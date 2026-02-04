@@ -1,0 +1,36 @@
+# --- Python & Venv ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+
+# --- Environment Secrets (PENTING: Jangan di-push) ---
+.env
+.env*
+secrets.toml
+
+# --- Streamlit ---
+# .streamlit/config.toml (Kalau mau simpan config tema dll, jangan di-ignore. Hapus pagar kalau mau di-ignore)
+# .streamlit/secrets.toml (WAJIB di-ignore, isinya password)
+.streamlit/secrets.toml
+.streamlit/*.toml # Opsional: kalau mau ignore semua config lokal
+
+# --- Editor / IDE ---
+.vscode/
+.idea/
+*.swp
+
+# --- OS Files ---
+.DS_Store
+Thumbs.db
+~$*
+
+# --- Logs & Databases ---
+*.log
+*.sqlite3
+
+# --- Catatan Sementara (Opsional) ---
+# _PERBAIKAN/  <-- Saya biarkan TIDAK di-ignore karena katanya "Dapur Kotor" mau di-push semua.

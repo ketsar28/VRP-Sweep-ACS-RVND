@@ -1,0 +1,4414 @@
+{
+  "mode": "ACADEMIC_REPLAY",
+  "user_vehicle_selection": [
+    {
+      "phase": "USER_VEHICLE_SELECTION",
+      "vehicle_id": "Vehicle A",
+      "vehicle_name": "Vehicle A",
+      "capacity": 60,
+      "enabled": true,
+      "units": 2,
+      "available_from": "08:00",
+      "available_until": "17:00",
+      "status": "\u2705 Aktif (2 unit, 08:00\u201317:00)"
+    },
+    {
+      "phase": "USER_VEHICLE_SELECTION",
+      "vehicle_id": "Vehicle B",
+      "vehicle_name": "Vehicle B",
+      "capacity": 100,
+      "enabled": true,
+      "units": 2,
+      "available_from": "09:15",
+      "available_until": "16:30",
+      "status": "\u2705 Aktif (2 unit, 09:15\u201316:30)"
+    },
+    {
+      "phase": "USER_VEHICLE_SELECTION",
+      "vehicle_id": "Vehicle C",
+      "vehicle_name": "Vehicle C",
+      "capacity": 150,
+      "enabled": true,
+      "units": 1,
+      "available_from": "10:25",
+      "available_until": "17:30",
+      "status": "\u2705 Aktif (1 unit, 10:25\u201317:30)"
+    }
+  ],
+  "vehicle_availability": [
+    {
+      "vehicle_id": "Vehicle A",
+      "capacity": 60,
+      "units": 2,
+      "available": true,
+      "available_from": "08:00",
+      "available_until": "17:00",
+      "status": "\u2705 Available",
+      "time_window": "08:00 \u2013 17:00"
+    },
+    {
+      "vehicle_id": "Vehicle B",
+      "capacity": 100,
+      "units": 2,
+      "available": true,
+      "available_from": "09:15",
+      "available_until": "16:30",
+      "status": "\u2705 Available",
+      "time_window": "09:15 \u2013 16:30"
+    },
+    {
+      "vehicle_id": "Vehicle C",
+      "capacity": 150,
+      "units": 1,
+      "available": true,
+      "available_from": "10:25",
+      "available_until": "17:30",
+      "status": "\u2705 Available",
+      "time_window": "10:25 \u2013 17:30"
+    }
+  ],
+  "available_vehicles": [
+    "Vehicle A",
+    "Vehicle B",
+    "Vehicle C"
+  ],
+  "dataset": {
+    "depot": {
+      "id": 0,
+      "name": "Depot",
+      "x": 0.0,
+      "y": 0.0,
+      "time_window": {
+        "start": "08:00",
+        "end": "17:00"
+      },
+      "service_time": 0
+    },
+    "customers": [
+      {
+        "id": 1,
+        "name": "C1",
+        "x": 2.0,
+        "y": 3.0,
+        "demand": 10,
+        "service_time": 5,
+        "time_window": {
+          "start": "08:00",
+          "end": "12:00"
+        }
+      },
+      {
+        "id": 2,
+        "name": "C2",
+        "x": 5.0,
+        "y": 1.0,
+        "demand": 15,
+        "service_time": 10,
+        "time_window": {
+          "start": "08:00",
+          "end": "14:00"
+        }
+      },
+      {
+        "id": 3,
+        "name": "C3",
+        "x": 6.0,
+        "y": 4.0,
+        "demand": 20,
+        "service_time": 8,
+        "time_window": {
+          "start": "09:00",
+          "end": "15:00"
+        }
+      },
+      {
+        "id": 4,
+        "name": "C4",
+        "x": 8.0,
+        "y": 2.0,
+        "demand": 25,
+        "service_time": 12,
+        "time_window": {
+          "start": "08:30",
+          "end": "16:00"
+        }
+      },
+      {
+        "id": 5,
+        "name": "C5",
+        "x": 3.0,
+        "y": 6.0,
+        "demand": 30,
+        "service_time": 15,
+        "time_window": {
+          "start": "10:00",
+          "end": "14:00"
+        }
+      },
+      {
+        "id": 6,
+        "name": "C6",
+        "x": 7.0,
+        "y": 5.0,
+        "demand": 18,
+        "service_time": 7,
+        "time_window": {
+          "start": "08:00",
+          "end": "13:00"
+        }
+      },
+      {
+        "id": 7,
+        "name": "C7",
+        "x": 4.0,
+        "y": 8.0,
+        "demand": 22,
+        "service_time": 9,
+        "time_window": {
+          "start": "09:00",
+          "end": "16:00"
+        }
+      },
+      {
+        "id": 8,
+        "name": "C8",
+        "x": 1.0,
+        "y": 5.0,
+        "demand": 12,
+        "service_time": 6,
+        "time_window": {
+          "start": "08:00",
+          "end": "11:00"
+        }
+      },
+      {
+        "id": 9,
+        "name": "C9",
+        "x": 9.0,
+        "y": 7.0,
+        "demand": 28,
+        "service_time": 11,
+        "time_window": {
+          "start": "10:00",
+          "end": "15:00"
+        }
+      },
+      {
+        "id": 10,
+        "name": "C10",
+        "x": 5.0,
+        "y": 9.0,
+        "demand": 35,
+        "service_time": 14,
+        "time_window": {
+          "start": "09:00",
+          "end": "17:00"
+        }
+      }
+    ],
+    "fleet": [
+      {
+        "id": "Vehicle A",
+        "name": "Vehicle A",
+        "capacity": 60,
+        "units": 2,
+        "available_from": "08:00",
+        "available_until": "17:00",
+        "fixed_cost": 50000,
+        "variable_cost_per_km": 1000
+      },
+      {
+        "id": "Vehicle B",
+        "name": "Vehicle B",
+        "capacity": 100,
+        "units": 2,
+        "available_from": "09:15",
+        "available_until": "16:30",
+        "fixed_cost": 50000,
+        "variable_cost_per_km": 1000
+      },
+      {
+        "id": "Vehicle C",
+        "name": "Vehicle C",
+        "capacity": 150,
+        "units": 1,
+        "available_from": "10:25",
+        "available_until": "17:30",
+        "fixed_cost": 50000,
+        "variable_cost_per_km": 1000
+      }
+    ],
+    "acs_parameters": {
+      "alpha": 0.5,
+      "beta": 2,
+      "rho": 0.2,
+      "q0": 0.85,
+      "num_ants": 2,
+      "max_iterations": 2
+    },
+    "objective_weights": {
+      "w1_distance": 1.0,
+      "w2_time": 1.0,
+      "w3_tw_violation": 1.0
+    }
+  },
+  "clusters": [
+    {
+      "cluster_id": 1,
+      "customer_ids": [
+        2,
+        4
+      ],
+      "total_demand": 40,
+      "vehicle_type": "A"
+    },
+    {
+      "cluster_id": 2,
+      "customer_ids": [
+        3,
+        6,
+        9
+      ],
+      "total_demand": 66,
+      "vehicle_type": "B"
+    },
+    {
+      "cluster_id": 3,
+      "customer_ids": [
+        1,
+        10
+      ],
+      "total_demand": 45,
+      "vehicle_type": "A"
+    },
+    {
+      "cluster_id": 4,
+      "customer_ids": [
+        5,
+        7,
+        8
+      ],
+      "total_demand": 64,
+      "vehicle_type": "B"
+    }
+  ],
+  "routes": [
+    {
+      "cluster_id": 1,
+      "vehicle_type": "Vehicle A",
+      "sequence": [
+        0,
+        2,
+        4,
+        0
+      ],
+      "stops": [
+        {
+          "node_id": 0,
+          "arrival": 480,
+          "departure": 480,
+          "wait": 0,
+          "violation": 0,
+          "tw_start": 480,
+          "tw_end": 1020
+        },
+        {
+          "node_id": 2,
+          "raw_arrival": 485.1,
+          "arrival": 485.1,
+          "departure": 495.1,
+          "wait": 0,
+          "violation": 0,
+          "service_time": 10,
+          "tw_start": 480,
+          "tw_end": 840
+        },
+        {
+          "node_id": 4,
+          "raw_arrival": 498.26,
+          "arrival": 510,
+          "departure": 522,
+          "wait": 11.74,
+          "violation": 0,
+          "service_time": 12,
+          "tw_start": 510,
+          "tw_end": 960
+        },
+        {
+          "node_id": 0,
+          "arrival": 530.25,
+          "departure": 530.25,
+          "wait": 0,
+          "violation": 0,
+          "tw_start": 480,
+          "tw_end": 1020
+        }
+      ],
+      "total_distance": 16.51,
+      "total_service_time": 22.0,
+      "total_travel_time": 16.51,
+      "total_tw_violation": 0.0,
+      "total_wait_time": 11.74,
+      "unassigned_customers": [],
+      "served_demand": 40,
+      "total_demand": 40,
+      "objective": 55.02000000000001
+    },
+    {
+      "cluster_id": 2,
+      "vehicle_type": "B",
+      "sequence": [
+        0,
+        3,
+        6,
+        9,
+        0
+      ],
+      "stops": [
+        {
+          "node_id": 0,
+          "arrival": 480,
+          "departure": 480,
+          "wait": 0,
+          "violation": 0,
+          "tw_start": 480,
+          "tw_end": 1020
+        },
+        {
+          "node_id": 3,
+          "raw_arrival": 487.21,
+          "arrival": 540,
+          "departure": 548,
+          "wait": 52.79,
+          "violation": 0,
+          "service_time": 8,
+          "tw_start": 540,
+          "tw_end": 900
+        },
+        {
+          "node_id": 6,
+          "raw_arrival": 549.41,
+          "arrival": 549.41,
+          "departure": 556.41,
+          "wait": 0,
+          "violation": 0,
+          "service_time": 7,
+          "tw_start": 480,
+          "tw_end": 780
+        },
+        {
+          "node_id": 9,
+          "raw_arrival": 559.24,
+          "arrival": 600,
+          "departure": 611,
+          "wait": 40.76,
+          "violation": 0,
+          "service_time": 11,
+          "tw_start": 600,
+          "tw_end": 900
+        },
+        {
+          "node_id": 0,
+          "arrival": 622.4,
+          "departure": 622.4,
+          "wait": 0,
+          "violation": 0,
+          "tw_start": 480,
+          "tw_end": 1020
+        }
+      ],
+      "total_distance": 22.86,
+      "total_service_time": 26.0,
+      "total_travel_time": 22.86,
+      "total_tw_violation": 0.0,
+      "total_wait_time": 93.55,
+      "unassigned_customers": [],
+      "served_demand": 66,
+      "total_demand": 66,
+      "objective": 71.72
+    },
+    {
+      "cluster_id": 3,
+      "vehicle_type": "Vehicle A",
+      "sequence": [
+        0,
+        1,
+        5,
+        0
+      ],
+      "stops": [
+        {
+          "node_id": 0,
+          "arrival": 480,
+          "departure": 480,
+          "wait": 0,
+          "violation": 0,
+          "tw_start": 480,
+          "tw_end": 1020
+        },
+        {
+          "node_id": 1,
+          "raw_arrival": 483.61,
+          "arrival": 483.61,
+          "departure": 488.61,
+          "wait": 0,
+          "violation": 0,
+          "service_time": 5,
+          "tw_start": 480,
+          "tw_end": 720
+        },
+        {
+          "node_id": 10,
+          "raw_arrival": 495.31,
+          "arrival": 540,
+          "departure": 554,
+          "wait": 44.69,
+          "violation": 0,
+          "service_time": 14,
+          "tw_start": 540,
+          "tw_end": 1020
+        },
+        {
+          "node_id": 0,
+          "arrival": 564.3,
+          "departure": 564.3,
+          "wait": 0,
+          "violation": 0,
+          "tw_start": 480,
+          "tw_end": 1020
+        }
+      ],
+      "total_distance": 13.48,
+      "total_service_time": 20.0,
+      "total_travel_time": 20.61,
+      "total_tw_violation": 0.0,
+      "total_wait_time": 44.69,
+      "unassigned_customers": [],
+      "served_demand": 45,
+      "total_demand": 40,
+      "objective": 60.22
+    },
+    {
+      "cluster_id": 4,
+      "vehicle_type": "B",
+      "sequence": [
+        0,
+        10,
+        7,
+        8,
+        0
+      ],
+      "stops": [
+        {
+          "node_id": 0,
+          "arrival": 480,
+          "departure": 480,
+          "wait": 0,
+          "violation": 0,
+          "tw_start": 480,
+          "tw_end": 1020
+        },
+        {
+          "node_id": 5,
+          "raw_arrival": 486.71,
+          "arrival": 600,
+          "departure": 615,
+          "wait": 113.29,
+          "violation": 0,
+          "service_time": 15,
+          "tw_start": 600,
+          "tw_end": 840
+        },
+        {
+          "node_id": 7,
+          "raw_arrival": 617.24,
+          "arrival": 617.24,
+          "departure": 626.24,
+          "wait": 0,
+          "violation": 0,
+          "service_time": 9,
+          "tw_start": 540,
+          "tw_end": 960
+        },
+        {
+          "node_id": 8,
+          "raw_arrival": 630.48,
+          "arrival": 630.48,
+          "departure": 636.48,
+          "wait": 0,
+          "violation": 0,
+          "service_time": 6,
+          "tw_start": 480,
+          "tw_end": 660
+        },
+        {
+          "node_id": 0,
+          "arrival": 641.58,
+          "departure": 641.58,
+          "wait": 0,
+          "violation": 0,
+          "tw_start": 480,
+          "tw_end": 1020
+        }
+      ],
+      "total_distance": 21.05,
+      "total_service_time": 29.0,
+      "total_travel_time": 18.29,
+      "total_tw_violation": 0.0,
+      "total_wait_time": 113.29,
+      "tw_violations_detail": [],
+      "total_demand": 69,
+      "objective": 66.58
+    }
+  ],
+  "unassigned_customers": [],
+  "costs": {
+    "total_fixed_cost": 200000.0,
+    "total_variable_cost": 73900.0,
+    "total_cost": 273900.0,
+    "breakdown": [
+      {
+        "cluster_id": 1,
+        "vehicle_type": "Vehicle A",
+        "fixed_cost": 50000,
+        "variable_cost": 16510.0,
+        "total_cost": 66510.0
+      },
+      {
+        "cluster_id": 2,
+        "vehicle_type": "B",
+        "fixed_cost": 50000,
+        "variable_cost": 22860.0,
+        "total_cost": 72860.0
+      },
+      {
+        "cluster_id": 3,
+        "vehicle_type": "Vehicle A",
+        "fixed_cost": 50000,
+        "variable_cost": 13480.0,
+        "total_cost": 63480.0
+      },
+      {
+        "cluster_id": 4,
+        "vehicle_type": "B",
+        "fixed_cost": 50000,
+        "variable_cost": 21050.0,
+        "total_cost": 71050.0
+      }
+    ]
+  },
+  "structure_validation": [
+    {
+      "cluster_id": 1,
+      "sequence": [
+        0,
+        2,
+        4,
+        0
+      ],
+      "valid": true,
+      "issues": []
+    },
+    {
+      "cluster_id": 2,
+      "sequence": [
+        0,
+        3,
+        6,
+        9,
+        0
+      ],
+      "valid": true,
+      "issues": []
+    },
+    {
+      "cluster_id": 3,
+      "sequence": [
+        0,
+        1,
+        5,
+        0
+      ],
+      "valid": true,
+      "issues": []
+    },
+    {
+      "cluster_id": 4,
+      "sequence": [
+        0,
+        10,
+        7,
+        8,
+        0
+      ],
+      "valid": true,
+      "issues": []
+    }
+  ],
+  "structure_valid": true,
+  "validation": [
+    {
+      "cluster_id": 1,
+      "sequence_expected": [
+        0,
+        2,
+        4,
+        0
+      ],
+      "sequence_actual": [
+        0,
+        2,
+        4,
+        0
+      ],
+      "sequence_match": true,
+      "distance_expected": 13.35,
+      "distance_actual": 16.51,
+      "distance_match": false,
+      "valid": false
+    },
+    {
+      "cluster_id": 2,
+      "sequence_expected": [
+        0,
+        3,
+        6,
+        9,
+        0
+      ],
+      "sequence_actual": [
+        0,
+        3,
+        6,
+        9,
+        0
+      ],
+      "sequence_match": true,
+      "distance_expected": 25.36,
+      "distance_actual": 22.86,
+      "distance_match": false,
+      "valid": false
+    },
+    {
+      "cluster_id": 3,
+      "sequence_expected": [
+        0,
+        1,
+        10,
+        0
+      ],
+      "sequence_actual": [
+        0,
+        1,
+        5,
+        0
+      ],
+      "sequence_match": false,
+      "distance_expected": 17.01,
+      "distance_actual": 13.48,
+      "distance_match": false,
+      "valid": false
+    },
+    {
+      "cluster_id": 4,
+      "sequence_expected": [
+        0,
+        5,
+        7,
+        8,
+        0
+      ],
+      "sequence_actual": [
+        0,
+        10,
+        7,
+        8,
+        0
+      ],
+      "sequence_match": false,
+      "distance_expected": 17.37,
+      "distance_actual": 21.05,
+      "distance_match": false,
+      "valid": false
+    }
+  ],
+  "all_valid": false,
+  "iteration_logs": [
+    {
+      "phase": "USER_VEHICLE_SELECTION",
+      "vehicle_id": "Vehicle A",
+      "vehicle_name": "Vehicle A",
+      "capacity": 60,
+      "enabled": true,
+      "units": 2,
+      "available_from": "08:00",
+      "available_until": "17:00",
+      "status": "\u2705 Aktif (2 unit, 08:00\u201317:00)"
+    },
+    {
+      "phase": "USER_VEHICLE_SELECTION",
+      "vehicle_id": "Vehicle B",
+      "vehicle_name": "Vehicle B",
+      "capacity": 100,
+      "enabled": true,
+      "units": 2,
+      "available_from": "09:15",
+      "available_until": "16:30",
+      "status": "\u2705 Aktif (2 unit, 09:15\u201316:30)"
+    },
+    {
+      "phase": "USER_VEHICLE_SELECTION",
+      "vehicle_id": "Vehicle C",
+      "vehicle_name": "Vehicle C",
+      "capacity": 150,
+      "enabled": true,
+      "units": 1,
+      "available_from": "10:25",
+      "available_until": "17:30",
+      "status": "\u2705 Aktif (1 unit, 10:25\u201317:30)"
+    },
+    {
+      "phase": "VEHICLE_AVAILABILITY",
+      "vehicle_id": "Vehicle A",
+      "capacity": 60,
+      "units": 2,
+      "available": true,
+      "time_window": "08:00 \u2013 17:00",
+      "status": "\u2705 Available"
+    },
+    {
+      "phase": "VEHICLE_AVAILABILITY",
+      "vehicle_id": "Vehicle B",
+      "capacity": 100,
+      "units": 2,
+      "available": true,
+      "time_window": "09:15 \u2013 16:30",
+      "status": "\u2705 Available"
+    },
+    {
+      "phase": "VEHICLE_AVAILABILITY",
+      "vehicle_id": "Vehicle C",
+      "capacity": 150,
+      "units": 1,
+      "available": true,
+      "time_window": "10:25 \u2013 17:30",
+      "status": "\u2705 Available"
+    },
+    {
+      "phase": "SWEEP",
+      "step": "polar_angle",
+      "customer_id": 1,
+      "angle": 56.31,
+      "formula": "atan2(3.0, 2.0) = 56.31\u00b0"
+    },
+    {
+      "phase": "SWEEP",
+      "step": "polar_angle",
+      "customer_id": 2,
+      "angle": 11.31,
+      "formula": "atan2(1.0, 5.0) = 11.31\u00b0"
+    },
+    {
+      "phase": "SWEEP",
+      "step": "polar_angle",
+      "customer_id": 3,
+      "angle": 33.69,
+      "formula": "atan2(4.0, 6.0) = 33.69\u00b0"
+    },
+    {
+      "phase": "SWEEP",
+      "step": "polar_angle",
+      "customer_id": 4,
+      "angle": 14.04,
+      "formula": "atan2(2.0, 8.0) = 14.04\u00b0"
+    },
+    {
+      "phase": "SWEEP",
+      "step": "polar_angle",
+      "customer_id": 5,
+      "angle": 63.43,
+      "formula": "atan2(6.0, 3.0) = 63.43\u00b0"
+    },
+    {
+      "phase": "SWEEP",
+      "step": "polar_angle",
+      "customer_id": 6,
+      "angle": 35.54,
+      "formula": "atan2(5.0, 7.0) = 35.54\u00b0"
+    },
+    {
+      "phase": "SWEEP",
+      "step": "polar_angle",
+      "customer_id": 7,
+      "angle": 63.43,
+      "formula": "atan2(8.0, 4.0) = 63.43\u00b0"
+    },
+    {
+      "phase": "SWEEP",
+      "step": "polar_angle",
+      "customer_id": 8,
+      "angle": 78.69,
+      "formula": "atan2(5.0, 1.0) = 78.69\u00b0"
+    },
+    {
+      "phase": "SWEEP",
+      "step": "polar_angle",
+      "customer_id": 9,
+      "angle": 37.87,
+      "formula": "atan2(7.0, 9.0) = 37.87\u00b0"
+    },
+    {
+      "phase": "SWEEP",
+      "step": "polar_angle",
+      "customer_id": 10,
+      "angle": 60.95,
+      "formula": "atan2(9.0, 5.0) = 60.95\u00b0"
+    },
+    {
+      "phase": "SWEEP",
+      "step": "sorted_order",
+      "order": [
+        2,
+        4,
+        3,
+        6,
+        9,
+        1,
+        10,
+        5,
+        7,
+        8
+      ],
+      "description": "Customers sorted by polar angle (ascending)"
+    },
+    {
+      "phase": "SWEEP",
+      "step": "cluster_formed",
+      "cluster_id": 1,
+      "customer_ids": [
+        2,
+        4
+      ],
+      "total_demand": 40,
+      "vehicle_type": "A"
+    },
+    {
+      "phase": "SWEEP",
+      "step": "cluster_formed",
+      "cluster_id": 2,
+      "customer_ids": [
+        3,
+        6,
+        9
+      ],
+      "total_demand": 66,
+      "vehicle_type": "B"
+    },
+    {
+      "phase": "SWEEP",
+      "step": "cluster_formed",
+      "cluster_id": 3,
+      "customer_ids": [
+        1,
+        10
+      ],
+      "total_demand": 45,
+      "vehicle_type": "A"
+    },
+    {
+      "phase": "SWEEP",
+      "step": "cluster_formed",
+      "cluster_id": 4,
+      "customer_ids": [
+        5,
+        7,
+        8
+      ],
+      "total_demand": 64,
+      "vehicle_type": "B"
+    },
+    {
+      "phase": "NN",
+      "cluster_id": 1,
+      "step": 1,
+      "from_node": 0,
+      "to_node": 2,
+      "distance": 5.1,
+      "arrival_time": 485.1,
+      "tw_start": 480,
+      "tw_end": 840,
+      "action": "ACCEPTED",
+      "description": "Select customer 2 (distance = 5.1)"
+    },
+    {
+      "phase": "NN",
+      "cluster_id": 1,
+      "step": 2,
+      "from_node": 2,
+      "to_node": 4,
+      "distance": 3.16,
+      "arrival_time": 498.26,
+      "tw_start": 510,
+      "tw_end": 960,
+      "action": "ACCEPTED",
+      "description": "Select customer 4 (distance = 3.16)"
+    },
+    {
+      "phase": "NN",
+      "cluster_id": 1,
+      "step": 3,
+      "from_node": 4,
+      "to_node": 0,
+      "distance": 8.25,
+      "description": "Return to depot (distance = 8.25)"
+    },
+    {
+      "phase": "NN",
+      "cluster_id": 2,
+      "step": 1,
+      "from_node": 0,
+      "to_node": 3,
+      "distance": 7.21,
+      "arrival_time": 487.21,
+      "tw_start": 540,
+      "tw_end": 900,
+      "action": "ACCEPTED",
+      "description": "Select customer 3 (distance = 7.21)"
+    },
+    {
+      "phase": "NN",
+      "cluster_id": 2,
+      "step": 2,
+      "from_node": 3,
+      "to_node": 6,
+      "distance": 1.41,
+      "arrival_time": 549.41,
+      "tw_start": 480,
+      "tw_end": 780,
+      "action": "ACCEPTED",
+      "description": "Select customer 6 (distance = 1.41)"
+    },
+    {
+      "phase": "NN",
+      "cluster_id": 2,
+      "step": 3,
+      "from_node": 6,
+      "to_node": 9,
+      "distance": 2.83,
+      "arrival_time": 559.24,
+      "tw_start": 600,
+      "tw_end": 900,
+      "action": "ACCEPTED",
+      "description": "Select customer 9 (distance = 2.83)"
+    },
+    {
+      "phase": "NN",
+      "cluster_id": 2,
+      "step": 4,
+      "from_node": 9,
+      "to_node": 0,
+      "distance": 11.4,
+      "description": "Return to depot (distance = 11.4)"
+    },
+    {
+      "phase": "NN",
+      "cluster_id": 3,
+      "step": 1,
+      "from_node": 0,
+      "to_node": 1,
+      "distance": 3.61,
+      "arrival_time": 483.61,
+      "tw_start": 480,
+      "tw_end": 720,
+      "action": "ACCEPTED",
+      "description": "Select customer 1 (distance = 3.61)"
+    },
+    {
+      "phase": "NN",
+      "cluster_id": 3,
+      "step": 2,
+      "from_node": 1,
+      "to_node": 10,
+      "distance": 6.71,
+      "arrival_time": 495.31,
+      "tw_start": 540,
+      "tw_end": 1020,
+      "action": "ACCEPTED",
+      "description": "Select customer 10 (distance = 6.71)"
+    },
+    {
+      "phase": "NN",
+      "cluster_id": 3,
+      "step": 3,
+      "from_node": 10,
+      "to_node": 0,
+      "distance": 10.3,
+      "description": "Return to depot (distance = 10.3)"
+    },
+    {
+      "phase": "NN",
+      "cluster_id": 4,
+      "step": 1,
+      "from_node": 0,
+      "to_node": 8,
+      "distance": 5.1,
+      "arrival_time": 485.1,
+      "tw_start": 480,
+      "tw_end": 660,
+      "action": "ACCEPTED",
+      "description": "Select customer 8 (distance = 5.1)"
+    },
+    {
+      "phase": "NN",
+      "cluster_id": 4,
+      "step": 2,
+      "from_node": 8,
+      "to_node": 5,
+      "distance": 2.24,
+      "arrival_time": 493.34,
+      "tw_start": 600,
+      "tw_end": 840,
+      "action": "ACCEPTED",
+      "description": "Select customer 5 (distance = 2.24)"
+    },
+    {
+      "phase": "NN",
+      "cluster_id": 4,
+      "step": 3,
+      "from_node": 5,
+      "to_node": 7,
+      "distance": 2.24,
+      "arrival_time": 617.24,
+      "tw_start": 540,
+      "tw_end": 960,
+      "action": "ACCEPTED",
+      "description": "Select customer 7 (distance = 2.24)"
+    },
+    {
+      "phase": "NN",
+      "cluster_id": 4,
+      "step": 4,
+      "from_node": 7,
+      "to_node": 0,
+      "distance": 8.94,
+      "description": "Return to depot (distance = 8.94)"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 1,
+      "step": "init_pheromone",
+      "mode": "ACADEMIC_REPLAY",
+      "tau0": 0.030285,
+      "nn_length": 16.51,
+      "formula": "tau0 = 1 / (2 \u00d7 16.51) = 0.030285",
+      "description": "Using PREDEFINED routes from Word document"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 1,
+      "step": "init_objective",
+      "initial_distance": 16.51,
+      "initial_time": 38.510000000000005,
+      "initial_tw_violation": 0.0,
+      "initial_objective": 55.02,
+      "formula": "Z = \u03b1\u00d7D + \u03b2\u00d7T + \u03b3\u00d7TW_violation",
+      "description": "Initial objective Z = 55.02"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 1,
+      "iteration": 1,
+      "ant": 1,
+      "step": "route_predefined",
+      "predefined_key": "(1, 1, 1)",
+      "route": [
+        0,
+        2,
+        4,
+        0
+      ],
+      "description": "PREDEFINED route for cluster 1, iter 1, ant 1"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 1,
+      "iteration": 1,
+      "ant": 1,
+      "step": "route_evaluation",
+      "route": [
+        0,
+        2,
+        4,
+        0
+      ],
+      "distance": 16.51,
+      "travel_time": 16.51,
+      "service_time": 22.0,
+      "total_time": 38.510000000000005,
+      "tw_violation": 0.0,
+      "wait_time": 11.74,
+      "objective_formula": "Z = 1.0\u00d7D + 1.0\u00d7T + 1.0\u00d7V",
+      "objective_calculation": "Z = 1.0\u00d716.51 + 1.0\u00d738.510000000000005 + 1.0\u00d70.0",
+      "objective": 55.02,
+      "acceptance_criterion": "OBJECTIVE_FUNCTION",
+      "description": "Z = 55.02 (acceptance based on Z = \u03b1D + \u03b2T + \u03b3TW)"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 1,
+      "iteration": 1,
+      "ant": 2,
+      "step": "route_predefined",
+      "predefined_key": "(1, 1, 2)",
+      "route": [
+        0,
+        4,
+        2,
+        0
+      ],
+      "description": "PREDEFINED route for cluster 1, iter 1, ant 2"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 1,
+      "iteration": 1,
+      "ant": 2,
+      "step": "route_evaluation",
+      "route": [
+        0,
+        4,
+        2,
+        0
+      ],
+      "distance": 16.51,
+      "travel_time": 16.51,
+      "service_time": 22.0,
+      "total_time": 38.510000000000005,
+      "tw_violation": 0.0,
+      "wait_time": 21.75,
+      "objective_formula": "Z = 1.0\u00d7D + 1.0\u00d7T + 1.0\u00d7V",
+      "objective_calculation": "Z = 1.0\u00d716.51 + 1.0\u00d738.510000000000005 + 1.0\u00d70.0",
+      "objective": 55.02,
+      "acceptance_criterion": "OBJECTIVE_FUNCTION",
+      "description": "Z = 55.02 (acceptance based on Z = \u03b1D + \u03b2T + \u03b3TW)"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 1,
+      "iteration": 1,
+      "step": "iteration_summary",
+      "best_route": [
+        0,
+        2,
+        4,
+        0
+      ],
+      "best_objective": 55.02,
+      "best_distance": 16.51,
+      "best_service_time": 22.0,
+      "best_tw_violation": 0.0,
+      "acceptance_criterion": "OBJECTIVE_FUNCTION (Z = \u03b1D + \u03b2T + \u03b3TW)"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 1,
+      "iteration": 2,
+      "ant": 1,
+      "step": "route_predefined",
+      "predefined_key": "(1, 2, 1)",
+      "route": [
+        0,
+        2,
+        4,
+        0
+      ],
+      "description": "PREDEFINED route for cluster 1, iter 2, ant 1"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 1,
+      "iteration": 2,
+      "ant": 1,
+      "step": "route_evaluation",
+      "route": [
+        0,
+        2,
+        4,
+        0
+      ],
+      "distance": 16.51,
+      "travel_time": 16.51,
+      "service_time": 22.0,
+      "total_time": 38.510000000000005,
+      "tw_violation": 0.0,
+      "wait_time": 11.74,
+      "objective_formula": "Z = 1.0\u00d7D + 1.0\u00d7T + 1.0\u00d7V",
+      "objective_calculation": "Z = 1.0\u00d716.51 + 1.0\u00d738.510000000000005 + 1.0\u00d70.0",
+      "objective": 55.02,
+      "acceptance_criterion": "OBJECTIVE_FUNCTION",
+      "description": "Z = 55.02 (acceptance based on Z = \u03b1D + \u03b2T + \u03b3TW)"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 1,
+      "iteration": 2,
+      "ant": 2,
+      "step": "route_predefined",
+      "predefined_key": "(1, 2, 2)",
+      "route": [
+        0,
+        4,
+        2,
+        0
+      ],
+      "description": "PREDEFINED route for cluster 1, iter 2, ant 2"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 1,
+      "iteration": 2,
+      "ant": 2,
+      "step": "route_evaluation",
+      "route": [
+        0,
+        4,
+        2,
+        0
+      ],
+      "distance": 16.51,
+      "travel_time": 16.51,
+      "service_time": 22.0,
+      "total_time": 38.510000000000005,
+      "tw_violation": 0.0,
+      "wait_time": 21.75,
+      "objective_formula": "Z = 1.0\u00d7D + 1.0\u00d7T + 1.0\u00d7V",
+      "objective_calculation": "Z = 1.0\u00d716.51 + 1.0\u00d738.510000000000005 + 1.0\u00d70.0",
+      "objective": 55.02,
+      "acceptance_criterion": "OBJECTIVE_FUNCTION",
+      "description": "Z = 55.02 (acceptance based on Z = \u03b1D + \u03b2T + \u03b3TW)"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 1,
+      "iteration": 2,
+      "step": "iteration_summary",
+      "best_route": [
+        0,
+        2,
+        4,
+        0
+      ],
+      "best_objective": 55.02,
+      "best_distance": 16.51,
+      "best_service_time": 22.0,
+      "best_tw_violation": 0.0,
+      "acceptance_criterion": "OBJECTIVE_FUNCTION (Z = \u03b1D + \u03b2T + \u03b3TW)"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 2,
+      "step": "init_pheromone",
+      "mode": "ACADEMIC_REPLAY",
+      "tau0": 0.014582,
+      "nn_length": 22.86,
+      "formula": "tau0 = 1 / (3 \u00d7 22.86) = 0.014582",
+      "description": "Using PREDEFINED routes from Word document"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 2,
+      "step": "init_objective",
+      "initial_distance": 22.86,
+      "initial_time": 48.86,
+      "initial_tw_violation": 0.0,
+      "initial_objective": 71.72,
+      "formula": "Z = \u03b1\u00d7D + \u03b2\u00d7T + \u03b3\u00d7TW_violation",
+      "description": "Initial objective Z = 71.72"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 2,
+      "iteration": 1,
+      "ant": 1,
+      "step": "route_predefined",
+      "predefined_key": "(2, 1, 1)",
+      "route": [
+        0,
+        3,
+        6,
+        9,
+        0
+      ],
+      "description": "PREDEFINED route for cluster 2, iter 1, ant 1"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 2,
+      "iteration": 1,
+      "ant": 1,
+      "step": "route_evaluation",
+      "route": [
+        0,
+        3,
+        6,
+        9,
+        0
+      ],
+      "distance": 22.86,
+      "travel_time": 22.86,
+      "service_time": 26.0,
+      "total_time": 48.86,
+      "tw_violation": 0.0,
+      "wait_time": 93.55,
+      "objective_formula": "Z = 1.0\u00d7D + 1.0\u00d7T + 1.0\u00d7V",
+      "objective_calculation": "Z = 1.0\u00d722.86 + 1.0\u00d748.86 + 1.0\u00d70.0",
+      "objective": 71.72,
+      "acceptance_criterion": "OBJECTIVE_FUNCTION",
+      "description": "Z = 71.72 (acceptance based on Z = \u03b1D + \u03b2T + \u03b3TW)"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 2,
+      "iteration": 1,
+      "ant": 2,
+      "step": "route_predefined",
+      "predefined_key": "(2, 1, 2)",
+      "route": [
+        0,
+        9,
+        6,
+        3,
+        0
+      ],
+      "description": "PREDEFINED route for cluster 2, iter 1, ant 2"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 2,
+      "iteration": 1,
+      "ant": 2,
+      "step": "route_evaluation",
+      "route": [
+        0,
+        9,
+        6,
+        3,
+        0
+      ],
+      "distance": 22.86,
+      "travel_time": 22.86,
+      "service_time": 26.0,
+      "total_time": 48.86,
+      "tw_violation": 0.0,
+      "wait_time": 108.6,
+      "objective_formula": "Z = 1.0\u00d7D + 1.0\u00d7T + 1.0\u00d7V",
+      "objective_calculation": "Z = 1.0\u00d722.86 + 1.0\u00d748.86 + 1.0\u00d70.0",
+      "objective": 71.72,
+      "acceptance_criterion": "OBJECTIVE_FUNCTION",
+      "description": "Z = 71.72 (acceptance based on Z = \u03b1D + \u03b2T + \u03b3TW)"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 2,
+      "iteration": 1,
+      "step": "iteration_summary",
+      "best_route": [
+        0,
+        3,
+        6,
+        9,
+        0
+      ],
+      "best_objective": 71.72,
+      "best_distance": 22.86,
+      "best_service_time": 26.0,
+      "best_tw_violation": 0.0,
+      "acceptance_criterion": "OBJECTIVE_FUNCTION (Z = \u03b1D + \u03b2T + \u03b3TW)"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 2,
+      "iteration": 2,
+      "ant": 1,
+      "step": "route_predefined",
+      "predefined_key": "(2, 2, 1)",
+      "route": [
+        0,
+        3,
+        9,
+        6,
+        0
+      ],
+      "description": "PREDEFINED route for cluster 2, iter 2, ant 1"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 2,
+      "iteration": 2,
+      "ant": 1,
+      "step": "route_evaluation",
+      "route": [
+        0,
+        3,
+        9,
+        6,
+        0
+      ],
+      "distance": 22.88,
+      "travel_time": 22.88,
+      "service_time": 26.0,
+      "total_time": 48.879999999999995,
+      "tw_violation": 0.0,
+      "wait_time": 100.55,
+      "objective_formula": "Z = 1.0\u00d7D + 1.0\u00d7T + 1.0\u00d7V",
+      "objective_calculation": "Z = 1.0\u00d722.88 + 1.0\u00d748.879999999999995 + 1.0\u00d70.0",
+      "objective": 71.76,
+      "acceptance_criterion": "OBJECTIVE_FUNCTION",
+      "description": "Z = 71.76 (acceptance based on Z = \u03b1D + \u03b2T + \u03b3TW)"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 2,
+      "iteration": 2,
+      "ant": 2,
+      "step": "route_predefined",
+      "predefined_key": "(2, 2, 2)",
+      "route": [
+        0,
+        6,
+        3,
+        9,
+        0
+      ],
+      "description": "PREDEFINED route for cluster 2, iter 2, ant 2"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 2,
+      "iteration": 2,
+      "ant": 2,
+      "step": "route_evaluation",
+      "route": [
+        0,
+        6,
+        3,
+        9,
+        0
+      ],
+      "distance": 25.66,
+      "travel_time": 25.66,
+      "service_time": 26.0,
+      "total_time": 51.66,
+      "tw_violation": 0.0,
+      "wait_time": 90.74,
+      "objective_formula": "Z = 1.0\u00d7D + 1.0\u00d7T + 1.0\u00d7V",
+      "objective_calculation": "Z = 1.0\u00d725.66 + 1.0\u00d751.66 + 1.0\u00d70.0",
+      "objective": 77.32,
+      "acceptance_criterion": "OBJECTIVE_FUNCTION",
+      "description": "Z = 77.32 (acceptance based on Z = \u03b1D + \u03b2T + \u03b3TW)"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 2,
+      "iteration": 2,
+      "step": "iteration_summary",
+      "best_route": [
+        0,
+        3,
+        6,
+        9,
+        0
+      ],
+      "best_objective": 71.72,
+      "best_distance": 22.86,
+      "best_service_time": 26.0,
+      "best_tw_violation": 0.0,
+      "acceptance_criterion": "OBJECTIVE_FUNCTION (Z = \u03b1D + \u03b2T + \u03b3TW)"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 3,
+      "step": "init_pheromone",
+      "mode": "ACADEMIC_REPLAY",
+      "tau0": 0.02426,
+      "nn_length": 20.61,
+      "formula": "tau0 = 1 / (2 \u00d7 20.61) = 0.02426",
+      "description": "Using PREDEFINED routes from Word document"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 3,
+      "step": "init_objective",
+      "initial_distance": 20.61,
+      "initial_time": 39.61,
+      "initial_tw_violation": 0.0,
+      "initial_objective": 60.22,
+      "formula": "Z = \u03b1\u00d7D + \u03b2\u00d7T + \u03b3\u00d7TW_violation",
+      "description": "Initial objective Z = 60.22"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 3,
+      "iteration": 1,
+      "ant": 1,
+      "step": "route_predefined",
+      "predefined_key": "(3, 1, 1)",
+      "route": [
+        0,
+        1,
+        10,
+        0
+      ],
+      "description": "PREDEFINED route for cluster 3, iter 1, ant 1"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 3,
+      "iteration": 1,
+      "ant": 1,
+      "step": "route_evaluation",
+      "route": [
+        0,
+        1,
+        10,
+        0
+      ],
+      "distance": 20.61,
+      "travel_time": 20.61,
+      "service_time": 19.0,
+      "total_time": 39.61,
+      "tw_violation": 0.0,
+      "wait_time": 44.69,
+      "objective_formula": "Z = 1.0\u00d7D + 1.0\u00d7T + 1.0\u00d7V",
+      "objective_calculation": "Z = 1.0\u00d720.61 + 1.0\u00d739.61 + 1.0\u00d70.0",
+      "objective": 60.22,
+      "acceptance_criterion": "OBJECTIVE_FUNCTION",
+      "description": "Z = 60.22 (acceptance based on Z = \u03b1D + \u03b2T + \u03b3TW)"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 3,
+      "iteration": 1,
+      "ant": 2,
+      "step": "route_predefined",
+      "predefined_key": "(3, 1, 2)",
+      "route": [
+        0,
+        10,
+        1,
+        0
+      ],
+      "description": "PREDEFINED route for cluster 3, iter 1, ant 2"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 3,
+      "iteration": 1,
+      "ant": 2,
+      "step": "route_evaluation",
+      "route": [
+        0,
+        10,
+        1,
+        0
+      ],
+      "distance": 20.61,
+      "travel_time": 20.61,
+      "service_time": 19.0,
+      "total_time": 39.61,
+      "tw_violation": 0.0,
+      "wait_time": 49.7,
+      "objective_formula": "Z = 1.0\u00d7D + 1.0\u00d7T + 1.0\u00d7V",
+      "objective_calculation": "Z = 1.0\u00d720.61 + 1.0\u00d739.61 + 1.0\u00d70.0",
+      "objective": 60.22,
+      "acceptance_criterion": "OBJECTIVE_FUNCTION",
+      "description": "Z = 60.22 (acceptance based on Z = \u03b1D + \u03b2T + \u03b3TW)"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 3,
+      "iteration": 1,
+      "step": "iteration_summary",
+      "best_route": [
+        0,
+        1,
+        10,
+        0
+      ],
+      "best_objective": 60.22,
+      "best_distance": 20.61,
+      "best_service_time": 19.0,
+      "best_tw_violation": 0.0,
+      "acceptance_criterion": "OBJECTIVE_FUNCTION (Z = \u03b1D + \u03b2T + \u03b3TW)"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 3,
+      "iteration": 2,
+      "ant": 1,
+      "step": "route_predefined",
+      "predefined_key": "(3, 2, 1)",
+      "route": [
+        0,
+        1,
+        10,
+        0
+      ],
+      "description": "PREDEFINED route for cluster 3, iter 2, ant 1"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 3,
+      "iteration": 2,
+      "ant": 1,
+      "step": "route_evaluation",
+      "route": [
+        0,
+        1,
+        10,
+        0
+      ],
+      "distance": 20.61,
+      "travel_time": 20.61,
+      "service_time": 19.0,
+      "total_time": 39.61,
+      "tw_violation": 0.0,
+      "wait_time": 44.69,
+      "objective_formula": "Z = 1.0\u00d7D + 1.0\u00d7T + 1.0\u00d7V",
+      "objective_calculation": "Z = 1.0\u00d720.61 + 1.0\u00d739.61 + 1.0\u00d70.0",
+      "objective": 60.22,
+      "acceptance_criterion": "OBJECTIVE_FUNCTION",
+      "description": "Z = 60.22 (acceptance based on Z = \u03b1D + \u03b2T + \u03b3TW)"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 3,
+      "iteration": 2,
+      "ant": 2,
+      "step": "route_predefined",
+      "predefined_key": "(3, 2, 2)",
+      "route": [
+        0,
+        10,
+        1,
+        0
+      ],
+      "description": "PREDEFINED route for cluster 3, iter 2, ant 2"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 3,
+      "iteration": 2,
+      "ant": 2,
+      "step": "route_evaluation",
+      "route": [
+        0,
+        10,
+        1,
+        0
+      ],
+      "distance": 20.61,
+      "travel_time": 20.61,
+      "service_time": 19.0,
+      "total_time": 39.61,
+      "tw_violation": 0.0,
+      "wait_time": 49.7,
+      "objective_formula": "Z = 1.0\u00d7D + 1.0\u00d7T + 1.0\u00d7V",
+      "objective_calculation": "Z = 1.0\u00d720.61 + 1.0\u00d739.61 + 1.0\u00d70.0",
+      "objective": 60.22,
+      "acceptance_criterion": "OBJECTIVE_FUNCTION",
+      "description": "Z = 60.22 (acceptance based on Z = \u03b1D + \u03b2T + \u03b3TW)"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 3,
+      "iteration": 2,
+      "step": "iteration_summary",
+      "best_route": [
+        0,
+        1,
+        10,
+        0
+      ],
+      "best_objective": 60.22,
+      "best_distance": 20.61,
+      "best_service_time": 19.0,
+      "best_tw_violation": 0.0,
+      "acceptance_criterion": "OBJECTIVE_FUNCTION (Z = \u03b1D + \u03b2T + \u03b3TW)"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 4,
+      "step": "init_pheromone",
+      "mode": "ACADEMIC_REPLAY",
+      "tau0": 0.017999,
+      "nn_length": 18.52,
+      "formula": "tau0 = 1 / (3 \u00d7 18.52) = 0.017999",
+      "description": "Using PREDEFINED routes from Word document"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 4,
+      "step": "init_objective",
+      "initial_distance": 18.52,
+      "initial_time": 48.519999999999996,
+      "initial_tw_violation": 0.0,
+      "initial_objective": 67.04,
+      "formula": "Z = \u03b1\u00d7D + \u03b2\u00d7T + \u03b3\u00d7TW_violation",
+      "description": "Initial objective Z = 67.04"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 4,
+      "iteration": 1,
+      "ant": 1,
+      "step": "route_predefined",
+      "predefined_key": "(4, 1, 1)",
+      "route": [
+        0,
+        5,
+        7,
+        8,
+        0
+      ],
+      "description": "PREDEFINED route for cluster 4, iter 1, ant 1"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 4,
+      "iteration": 1,
+      "ant": 1,
+      "step": "route_evaluation",
+      "route": [
+        0,
+        5,
+        7,
+        8,
+        0
+      ],
+      "distance": 18.29,
+      "travel_time": 18.29,
+      "service_time": 30.0,
+      "total_time": 48.29,
+      "tw_violation": 0.0,
+      "wait_time": 113.29,
+      "objective_formula": "Z = 1.0\u00d7D + 1.0\u00d7T + 1.0\u00d7V",
+      "objective_calculation": "Z = 1.0\u00d718.29 + 1.0\u00d748.29 + 1.0\u00d70.0",
+      "objective": 66.58,
+      "acceptance_criterion": "OBJECTIVE_FUNCTION",
+      "description": "Z = 66.58 (acceptance based on Z = \u03b1D + \u03b2T + \u03b3TW)"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 4,
+      "iteration": 1,
+      "ant": 2,
+      "step": "route_predefined",
+      "predefined_key": "(4, 1, 2)",
+      "route": [
+        0,
+        8,
+        7,
+        5,
+        0
+      ],
+      "description": "PREDEFINED route for cluster 4, iter 1, ant 2"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 4,
+      "iteration": 1,
+      "ant": 2,
+      "step": "route_evaluation",
+      "route": [
+        0,
+        8,
+        7,
+        5,
+        0
+      ],
+      "distance": 18.29,
+      "travel_time": 18.29,
+      "service_time": 30.0,
+      "total_time": 48.29,
+      "tw_violation": 0.0,
+      "wait_time": 93.42,
+      "objective_formula": "Z = 1.0\u00d7D + 1.0\u00d7T + 1.0\u00d7V",
+      "objective_calculation": "Z = 1.0\u00d718.29 + 1.0\u00d748.29 + 1.0\u00d70.0",
+      "objective": 66.58,
+      "acceptance_criterion": "OBJECTIVE_FUNCTION",
+      "description": "Z = 66.58 (acceptance based on Z = \u03b1D + \u03b2T + \u03b3TW)"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 4,
+      "iteration": 1,
+      "step": "new_best_found",
+      "new_best_objective": 66.58,
+      "new_best_distance": 18.29,
+      "description": "New best route found: Z = 66.58"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 4,
+      "iteration": 1,
+      "step": "iteration_summary",
+      "best_route": [
+        0,
+        5,
+        7,
+        8,
+        0
+      ],
+      "best_objective": 66.58,
+      "best_distance": 18.29,
+      "best_service_time": 30.0,
+      "best_tw_violation": 0.0,
+      "acceptance_criterion": "OBJECTIVE_FUNCTION (Z = \u03b1D + \u03b2T + \u03b3TW)"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 4,
+      "iteration": 2,
+      "ant": 1,
+      "step": "route_predefined",
+      "predefined_key": "(4, 2, 1)",
+      "route": [
+        0,
+        5,
+        8,
+        7,
+        0
+      ],
+      "description": "PREDEFINED route for cluster 4, iter 2, ant 1"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 4,
+      "iteration": 2,
+      "ant": 1,
+      "step": "route_evaluation",
+      "route": [
+        0,
+        5,
+        8,
+        7,
+        0
+      ],
+      "distance": 22.13,
+      "travel_time": 22.13,
+      "service_time": 30.0,
+      "total_time": 52.129999999999995,
+      "tw_violation": 0.0,
+      "wait_time": 113.29,
+      "objective_formula": "Z = 1.0\u00d7D + 1.0\u00d7T + 1.0\u00d7V",
+      "objective_calculation": "Z = 1.0\u00d722.13 + 1.0\u00d752.129999999999995 + 1.0\u00d70.0",
+      "objective": 74.26,
+      "acceptance_criterion": "OBJECTIVE_FUNCTION",
+      "description": "Z = 74.26 (acceptance based on Z = \u03b1D + \u03b2T + \u03b3TW)"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 4,
+      "iteration": 2,
+      "ant": 2,
+      "step": "route_predefined",
+      "predefined_key": "(4, 2, 2)",
+      "route": [
+        0,
+        7,
+        5,
+        8,
+        0
+      ],
+      "description": "PREDEFINED route for cluster 4, iter 2, ant 2"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 4,
+      "iteration": 2,
+      "ant": 2,
+      "step": "route_evaluation",
+      "route": [
+        0,
+        7,
+        5,
+        8,
+        0
+      ],
+      "distance": 18.52,
+      "travel_time": 18.52,
+      "service_time": 30.0,
+      "total_time": 48.519999999999996,
+      "tw_violation": 0.0,
+      "wait_time": 99.82,
+      "objective_formula": "Z = 1.0\u00d7D + 1.0\u00d7T + 1.0\u00d7V",
+      "objective_calculation": "Z = 1.0\u00d718.52 + 1.0\u00d748.519999999999996 + 1.0\u00d70.0",
+      "objective": 67.04,
+      "acceptance_criterion": "OBJECTIVE_FUNCTION",
+      "description": "Z = 67.04 (acceptance based on Z = \u03b1D + \u03b2T + \u03b3TW)"
+    },
+    {
+      "phase": "ACS",
+      "cluster_id": 4,
+      "iteration": 2,
+      "step": "iteration_summary",
+      "best_route": [
+        0,
+        5,
+        7,
+        8,
+        0
+      ],
+      "best_objective": 66.58,
+      "best_distance": 18.29,
+      "best_service_time": 30.0,
+      "best_tw_violation": 0.0,
+      "acceptance_criterion": "OBJECTIVE_FUNCTION (Z = \u03b1D + \u03b2T + \u03b3TW)"
+    },
+    {
+      "iteration_id": 1,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "none",
+      "improved": false,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          10,
+          0
+        ],
+        [
+          0,
+          5,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 78.27,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY",
+      "move": {
+        "predefined": true,
+        "neighborhood": "swap_1_1",
+        "route_pair": [
+          0,
+          1
+        ],
+        "swap_pair": [
+          2,
+          3
+        ]
+      }
+    },
+    {
+      "iteration_id": 2,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "none",
+      "improved": false,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          10,
+          0
+        ],
+        [
+          0,
+          5,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 78.27,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY",
+      "move": {
+        "predefined": true,
+        "neighborhood": "swap_1_1",
+        "route_pair": [
+          0,
+          2
+        ],
+        "swap_pair": [
+          4,
+          1
+        ]
+      }
+    },
+    {
+      "iteration_id": 3,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "none",
+      "improved": false,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          10,
+          0
+        ],
+        [
+          0,
+          5,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 78.27,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY",
+      "move": {
+        "predefined": true,
+        "neighborhood": "swap_1_1",
+        "route_pair": [
+          1,
+          2
+        ],
+        "swap_pair": [
+          6,
+          10
+        ]
+      }
+    },
+    {
+      "iteration_id": 4,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "none",
+      "improved": false,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          10,
+          0
+        ],
+        [
+          0,
+          5,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 78.27,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY",
+      "move": {
+        "predefined": true,
+        "neighborhood": "shift_1_0",
+        "route_pair": [
+          2,
+          3
+        ],
+        "swap_pair": [
+          1,
+          null
+        ]
+      }
+    },
+    {
+      "iteration_id": 5,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY",
+      "move": {
+        "predefined": true,
+        "neighborhood": "swap_1_1",
+        "route_pair": [
+          2,
+          3
+        ],
+        "swap_pair": [
+          10,
+          5
+        ]
+      }
+    },
+    {
+      "iteration_id": 6,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 7,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 8,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 9,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 10,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 11,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 12,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 13,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 14,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 15,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 16,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 17,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 18,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 19,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 20,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 21,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 22,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 23,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 24,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 25,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 26,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 27,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 28,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 29,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 30,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 31,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 32,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 33,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 34,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 35,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 36,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 37,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 38,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 39,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 40,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 41,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 42,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 43,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 44,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 45,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 46,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 47,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 48,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 49,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 50,
+      "phase": "RVND-INTER",
+      "mode": "ACADEMIC_REPLAY",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ],
+        [
+          0,
+          1,
+          5,
+          0
+        ],
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 73.9,
+      "total_service_time": 97.0,
+      "vehicle_usage": {
+        "A": 1,
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 1,
+      "phase": "RVND-INTRA",
+      "mode": "ACADEMIC_REPLAY",
+      "cluster_id": 1,
+      "neighborhood": "none",
+      "improved": false,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ]
+      ],
+      "total_distance": 16.51,
+      "total_service_time": 22.0,
+      "vehicle_usage": {
+        "A": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 2,
+      "phase": "RVND-INTRA",
+      "mode": "ACADEMIC_REPLAY",
+      "cluster_id": 1,
+      "neighborhood": "none",
+      "improved": false,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ]
+      ],
+      "total_distance": 16.51,
+      "total_service_time": 22.0,
+      "vehicle_usage": {
+        "A": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 3,
+      "phase": "RVND-INTRA",
+      "mode": "ACADEMIC_REPLAY",
+      "cluster_id": 1,
+      "neighborhood": "none",
+      "improved": false,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          4,
+          0
+        ]
+      ],
+      "total_distance": 16.51,
+      "total_service_time": 22.0,
+      "vehicle_usage": {
+        "A": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 1,
+      "phase": "RVND-INTRA",
+      "mode": "ACADEMIC_REPLAY",
+      "cluster_id": 2,
+      "neighborhood": "none",
+      "improved": false,
+      "routes_snapshot": [
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ]
+      ],
+      "total_distance": 22.86,
+      "total_service_time": 26.0,
+      "vehicle_usage": {
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 2,
+      "phase": "RVND-INTRA",
+      "mode": "ACADEMIC_REPLAY",
+      "cluster_id": 2,
+      "neighborhood": "none",
+      "improved": false,
+      "routes_snapshot": [
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ]
+      ],
+      "total_distance": 22.86,
+      "total_service_time": 26.0,
+      "vehicle_usage": {
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 3,
+      "phase": "RVND-INTRA",
+      "mode": "ACADEMIC_REPLAY",
+      "cluster_id": 2,
+      "neighborhood": "none",
+      "improved": false,
+      "routes_snapshot": [
+        [
+          0,
+          3,
+          6,
+          9,
+          0
+        ]
+      ],
+      "total_distance": 22.86,
+      "total_service_time": 26.0,
+      "vehicle_usage": {
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 1,
+      "phase": "RVND-INTRA",
+      "mode": "ACADEMIC_REPLAY",
+      "cluster_id": 3,
+      "neighborhood": "none",
+      "improved": false,
+      "routes_snapshot": [
+        [
+          0,
+          1,
+          5,
+          0
+        ]
+      ],
+      "total_distance": 13.48,
+      "total_service_time": 20.0,
+      "vehicle_usage": {
+        "A": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 2,
+      "phase": "RVND-INTRA",
+      "mode": "ACADEMIC_REPLAY",
+      "cluster_id": 3,
+      "neighborhood": "none",
+      "improved": false,
+      "routes_snapshot": [
+        [
+          0,
+          1,
+          5,
+          0
+        ]
+      ],
+      "total_distance": 13.48,
+      "total_service_time": 20.0,
+      "vehicle_usage": {
+        "A": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 1,
+      "phase": "RVND-INTRA",
+      "mode": "ACADEMIC_REPLAY",
+      "cluster_id": 4,
+      "neighborhood": "none",
+      "improved": false,
+      "routes_snapshot": [
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 21.05,
+      "total_service_time": 29.0,
+      "vehicle_usage": {
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 2,
+      "phase": "RVND-INTRA",
+      "mode": "ACADEMIC_REPLAY",
+      "cluster_id": 4,
+      "neighborhood": "none",
+      "improved": false,
+      "routes_snapshot": [
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 21.05,
+      "total_service_time": 29.0,
+      "vehicle_usage": {
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "iteration_id": 3,
+      "phase": "RVND-INTRA",
+      "mode": "ACADEMIC_REPLAY",
+      "cluster_id": 4,
+      "neighborhood": "none",
+      "improved": false,
+      "routes_snapshot": [
+        [
+          0,
+          10,
+          7,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 21.05,
+      "total_service_time": 29.0,
+      "vehicle_usage": {
+        "B": 1
+      },
+      "acceptance_criterion": "DISTANCE_ONLY"
+    },
+    {
+      "phase": "VEHICLE_REASSIGN",
+      "cluster_id": 1,
+      "demand": 40,
+      "old_vehicle": "A",
+      "new_vehicle": "Vehicle A",
+      "reason": "Demand 40 \u2264 capacity 60, available 08:00\u201317:00",
+      "status": "\u2705 Assigned"
+    },
+    {
+      "phase": "VEHICLE_REASSIGN",
+      "cluster_id": 2,
+      "demand": 66,
+      "old_vehicle": "B",
+      "new_vehicle": null,
+      "reason": "No feasible vehicle: all unavailable or insufficient capacity",
+      "status": "\u274c No Vehicle"
+    },
+    {
+      "phase": "VEHICLE_REASSIGN",
+      "cluster_id": 3,
+      "demand": 40,
+      "old_vehicle": "A",
+      "new_vehicle": "Vehicle A",
+      "reason": "Demand 40 \u2264 capacity 60, available 08:00\u201317:00",
+      "status": "\u2705 Assigned"
+    },
+    {
+      "phase": "VEHICLE_REASSIGN",
+      "cluster_id": 4,
+      "demand": 69,
+      "old_vehicle": "B",
+      "new_vehicle": null,
+      "reason": "No feasible vehicle: all unavailable or insufficient capacity",
+      "status": "\u274c No Vehicle"
+    }
+  ]
+}

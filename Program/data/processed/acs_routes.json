@@ -1,0 +1,164 @@
+{
+  "clusters": [
+    {
+      "sequence": [
+        0,
+        2,
+        3,
+        1,
+        0
+      ],
+      "stops": [
+        {
+          "node_id": 0,
+          "arrival": 510,
+          "arrival_str": "08:30",
+          "departure": 510,
+          "departure_str": "08:30",
+          "wait": 0.0,
+          "violation": 0.0
+        },
+        {
+          "node_id": 2,
+          "arrival": 525.0,
+          "arrival_str": "08:45",
+          "departure": 525.0,
+          "departure_str": "08:45",
+          "wait": 0.0,
+          "violation": 0.0
+        },
+        {
+          "node_id": 3,
+          "arrival": 558.0,
+          "arrival_str": "09:18",
+          "departure": 558.0,
+          "departure_str": "09:18",
+          "wait": 0.0,
+          "violation": 0.0
+        },
+        {
+          "node_id": 1,
+          "arrival": 624.0,
+          "arrival_str": "10:24",
+          "departure": 624.0,
+          "departure_str": "10:24",
+          "wait": 0.0,
+          "violation": 0.0
+        },
+        {
+          "node_id": 0,
+          "arrival": 649.0,
+          "arrival_str": "10:49",
+          "departure": 649.0,
+          "departure_str": "10:49",
+          "wait": 0.0,
+          "violation": 0.0
+        }
+      ],
+      "total_distance": 139.0,
+      "total_travel_time": 139.0,
+      "total_service_time": 0.0,
+      "total_time_component": 139.0,
+      "total_tw_violation": 0.0,
+      "objective": 278.0,
+      "cluster_id": 1,
+      "vehicle_type": "A",
+      "tau0": 0.002398081534772182,
+      "iterations": 2,
+      "iteration_logs": [
+        {
+          "iteration_id": 1,
+          "phase": "ACS",
+          "routes_snapshot": [
+            [
+              0,
+              2,
+              3,
+              1,
+              0
+            ]
+          ],
+          "total_distance": 139.0,
+          "total_service_time": 0.0,
+          "total_travel_time": 139.0,
+          "vehicle_type": "A",
+          "objective": 278.0,
+          "cluster_id": 1
+        },
+        {
+          "iteration_id": 2,
+          "phase": "ACS",
+          "routes_snapshot": [
+            [
+              0,
+              2,
+              3,
+              1,
+              0
+            ]
+          ],
+          "total_distance": 139.0,
+          "total_service_time": 0.0,
+          "total_travel_time": 139.0,
+          "vehicle_type": "A",
+          "objective": 278.0,
+          "cluster_id": 1
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_distance": 139.0,
+    "total_tw_violation": 0.0,
+    "objective_sum": 278.0
+  },
+  "parameters": {
+    "num_ants": 1,
+    "alpha": 0.5,
+    "beta": 2,
+    "rho": 0.2,
+    "q0": 0.85,
+    "max_iterations": 2
+  },
+  "random_seed": 42,
+  "iteration_logs": [
+    {
+      "iteration_id": 1,
+      "phase": "ACS",
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          3,
+          1,
+          0
+        ]
+      ],
+      "total_distance": 139.0,
+      "total_service_time": 0.0,
+      "total_travel_time": 139.0,
+      "vehicle_type": "A",
+      "objective": 278.0,
+      "cluster_id": 1
+    },
+    {
+      "iteration_id": 2,
+      "phase": "ACS",
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          3,
+          1,
+          0
+        ]
+      ],
+      "total_distance": 139.0,
+      "total_service_time": 0.0,
+      "total_travel_time": 139.0,
+      "vehicle_type": "A",
+      "objective": 278.0,
+      "cluster_id": 1
+    }
+  ]
+}

@@ -1,0 +1,259 @@
+{
+  "routes": [
+    {
+      "cluster_id": 1,
+      "vehicle_type": "A",
+      "baseline": {
+        "sequence": [
+          0,
+          2,
+          3,
+          1,
+          0
+        ],
+        "stops": [
+          {
+            "node_id": 0,
+            "arrival": 510,
+            "arrival_str": "08:30",
+            "departure": 510,
+            "departure_str": "08:30",
+            "wait": 0.0,
+            "violation": 0.0
+          },
+          {
+            "node_id": 2,
+            "arrival": 525.0,
+            "arrival_str": "08:45",
+            "departure": 525.0,
+            "departure_str": "08:45",
+            "wait": 0.0,
+            "violation": 0.0
+          },
+          {
+            "node_id": 3,
+            "arrival": 558.0,
+            "arrival_str": "09:18",
+            "departure": 558.0,
+            "departure_str": "09:18",
+            "wait": 0.0,
+            "violation": 0.0
+          },
+          {
+            "node_id": 1,
+            "arrival": 624.0,
+            "arrival_str": "10:24",
+            "departure": 624.0,
+            "departure_str": "10:24",
+            "wait": 0.0,
+            "violation": 0.0
+          },
+          {
+            "node_id": 0,
+            "arrival": 649.0,
+            "arrival_str": "10:49",
+            "departure": 649.0,
+            "departure_str": "10:49",
+            "wait": 0.0,
+            "violation": 0.0
+          }
+        ],
+        "total_distance": 139.0,
+        "total_travel_time": 139.0,
+        "total_service_time": 0.0,
+        "total_time_component": 139.0,
+        "total_tw_violation": 0.0,
+        "total_demand": 0.0,
+        "capacity_violation": 0.0,
+        "objective": 278.0,
+        "feasible": true
+      },
+      "improved": {
+        "sequence": [
+          0,
+          3,
+          2,
+          1,
+          0
+        ],
+        "stops": [
+          {
+            "node_id": 0,
+            "arrival": 510,
+            "arrival_str": "08:30",
+            "departure": 510,
+            "departure_str": "08:30",
+            "wait": 0.0,
+            "violation": 0.0
+          },
+          {
+            "node_id": 3,
+            "arrival": 545.0,
+            "arrival_str": "09:05",
+            "departure": 545.0,
+            "departure_str": "09:05",
+            "wait": 0.0,
+            "violation": 0.0
+          },
+          {
+            "node_id": 2,
+            "arrival": 578.0,
+            "arrival_str": "09:38",
+            "departure": 578.0,
+            "departure_str": "09:38",
+            "wait": 0.0,
+            "violation": 0.0
+          },
+          {
+            "node_id": 1,
+            "arrival": 613.0,
+            "arrival_str": "10:13",
+            "departure": 613.0,
+            "departure_str": "10:13",
+            "wait": 0.0,
+            "violation": 0.0
+          },
+          {
+            "node_id": 0,
+            "arrival": 638.0,
+            "arrival_str": "10:38",
+            "departure": 638.0,
+            "departure_str": "10:38",
+            "wait": 0.0,
+            "violation": 0.0
+          }
+        ],
+        "total_distance": 128.0,
+        "total_travel_time": 128.0,
+        "total_service_time": 0.0,
+        "total_time_component": 128.0,
+        "total_tw_violation": 0.0,
+        "total_demand": 0.0,
+        "capacity_violation": 0.0,
+        "objective": 256.0,
+        "feasible": true,
+        "iteration_logs": [
+          {
+            "iteration_id": 1,
+            "phase": "RVND-INTRA",
+            "neighborhood": "reinsertion",
+            "improved": true,
+            "routes_snapshot": [
+              [
+                0,
+                3,
+                2,
+                1,
+                0
+              ]
+            ],
+            "total_distance": 128.0,
+            "total_service_time": 0.0,
+            "total_travel_time": 128.0,
+            "objective": 256.0,
+            "cluster_id": 1,
+            "vehicle_type": "A"
+          },
+          {
+            "iteration_id": 2,
+            "phase": "RVND-INTRA",
+            "neighborhood": "none",
+            "improved": false,
+            "routes_snapshot": [
+              [
+                0,
+                3,
+                2,
+                1,
+                0
+              ]
+            ],
+            "total_distance": 128.0,
+            "total_service_time": 0.0,
+            "total_travel_time": 128.0,
+            "objective": 256.0,
+            "cluster_id": 1,
+            "vehicle_type": "A"
+          }
+        ],
+        "vehicle_assignment_failed": false
+      }
+    }
+  ],
+  "summary": {
+    "distance_before": 139.0,
+    "distance_after": 128.0,
+    "objective_before": 278.0,
+    "objective_after": 256.0,
+    "tw_before": 0.0,
+    "tw_after": 0.0,
+    "capacity_violations_before": 0,
+    "capacity_violations_after": 0
+  },
+  "parameters": {
+    "inter_neighborhoods": [
+      "shift_1_0",
+      "shift_2_0",
+      "swap_1_1",
+      "swap_2_1",
+      "swap_2_2",
+      "cross"
+    ],
+    "intra_neighborhoods": [
+      "two_opt",
+      "or_opt",
+      "reinsertion",
+      "exchange"
+    ],
+    "max_inter_iterations": 50,
+    "max_intra_iterations": 100,
+    "seed": 84
+  },
+  "vehicle_usage": {
+    "A": 1
+  },
+  "iteration_logs": [
+    {
+      "iteration_id": 1,
+      "phase": "RVND-INTRA",
+      "neighborhood": "reinsertion",
+      "improved": true,
+      "routes_snapshot": [
+        [
+          0,
+          3,
+          2,
+          1,
+          0
+        ]
+      ],
+      "total_distance": 128.0,
+      "total_service_time": 0.0,
+      "total_travel_time": 128.0,
+      "objective": 256.0,
+      "cluster_id": 1,
+      "vehicle_type": "A"
+    },
+    {
+      "iteration_id": 2,
+      "phase": "RVND-INTRA",
+      "neighborhood": "none",
+      "improved": false,
+      "routes_snapshot": [
+        [
+          0,
+          3,
+          2,
+          1,
+          0
+        ]
+      ],
+      "total_distance": 128.0,
+      "total_service_time": 0.0,
+      "total_travel_time": 128.0,
+      "objective": 256.0,
+      "cluster_id": 1,
+      "vehicle_type": "A"
+    }
+  ]
+}
