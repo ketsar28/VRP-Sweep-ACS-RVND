@@ -394,14 +394,13 @@
     }
   ],
   "acs_params": {
-    "alpha": 0.3,
+    "alpha": 2.0,
     "beta": 5.0,
-    "rho": 0.7,
-    "q0": 0.3,
-    "num_ants": 7,
+    "rho": 0.5,
+    "q0": 0.9,
+    "num_ants": 5,
     "max_iterations": 30
   },
   "kapasitas_kendaraan": 100,
-  "iterasi": 30,
-  "distanceMatrix_size": 11
+  "iterasi": 30
 }

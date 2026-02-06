@@ -2,7 +2,8 @@
 Academic Replay Mode - "Hitung Manual MFVRPTE RVND"
 
 This module reproduces EXACTLY the computations from the Word document.
-NO optimization. NO randomization. DETERMINISTIC replay only.
+This module reproduces computations using Dynamic ACS logic to simulate manual calculation variability.
+Optimization logic is now probabilistic matching standard ACS.
 
 MODE: ACADEMIC_REPLAY (default for validation)
 """
@@ -12,6 +13,7 @@ import math
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 from copy import deepcopy
+import random
 
 # ============================================================
 # CONFIGURATION
@@ -154,7 +156,7 @@ def compute_polar_angle_degrees(customer: Dict, depot: Dict) -> float:
     return round(angle_deg, 2)
 
 
-def build_distance_matrix(dataset: Dict) -> List[List[float]]:
+def build_distance_matrix(dataset: Dict, multiplier: float = 1.0) -> List[List[float]]:
     """Build distance matrix including depot (node 0).
 
     Matrix structure:
@@ -165,6 +167,10 @@ def build_distance_matrix(dataset: Dict) -> List[List[float]]:
 
     IMPORTANT: Matrix indices are based on POSITION in dataset["customers"] list,
     NOT on customer IDs! Use build_id_to_idx_mapping() to get the correct mapping.
+
+    Args:
+        dataset: The dataset containing depot and customers
+        multiplier: Factor to multiply Euclidean distance by (e.g., 1.5 for tortuosity)
     """
     depot = dataset["depot"]
     customers = dataset["customers"]
@@ -177,10 +183,11 @@ def build_distance_matrix(dataset: Dict) -> List[List[float]]:
     for i in range(n):
         for j in range(n):
             if i != j:
-                matrix[i][j] = euclidean_distance(
+                dist = euclidean_distance(
                     nodes[i]["x"], nodes[i]["y"],
                     nodes[j]["x"], nodes[j]["y"]
                 )
+                matrix[i][j] = dist * multiplier
 
     return matrix
 
@@ -804,8 +811,9 @@ def academic_acs_cluster(
     Perform ACS in ACADEMIC REPLAY MODE (WORD-COMPLIANT).
 
     PSEUDOCODE (from Word document):
-    - Routes are PREDEFINED for each iteration/ant from Word document
-    - No randomness in route construction
+    PSEUDOCODE (Dynamic Simulation):
+    - Routes are constructed using ACS State Transition Rule
+    - Probabilistic selection based on Pheromone & Heuristic
     - Time windows are SOFT CONSTRAINTS (log violations but accept route)
     - Acceptance is based on DISTANCE ONLY
     - Pheromone updates still occur for educational purposes
@@ -816,6 +824,7 @@ def academic_acs_cluster(
     alpha = acs_params["alpha"]
     beta = acs_params["beta"]
     rho = acs_params["rho"]
+    q0 = acs_params.get("q0", 0.9)
     num_ants = acs_params["num_ants"]
     max_iterations = acs_params["max_iterations"]
 
@@ -895,7 +904,7 @@ def academic_acs_cluster(
                     tau = pheromone.get((current, cid), tau0)
 
                     # Probability = tau^alpha * eta^beta
-                    prob = (tau ** 1.0) * (eta ** 2.0)  # alpha=1, beta=2
+                    prob = (tau ** alpha) * (eta ** beta)
                     probs.append((cid, prob))
 
                 # Normalize probabilities
@@ -903,16 +912,22 @@ def academic_acs_cluster(
                 if total_prob > 0:
                     probs = [(cid, p / total_prob) for cid, p in probs]
 
-                # Select next customer (deterministic for ant 1, random-like for others)
-                if ant == 1 or not probs:
-                    # Greedy selection (highest probability)
-                    next_cust = max(probs, key=lambda x: x[1])[
-                        0] if probs else remaining[0]
+                # Select next customer using ACS Transition Rule
+                if not probs:
+                    next_cust = remaining[0]
                 else:
-                    # For other ants, use different permutation (round-robin variation)
-                    # This simulates different exploration paths
-                    idx = (ant + iteration - 2) % len(remaining)
-                    next_cust = remaining[idx]
+                    # Generate random q
+                    q = random.random()
+
+                    if q <= q0:
+                        # Exploitation (ArgMax)
+                        next_cust = max(probs, key=lambda x: x[1])[0]
+                    else:
+                        # Exploration (Roulette Wheel / Weighted Random)
+                        candidates = [p[0] for p in probs]
+                        weights = [p[1] for p in probs]
+                        next_cust = random.choices(
+                            candidates, weights=weights, k=1)[0]
 
                 ant_route_seq.append(next_cust)
                 remaining.remove(next_cust)
@@ -951,7 +966,7 @@ def academic_acs_cluster(
                     "step": "tw_soft_constraint",
                     "total_tw_violation": route_result["total_tw_violation"],
                     "violations": tw_violations,
-                    "description": f"TW violations logged (soft constraint): {route_result['total_tw_violation']} min"
+                    "description": f"Pelanggaran TW tercatat (soft constraint): {route_result['total_tw_violation']} menit"
                 })
 
             # Log with FULL OBJECTIVE FUNCTION
@@ -972,8 +987,8 @@ def academic_acs_cluster(
                 "objective_formula": f"Z = {weights['w1_distance']}×D + {weights['w2_time']}×T + {weights['w3_tw_violation']}×V",
                 "objective_calculation": f"Z = {weights['w1_distance']}×{route_distance} + {weights['w2_time']}×{route_result['total_travel_time'] + route_result['total_service_time']} + {weights['w3_tw_violation']}×{route_result['total_tw_violation']}",
                 "objective": round(route_objective, 2),
-                "acceptance_criterion": "OBJECTIVE_FUNCTION",
-                "description": f"Z = {round(route_objective, 2)} (acceptance based on Z = αD + βT + γTW)"
+                "acceptance_criterion": "FUNGSI_TUJUAN",
+                "description": f"Z = {round(route_objective, 2)} (penerimaan berdasarkan Z = αD + βT + γTW)"
             })
 
             # Local pheromone update for educational purposes
@@ -1011,7 +1026,7 @@ def academic_acs_cluster(
                 "step": "new_best_found",
                 "new_best_objective": round(best_objective, 2),
                 "new_best_distance": best_route["total_distance"],
-                "description": f"New best route found: Z = {round(best_objective, 2)}"
+                "description": f"Rute terbaik baru ditemukan: Z = {round(best_objective, 2)}"
             })
 
         iteration_logs.append({
@@ -1024,7 +1039,7 @@ def academic_acs_cluster(
             "best_distance": best_route["total_distance"],
             "best_service_time": best_route["total_service_time"],
             "best_tw_violation": best_route.get("total_tw_violation", 0),
-            "acceptance_criterion": "OBJECTIVE_FUNCTION (Z = αD + βT + γTW)"
+            "acceptance_criterion": "FUNGSI_TUJUAN (Z = αD + βT + γTW)"
         })
 
     return best_route, iteration_logs
@@ -1853,7 +1868,8 @@ def run_academic_replay(
     user_vehicles: Optional[List[Dict]] = None,
     user_customers: Optional[List[Dict]] = None,
     user_depot: Optional[Dict] = None,
-    user_acs_params: Optional[Dict] = None
+    user_acs_params: Optional[Dict] = None,
+    distance_multiplier: float = 1.0
 ) -> Dict:
     """
     Run the complete academic replay pipeline with DYNAMIC user data.
@@ -1992,14 +2008,14 @@ def run_academic_replay(
 
         # Replace fleet with ENABLED user-defined vehicles ONLY
         dataset["fleet"] = updated_fleet
-        print(f"   → {len(updated_fleet)} vehicle types ACTIVE for routing")
+        print(f"   → {len(updated_fleet)} fleet types ACTIVE for routing")
 
         # Check if any vehicles are active
         if len(updated_fleet) == 0:
-            print("   ❌ CRITICAL: All vehicles are disabled!")
+            print("   ❌ CRITICAL: All fleets are disabled!")
             return {
                 "mode": "ACADEMIC_REPLAY",
-                "error": "Semua kendaraan dinonaktifkan! Aktifkan minimal 1 kendaraan di tab 'Input Data'.",
+                "error": "Semua fleet dinonaktifkan! Aktifkan minimal 1 fleet di tab 'Input Data'.",
                 "user_vehicle_selection": user_vehicle_selection_log,
                 "vehicle_availability": [],
                 "available_vehicles": [],
@@ -2011,11 +2027,11 @@ def run_academic_replay(
             }
     else:
         # NO USER VEHICLES = CANNOT RUN!
-        print("\n[PRE] ❌ CRITICAL: No vehicles defined by user!")
-        print("   User MUST add vehicles in Input Data tab before running.")
+        print("\n[PRE] ❌ CRITICAL: No fleet defined by user!")
+        print("   User MUST add fleet in Input Data tab before running.")
         return {
             "mode": "ACADEMIC_REPLAY",
-            "error": "Tidak ada kendaraan! Silakan tambah kendaraan di tab 'Input Data' terlebih dahulu.",
+            "error": "Tidak ada fleet! Silakan tambah fleet di tab 'Input Data' terlebih dahulu.",
             "user_vehicle_selection": [],
             "vehicle_availability": [],
             "available_vehicles": [],
@@ -2026,20 +2042,21 @@ def run_academic_replay(
             "iteration_logs": []
         }
 
-    distance_matrix = build_distance_matrix(dataset)
+    distance_matrix = build_distance_matrix(
+        dataset, multiplier=distance_multiplier)
 
     all_logs = []
     # Add user selection logs FIRST
     all_logs.extend(user_vehicle_selection_log)
 
     # ============================================================
-    # 0. VEHICLE AVAILABILITY CHECK
+    # 0. FLEET AVAILABILITY CHECK
     # ============================================================
-    print("\n[0/5] Checking Vehicle Availability...")
+    print("\n[0/5] Checking Fleet Availability...")
     fleet = dataset["fleet"]
 
     if len(fleet) == 0:
-        print("   ❌ CRITICAL: No vehicles selected by user! Cannot proceed.")
+        print("   ❌ CRITICAL: No fleet selected by user! Cannot proceed.")
         return {
             "mode": "ACADEMIC_REPLAY",
             "error": "No vehicles selected by user",
@@ -2069,13 +2086,13 @@ def run_academic_replay(
         })
 
         icon = "✅" if status["available"] else "❌"
-        print(f"   {icon} Vehicle {status['vehicle_id']}: {status['status']}")
+        print(f"   {icon} Fleet {status['vehicle_id']}: {status['status']}")
 
     print(
-        f"   → {len(available_fleet)}/{len(fleet)} vehicle types available for routing")
+        f"   → {len(available_fleet)}/{len(fleet)} fleet types available for routing")
 
     if len(available_fleet) == 0:
-        print("   ❌ CRITICAL: No vehicles available! Cannot proceed with routing.")
+        print("   ❌ CRITICAL: No fleet available! Cannot proceed with routing.")
         return {
             "mode": "ACADEMIC_REPLAY",
             "error": "No vehicles available",
@@ -2103,6 +2120,14 @@ def run_academic_replay(
             cluster, dataset, distance_matrix)
         initial_routes.append(route)
         all_logs.extend(nn_logs)
+        # SUMMARY LOG for NN
+        all_logs.append({
+            "phase": "NN_SUMMARY",
+            "cluster_id": cluster['cluster_id'],
+            "route_sequence": "-".join(map(str, route['sequence'])),
+            "total_distance": route['total_distance'],
+            "vehicle_type": route.get("vehicle_type", "Belum Ditentukan")
+        })
 
         # Track unassigned customers
         unassigned = route.get("unassigned_customers", [])
@@ -2126,6 +2151,14 @@ def run_academic_replay(
             cluster, dataset, distance_matrix, initial_routes[i])
         acs_routes.append(route)
         all_logs.extend(acs_logs)
+        # SUMMARY LOG for ACS
+        all_logs.append({
+            "phase": "ACS_SUMMARY",
+            "cluster_id": cluster['cluster_id'],
+            "route_sequence": "-".join(map(str, route['sequence'])),
+            "total_distance": route['total_distance'],
+            "vehicle_type": route.get("vehicle_type", "Belum Ditentukan")
+        })
         print(
             f"   Cluster {cluster['cluster_id']}: {route['sequence']} (dist={route['total_distance']})")
 
@@ -2134,12 +2167,21 @@ def run_academic_replay(
     final_routes, rvnd_logs = academic_rvnd(
         acs_routes, dataset, distance_matrix)
     all_logs.extend(rvnd_logs)
+    # SUMMARY LOG for RVND
+    for route in final_routes:
+        all_logs.append({
+            "phase": "RVND_SUMMARY",
+            "cluster_id": route['cluster_id'],
+            "route_sequence": "-".join(map(str, route['sequence'])),
+            "total_distance": route['total_distance'],
+            "vehicle_type": route.get("vehicle_type", "Belum Ditentukan")
+        })
     for route in final_routes:
         print(
             f"   Cluster {route['cluster_id']}: {route['sequence']} (dist={route['total_distance']})")
 
-    # 5. VEHICLE REASSIGNMENT
-    print("\n[5/5] Reassigning vehicles...")
+    # 5. FLEET REASSIGNMENT
+    print("\n[5/5] Reassigning fleets...")
     final_routes, vehicle_logs = reassign_vehicles(final_routes, dataset)
     all_logs.extend(vehicle_logs)
 
@@ -2149,7 +2191,7 @@ def run_academic_replay(
 
     # TIME WINDOW SUMMARY
     print("\n" + "=" * 60)
-    print("TIME WINDOW SUMMARY (Soft Constraints)")
+    print("FLEET TIME WINDOW SUMMARY (Soft Constraints)")
     print("=" * 60)
     total_violations = 0
     total_wait = 0

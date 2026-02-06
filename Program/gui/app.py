@@ -174,7 +174,7 @@ def prepare_route_table(final_solution: Dict, instance_data: Dict) -> pd.DataFra
         rows.append(
             {
                 "Cluster": route["cluster_id"],
-                "Vehicle": route["vehicle_type"],
+                "Fleet": route["vehicle_type"],
                 "Route": " → ".join(map(str, route["sequence"])),
                 "Distance (km)": round(route["total_distance"], 3),
                 "Time (min)": round(route["total_time_component"], 3),
@@ -281,7 +281,7 @@ def render_kpis(summary: Dict) -> None:
 def render_cluster_details(route_table: pd.DataFrame) -> None:
     st.markdown("## Cluster Detail")
     for _, row in route_table.sort_values("Cluster").iterrows():
-        with st.expander(f"Cluster {row['Cluster']} – Vehicle {row['Vehicle']}"):
+        with st.expander(f"Cluster {row['Cluster']} – Fleet {row['Fleet']}"):
             st.write(
                 {
                     "Route": row["Route"],
@@ -357,7 +357,7 @@ def main() -> None:
     # Check if we need to load from autosave (only if session is empty/fresh)
     if "points" not in st.session_state or not st.session_state["points"].get("depots"):
         if load_from_autosave():
-            st.toast("♻️ Data terakhir dipulihkan", icon="💾")
+            st.toast("Data terakhir dipulihkan", icon="♻️")
 
     # ============================================================
     # CUSTOM CSS FOR BETTER UI

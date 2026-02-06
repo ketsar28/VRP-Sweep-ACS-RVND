@@ -37,8 +37,8 @@ def _get_next_vehicle_letter() -> str:
     used_letters = set()
     for v in user_vehicles:
         name = v.get("name", "")
-        if name.startswith("Vehicle ") and len(name) > 8:
-            letter = name[8:]  # Get letter after "Vehicle "
+        if name.startswith("Fleet ") and len(name) > 6:
+            letter = name[6:]  # Get letter after "Fleet "
             if len(letter) == 1 and letter.isalpha():
                 used_letters.add(letter.upper())
 
@@ -91,6 +91,13 @@ def render_input_data() -> None:
 
         user_vehicles = st.session_state["user_vehicles"]
 
+        # Migration: Rename "Vehicle" to "Fleet" if present
+        for v in user_vehicles:
+            if v.get("name", "").startswith("Vehicle "):
+                v["name"] = v["name"].replace("Vehicle ", "Fleet ")
+                if v.get("id", "").startswith("Vehicle "):
+                    v["id"] = v["id"].replace("Vehicle ", "Fleet ")
+
         # Display existing vehicles
         if user_vehicles:
             # Header row for labels
@@ -115,7 +122,7 @@ def render_input_data() -> None:
 
             for idx, vehicle in enumerate(user_vehicles):
                 vehicle_name = vehicle.get(
-                    "name", f"Vehicle {chr(ord('A') + idx)}")
+                    "name", f"Fleet {chr(ord('A') + idx)}")
                 capacity = vehicle.get("capacity", 100)
 
                 # Create input row for each vehicle
@@ -215,8 +222,8 @@ def render_input_data() -> None:
         if st.button("➕ Tambah Kendaraan Baru", key="btn_add_vehicle", type="primary"):
             next_letter = _get_next_vehicle_letter()
             new_vehicle = {
-                "id": f"Vehicle {next_letter}",
-                "name": f"Vehicle {next_letter}",
+                "id": f"Fleet {next_letter}",
+                "name": f"Fleet {next_letter}",
                 "capacity": _get_default_capacity_for_letter(next_letter),
                 "units": 2,
                 "available_from": "08:00",
@@ -308,8 +315,8 @@ def render_input_data() -> None:
             q0 = st.number_input(
                 "Q0 - Probabilitas Eksploitasi",
                 min_value=0.0, max_value=1.0, step=0.05,
-                value=float(acs_params.get("q0", 0.9)),
-                help="Probabilitas memilih jalur terbaik vs eksplorasi (default: 0.9)"
+                value=float(acs_params.get("q0", 0.5)),
+                help="Probabilitas memilih jalur terbaik vs eksplorasi (default: 0.5)"
             )
             acs_params["q0"] = q0
 
@@ -336,7 +343,7 @@ def render_input_data() -> None:
                 "alpha": 1.0,
                 "beta": 2.0,
                 "rho": 0.1,
-                "q0": 0.9,
+                "q0": 0.5,
                 "num_ants": 10,
                 "max_iterations": 50
             }
@@ -389,6 +396,8 @@ def render_input_data() -> None:
             })
 
         df_cust = pd.DataFrame(customer_table_data)
+        # Shift index to start from 1 instead of 0
+        df_cust.index = range(1, len(df_cust) + 1)
 
         st.markdown(
             "*Masukkan demand & time window untuk setiap customer.*")
@@ -431,6 +440,23 @@ def render_input_data() -> None:
 
     # ===== SECTION 4: Tabel Jarak (Distance Matrix) =====
     st.subheader("📏 Matriks Jarak")
+
+    # NEW: Distance Multiplier (Layout yang lebih rapi)
+    st.markdown("##### ⚙️ Konfigurasi Jarak")
+
+    dist_multiplier = st.number_input(
+        "Faktor Pengali (Multiplier)",
+        min_value=0.1, max_value=10.0, step=0.1,
+        value=float(st.session_state.get("distance_multiplier", 1.5)),
+        help="Faktor pengali untuk jarak Euclidean. Default 1.0 (murni). Gunakan 1.5 untuk memperhitungkan tortuosity (kelok jalan)."
+    )
+    st.caption(
+        "ℹ️ **Tips:** Gunakan **1.5** untuk memperhitungkan _tortuosity_ (kelok jalan).")
+
+    st.session_state["distance_multiplier"] = dist_multiplier
+    # Also save to inputData
+    if "inputData" in st.session_state:
+        st.session_state["inputData"]["distance_multiplier"] = dist_multiplier
 
     nodes = []
     nodes_map = {}
