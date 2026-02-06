@@ -1,25 +1,266 @@
 {
   "summary": {
-    "total_distance": 128.0,
-    "total_time_component": 128.0,
+    "total_distance": 0.85098,
+    "total_time_component": 177.85098,
     "total_tw_violation": 0.0,
-    "total_objective": 256.0,
-    "total_cost": 178000.0,
+    "total_objective": 178.70196,
+    "total_cost": 240850.98,
     "fleet_usage": {
       "A": 1,
-      "B": 0,
-      "C": 0
+      "B": 2,
+      "C": 1
     }
   },
   "routes": [
     {
       "cluster_id": 1,
+      "vehicle_type": "C",
+      "sequence": [
+        0,
+        8,
+        6,
+        10,
+        4,
+        0
+      ],
+      "stops": [
+        {
+          "node_id": 0,
+          "arrival": 510,
+          "arrival_str": "08:30",
+          "departure": 510,
+          "departure_str": "08:30",
+          "wait": 0.0,
+          "violation": 0.0
+        },
+        {
+          "node_id": 8,
+          "arrival": 510.03032,
+          "arrival_str": "08:30+02s",
+          "departure": 534.0303200000001,
+          "departure_str": "08:54+02s",
+          "wait": 0.0,
+          "violation": 0.0
+        },
+        {
+          "node_id": 6,
+          "arrival": 534.08554,
+          "arrival_str": "08:54+05s",
+          "departure": 543.08554,
+          "departure_str": "09:03+05s",
+          "wait": 0.0,
+          "violation": 0.0
+        },
+        {
+          "node_id": 10,
+          "arrival": 543.1223,
+          "arrival_str": "09:03+07s",
+          "departure": 566.1223,
+          "departure_str": "09:26+07s",
+          "wait": 0.0,
+          "violation": 0.0
+        },
+        {
+          "node_id": 4,
+          "arrival": 566.16853,
+          "arrival_str": "09:26+10s",
+          "departure": 586.16853,
+          "departure_str": "09:46+10s",
+          "wait": 0.0,
+          "violation": 0.0
+        },
+        {
+          "node_id": 0,
+          "arrival": 586.2096300000001,
+          "arrival_str": "09:46+13s",
+          "departure": 586.2096300000001,
+          "departure_str": "09:46+13s",
+          "wait": 0.0,
+          "violation": 0.0
+        }
+      ],
+      "total_distance": 0.20963,
+      "total_travel_time": 0.20963,
+      "total_service_time": 76.0,
+      "total_time_component": 76.20963,
+      "total_tw_violation": 0.0,
+      "objective": 76.41926000000001,
+      "initial_sequence": [
+        0,
+        10,
+        6,
+        8,
+        4,
+        0
+      ],
+      "acs_sequence": [
+        0,
+        10,
+        6,
+        8,
+        4,
+        0
+      ],
+      "rvnd_sequence": [
+        0,
+        8,
+        6,
+        10,
+        4,
+        0
+      ]
+    },
+    {
+      "cluster_id": 2,
+      "vehicle_type": "B",
+      "sequence": [
+        0,
+        5,
+        2,
+        0
+      ],
+      "stops": [
+        {
+          "node_id": 0,
+          "arrival": 510,
+          "arrival_str": "08:30",
+          "departure": 510,
+          "departure_str": "08:30",
+          "wait": 0.0,
+          "violation": 0.0
+        },
+        {
+          "node_id": 5,
+          "arrival": 540,
+          "arrival_str": "09:00",
+          "departure": 574,
+          "departure_str": "09:34",
+          "wait": 29.969960000000015,
+          "violation": 0.0
+        },
+        {
+          "node_id": 2,
+          "arrival": 574.11704,
+          "arrival_str": "09:34+07s",
+          "departure": 583.11704,
+          "departure_str": "09:43+07s",
+          "wait": 0.0,
+          "violation": 0.0
+        },
+        {
+          "node_id": 0,
+          "arrival": 583.1570399999999,
+          "arrival_str": "09:43+09s",
+          "departure": 583.1570399999999,
+          "departure_str": "09:43+09s",
+          "wait": 0.0,
+          "violation": 0.0
+        }
+      ],
+      "total_distance": 0.18708000000000002,
+      "total_travel_time": 0.18708000000000002,
+      "total_service_time": 43.0,
+      "total_time_component": 43.18708,
+      "total_tw_violation": 0.0,
+      "objective": 43.37416,
+      "initial_sequence": [
+        0,
+        5,
+        2,
+        0
+      ],
+      "acs_sequence": [
+        0,
+        5,
+        2,
+        0
+      ],
+      "rvnd_sequence": [
+        0,
+        5,
+        2,
+        0
+      ]
+    },
+    {
+      "cluster_id": 3,
+      "vehicle_type": "B",
+      "sequence": [
+        0,
+        1,
+        7,
+        0
+      ],
+      "stops": [
+        {
+          "node_id": 0,
+          "arrival": 510,
+          "arrival_str": "08:30",
+          "departure": 510,
+          "departure_str": "08:30",
+          "wait": 0.0,
+          "violation": 0.0
+        },
+        {
+          "node_id": 1,
+          "arrival": 510.06934,
+          "arrival_str": "08:30+04s",
+          "departure": 535.06934,
+          "departure_str": "08:55+04s",
+          "wait": 0.0,
+          "violation": 0.0
+        },
+        {
+          "node_id": 7,
+          "arrival": 535.16884,
+          "arrival_str": "08:55+10s",
+          "departure": 547.16884,
+          "departure_str": "09:07+10s",
+          "wait": 0.0,
+          "violation": 0.0
+        },
+        {
+          "node_id": 0,
+          "arrival": 547.20217,
+          "arrival_str": "09:07+12s",
+          "departure": 547.20217,
+          "departure_str": "09:07+12s",
+          "wait": 0.0,
+          "violation": 0.0
+        }
+      ],
+      "total_distance": 0.20217,
+      "total_travel_time": 0.20217,
+      "total_service_time": 37.0,
+      "total_time_component": 37.20217,
+      "total_tw_violation": 0.0,
+      "objective": 37.404340000000005,
+      "initial_sequence": [
+        0,
+        7,
+        1,
+        0
+      ],
+      "acs_sequence": [
+        0,
+        7,
+        1,
+        0
+      ],
+      "rvnd_sequence": [
+        0,
+        1,
+        7,
+        0
+      ]
+    },
+    {
+      "cluster_id": 4,
       "vehicle_type": "A",
       "sequence": [
         0,
         3,
-        2,
-        1,
+        9,
         0
       ],
       "stops": [
@@ -34,66 +275,54 @@
         },
         {
           "node_id": 3,
-          "arrival": 545.0,
-          "arrival_str": "09:05",
-          "departure": 545.0,
-          "departure_str": "09:05",
-          "wait": 0.0,
+          "arrival": 560,
+          "arrival_str": "09:20",
+          "departure": 566,
+          "departure_str": "09:26",
+          "wait": 49.96078,
           "violation": 0.0
         },
         {
-          "node_id": 2,
-          "arrival": 578.0,
-          "arrival_str": "09:38",
-          "departure": 578.0,
-          "departure_str": "09:38",
-          "wait": 0.0,
-          "violation": 0.0
-        },
-        {
-          "node_id": 1,
-          "arrival": 613.0,
-          "arrival_str": "10:13",
-          "departure": 613.0,
-          "departure_str": "10:13",
+          "node_id": 9,
+          "arrival": 566.1715,
+          "arrival_str": "09:26+10s",
+          "departure": 581.1715,
+          "departure_str": "09:41+10s",
           "wait": 0.0,
           "violation": 0.0
         },
         {
           "node_id": 0,
-          "arrival": 638.0,
-          "arrival_str": "10:38",
-          "departure": 638.0,
-          "departure_str": "10:38",
+          "arrival": 581.21288,
+          "arrival_str": "09:41+13s",
+          "departure": 581.21288,
+          "departure_str": "09:41+13s",
           "wait": 0.0,
           "violation": 0.0
         }
       ],
-      "total_distance": 128.0,
-      "total_travel_time": 128.0,
-      "total_service_time": 0.0,
-      "total_time_component": 128.0,
+      "total_distance": 0.2521,
+      "total_travel_time": 0.2521,
+      "total_service_time": 21.0,
+      "total_time_component": 21.2521,
       "total_tw_violation": 0.0,
-      "objective": 256.0,
+      "objective": 21.504199999999997,
       "initial_sequence": [
         0,
-        2,
         3,
-        1,
+        9,
         0
       ],
       "acs_sequence": [
         0,
-        2,
         3,
-        1,
+        9,
         0
       ],
       "rvnd_sequence": [
         0,
         3,
-        2,
-        1,
+        9,
         0
       ]
     }

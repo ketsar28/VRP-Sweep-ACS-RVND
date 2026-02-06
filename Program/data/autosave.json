@@ -1,0 +1,406 @@
+{
+  "points": {
+    "depots": [
+      {
+        "id": 0,
+        "name": "Depot (Gudang)",
+        "x": 0,
+        "y": 0,
+        "time_window": {
+          "start": "08:30",
+          "end": "17:00"
+        },
+        "service_time": 0
+      }
+    ],
+    "customers": [
+      {
+        "id": 1,
+        "name": "RSUD Kota Malang",
+        "x": 8,
+        "y": 12,
+        "demand": 51.0,
+        "time_window": {
+          "start": "08:20",
+          "end": "10:00"
+        },
+        "service_time": 25
+      },
+      {
+        "id": 2,
+        "name": "Puskesmas Dinoyo",
+        "x": 20,
+        "y": 15,
+        "demand": 17.0,
+        "time_window": {
+          "start": "07:00",
+          "end": "09:45"
+        },
+        "service_time": 9
+      },
+      {
+        "id": 3,
+        "name": "Puskesmas Mojolar",
+        "x": 5,
+        "y": 25,
+        "demand": 12.0,
+        "time_window": {
+          "start": "09:20",
+          "end": "12:00"
+        },
+        "service_time": 6
+      },
+      {
+        "id": 4,
+        "name": "Puskesmas Arjowinangun",
+        "x": 24,
+        "y": 4,
+        "demand": 40.0,
+        "time_window": {
+          "start": "08:30",
+          "end": "11:30"
+        },
+        "service_time": 20
+      },
+      {
+        "id": 5,
+        "name": "RS Lavalette",
+        "x": 28,
+        "y": 18,
+        "demand": 68.0,
+        "time_window": {
+          "start": "09:00",
+          "end": "11:45"
+        },
+        "service_time": 34
+      },
+      {
+        "id": 6,
+        "name": "Puskesmas Sukun",
+        "x": 14,
+        "y": 6,
+        "demand": 18.0,
+        "time_window": {
+          "start": "08:30",
+          "end": "11:00"
+        },
+        "service_time": 9
+      },
+      {
+        "id": 7,
+        "name": "Klinik Kahuripan",
+        "x": 18,
+        "y": 24,
+        "demand": 24.0,
+        "time_window": {
+          "start": "08:20",
+          "end": "11:00"
+        },
+        "service_time": 12
+      },
+      {
+        "id": 8,
+        "name": "RS Mitra Sehat",
+        "x": 32,
+        "y": 8,
+        "demand": 47.0,
+        "time_window": {
+          "start": "08:30",
+          "end": "13:00"
+        },
+        "service_time": 24
+      },
+      {
+        "id": 9,
+        "name": "Puskesmas Lowokwaru",
+        "x": 10,
+        "y": 22,
+        "demand": 28.0,
+        "time_window": {
+          "start": "09:00",
+          "end": "11:00"
+        },
+        "service_time": 15
+      },
+      {
+        "id": 10,
+        "name": "RS Panti Nirmala",
+        "x": 36,
+        "y": 22,
+        "demand": 43.0,
+        "time_window": {
+          "start": "09:00",
+          "end": "12:30"
+        },
+        "service_time": 23
+      }
+    ]
+  },
+  "inputData": {
+    "customerTimeWindows": [
+      {
+        "demand": 51.0,
+        "tw_start": "08:20",
+        "tw_end": "10:00",
+        "service_time": 25
+      },
+      {
+        "demand": 17.0,
+        "tw_start": "07:00",
+        "tw_end": "09:45",
+        "service_time": 9
+      },
+      {
+        "demand": 12.0,
+        "tw_start": "09:20",
+        "tw_end": "12:00",
+        "service_time": 6
+      },
+      {
+        "demand": 40.0,
+        "tw_start": "08:30",
+        "tw_end": "11:30",
+        "service_time": 20
+      },
+      {
+        "demand": 68.0,
+        "tw_start": "09:00",
+        "tw_end": "11:45",
+        "service_time": 34
+      },
+      {
+        "demand": 18.0,
+        "tw_start": "08:30",
+        "tw_end": "11:00",
+        "service_time": 9
+      },
+      {
+        "demand": 24.0,
+        "tw_start": "08:20",
+        "tw_end": "11:00",
+        "service_time": 12
+      },
+      {
+        "demand": 47.0,
+        "tw_start": "08:30",
+        "tw_end": "13:00",
+        "service_time": 24
+      },
+      {
+        "demand": 28.0,
+        "tw_start": "09:00",
+        "tw_end": "11:00",
+        "service_time": 15
+      },
+      {
+        "demand": 43.0,
+        "tw_start": "09:00",
+        "tw_end": "12:30",
+        "service_time": 23
+      }
+    ],
+    "customerDemand": [
+      51.0,
+      17.0,
+      12.0,
+      40.0,
+      68.0,
+      18.0,
+      24.0,
+      47.0,
+      28.0,
+      43.0
+    ],
+    "distanceMatrix": [
+      [
+        0.0,
+        0.06934,
+        0.04,
+        0.03922,
+        0.0411,
+        0.03004,
+        0.06565,
+        0.03333,
+        0.03032,
+        0.04138,
+        0.0237
+      ],
+      [
+        0.06934,
+        0.0,
+        0.08085,
+        0.07495,
+        0.06238,
+        0.04789,
+        0.11785,
+        0.0995,
+        0.04163,
+        0.09806,
+        0.03363
+      ],
+      [
+        0.04,
+        0.08085,
+        0.0,
+        0.05547,
+        0.08544,
+        0.11704,
+        0.09245,
+        0.10847,
+        0.07198,
+        0.08192,
+        0.05726
+      ],
+      [
+        0.03922,
+        0.07495,
+        0.05547,
+        0.0,
+        0.03531,
+        0.04159,
+        0.03098,
+        0.0767,
+        0.03134,
+        0.1715,
+        0.03211
+      ],
+      [
+        0.0411,
+        0.06238,
+        0.08544,
+        0.03531,
+        0.0,
+        0.06868,
+        0.09806,
+        0.04789,
+        0.1118,
+        0.04385,
+        0.04623
+      ],
+      [
+        0.03004,
+        0.04789,
+        0.11704,
+        0.04159,
+        0.06868,
+        0.0,
+        0.05423,
+        0.08575,
+        0.09285,
+        0.05423,
+        0.1118
+      ],
+      [
+        0.06565,
+        0.11785,
+        0.09245,
+        0.03098,
+        0.09806,
+        0.05423,
+        0.0,
+        0.05423,
+        0.05522,
+        0.06063,
+        0.03676
+      ],
+      [
+        0.03333,
+        0.0995,
+        0.10847,
+        0.0767,
+        0.04789,
+        0.08575,
+        0.05423,
+        0.0,
+        0.04704,
+        0.12127,
+        0.05522
+      ],
+      [
+        0.03032,
+        0.04163,
+        0.07198,
+        0.03134,
+        0.1118,
+        0.09285,
+        0.05522,
+        0.04704,
+        0.0,
+        0.03835,
+        0.06868
+      ],
+      [
+        0.04138,
+        0.09806,
+        0.08192,
+        0.1715,
+        0.04385,
+        0.05423,
+        0.06063,
+        0.12127,
+        0.03835,
+        0.0,
+        0.03846
+      ],
+      [
+        0.0237,
+        0.03363,
+        0.05726,
+        0.03211,
+        0.04623,
+        0.1118,
+        0.03676,
+        0.05522,
+        0.06868,
+        0.03846,
+        0.0
+      ]
+    ]
+  },
+  "user_vehicles": [
+    {
+      "id": "Vehicle A",
+      "name": "Vehicle A",
+      "capacity": 60,
+      "units": 2,
+      "available_from": "08:30",
+      "available_until": "17:00",
+      "enabled": true,
+      "fixed_cost": 50000,
+      "variable_cost_per_km": 1000
+    },
+    {
+      "id": "Vehicle B",
+      "name": "Vehicle B",
+      "capacity": 100,
+      "units": 2,
+      "available_from": "08:30",
+      "available_until": "17:00",
+      "enabled": true,
+      "fixed_cost": 60000,
+      "variable_cost_per_km": 1000
+    },
+    {
+      "id": "Vehicle C",
+      "name": "Vehicle C",
+      "capacity": 150,
+      "units": 1,
+      "available_from": "08:30",
+      "available_until": "17:00",
+      "enabled": true,
+      "fixed_cost": 70000,
+      "variable_cost_per_km": 1000
+    }
+  ],
+  "acs_params": {
+    "alpha": 0.5,
+    "beta": 2.0,
+    "rho": 0.2,
+    "q0": 0.85,
+    "num_ants": 1,
+    "max_iterations": 50
+  },
+  "kapasitas_kendaraan": 100,
+  "iterasi": 50,
+  "distanceMatrix_size": 11
+}

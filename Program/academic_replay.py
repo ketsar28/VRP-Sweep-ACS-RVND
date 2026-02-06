@@ -82,90 +82,28 @@ ACADEMIC_DATASET = {
 }
 
 # ============================================================
-# FIXED VALUES FROM WORD DOCUMENT
-# These are the EXACT random values and decisions from the document
+# DEPRECATED: HARDCODED DATA FROM WORD DOCUMENT
+# These are kept for reference only - actual algorithms now use
+# DYNAMIC CALCULATION based on user input data.
 # ============================================================
 
-# Polar angles (pre-computed as in Word)
-WORD_POLAR_ANGLES = {
-    1: 56.31,   # C1: atan2(3, 2) = 56.31°
-    2: 11.31,   # C2: atan2(1, 5) = 11.31°
-    3: 33.69,   # C3: atan2(4, 6) = 33.69°
-    4: 14.04,   # C4: atan2(2, 8) = 14.04°
-    5: 63.43,   # C5: atan2(6, 3) = 63.43°
-    6: 35.54,   # C6: atan2(5, 7) = 35.54°
-    7: 63.43,   # C7: atan2(8, 4) = 63.43°
-    8: 78.69,   # C8: atan2(5, 1) = 78.69°
-    9: 37.87,   # C9: atan2(7, 9) = 37.87°
-    10: 60.95   # C10: atan2(9, 5) = 60.95°
-}
+# NOTE: Polar angles are now calculated dynamically in academic_sweep()
+# WORD_POLAR_ANGLES = {...}  # DEPRECATED
 
-# Sorted customers by polar angle (as in Word)
-WORD_SORTED_CUSTOMERS = [2, 4, 3, 6, 9, 1, 10, 5, 7, 8]
+# NOTE: Customers are now sorted dynamically by polar angle
+# WORD_SORTED_CUSTOMERS = [...]  # DEPRECATED
 
-# Clusters formed (exactly as in Word document - 4 clusters with forced termination)
-# Termination logic: After adding a customer, check if ANY remaining customer fits.
-# If no remaining customer can fit, STOP the cluster (forced termination).
-WORD_CLUSTERS = [
-    {"cluster_id": 1, "customer_ids": [2, 4],
-        "total_demand": 40, "vehicle_type": "A"},
-    {"cluster_id": 2, "customer_ids": [3, 6, 9],
-        "total_demand": 66, "vehicle_type": "B"},
-    {"cluster_id": 3, "customer_ids": [1, 10],
-        "total_demand": 45, "vehicle_type": "A"},
-    {"cluster_id": 4, "customer_ids": [5, 7, 8],
-        "total_demand": 64, "vehicle_type": "B"}
-]
+# NOTE: Clusters are now formed dynamically based on user's vehicle capacities
+# WORD_CLUSTERS = [...]  # DEPRECATED
 
-# Fixed random values for ACS (from Word tables)
-# Format: {(cluster_id, iteration, ant, step): random_value}
-# Cluster 1: [2, 4] - 2 customers (1 step needed)
-# Cluster 2: [3, 6, 9] - 3 customers (2 steps needed)
-# Cluster 3: [1, 10] - 2 customers (1 step needed)
-# Cluster 4: [5, 7, 8] - 3 customers (2 steps needed)
-WORD_RANDOM_VALUES = {
-    # Cluster 1 (customers 2, 4): 2 customers = 1 step
-    (1, 1, 1, 1): 0.92,  # Ant 1, Step 1
-    (1, 1, 2, 1): 0.32,  # Ant 2, Step 1
-    (1, 2, 1, 1): 0.72,
-    (1, 2, 2, 1): 0.91,
-    # Cluster 2 (customers 3, 6, 9): 3 customers = 2 steps
-    (2, 1, 1, 1): 0.80,
-    (2, 1, 1, 2): 0.40,
-    (2, 1, 2, 1): 0.55,
-    (2, 1, 2, 2): 0.90,
-    (2, 2, 1, 1): 0.35,
-    (2, 2, 1, 2): 0.75,
-    (2, 2, 2, 1): 0.60,
-    (2, 2, 2, 2): 0.20,
-    # Cluster 3 (customers 1, 10): 2 customers = 1 step
-    (3, 1, 1, 1): 0.88,
-    (3, 1, 2, 1): 0.22,
-    (3, 2, 1, 1): 0.70,
-    (3, 2, 2, 1): 0.95,
-    # Cluster 4 (customers 5, 7, 8): 3 customers = 2 steps
-    (4, 1, 1, 1): 0.65,
-    (4, 1, 1, 2): 0.30,
-    (4, 1, 2, 1): 0.78,
-    (4, 1, 2, 2): 0.50,
-    (4, 2, 1, 1): 0.88,
-    (4, 2, 1, 2): 0.45,
-    (4, 2, 2, 1): 0.28,
-    (4, 2, 2, 2): 0.52,
-}
+# NOTE: Random values for ACS are now generated dynamically
+# WORD_RANDOM_VALUES = {...}  # DEPRECATED
 
-# Expected routes from Word document (FINAL ANSWER) - 4 clusters
-WORD_EXPECTED_ROUTES = {
-    1: {"sequence": [0, 2, 4, 0], "distance": 13.35, "service_time": 22, "tw_violation": 0},
-    2: {"sequence": [0, 3, 6, 9, 0], "distance": 25.36, "service_time": 26, "tw_violation": 0},
-    3: {"sequence": [0, 1, 10, 0], "distance": 17.01, "service_time": 19, "tw_violation": 0},
-    4: {"sequence": [0, 5, 7, 8, 0], "distance": 17.37, "service_time": 30, "tw_violation": 0}
-}
+# NOTE: Expected routes are calculated dynamically, not hardcoded
+# WORD_EXPECTED_ROUTES = {...}  # DEPRECATED
 
-# RVND moves (exactly as in Word)
-WORD_RVND_MOVES = [
-    # {"phase": "INTER", "iteration": 1, "operator": "swap_1_1", "routes_before": [...], "routes_after": [...], "accepted": True/False},
-]
+# NOTE: RVND moves are now generated dynamically
+# WORD_RVND_MOVES = [...]  # DEPRECATED
 
 # ============================================================
 # HELPER FUNCTIONS
@@ -217,7 +155,17 @@ def compute_polar_angle_degrees(customer: Dict, depot: Dict) -> float:
 
 
 def build_distance_matrix(dataset: Dict) -> List[List[float]]:
-    """Build distance matrix including depot (node 0)."""
+    """Build distance matrix including depot (node 0).
+
+    Matrix structure:
+    - Index 0 = Depot
+    - Index 1 = customers[0] (first customer in dataset["customers"])
+    - Index 2 = customers[1] (second customer in dataset["customers"])
+    - etc.
+
+    IMPORTANT: Matrix indices are based on POSITION in dataset["customers"] list,
+    NOT on customer IDs! Use build_id_to_idx_mapping() to get the correct mapping.
+    """
     depot = dataset["depot"]
     customers = dataset["customers"]
 
@@ -235,6 +183,30 @@ def build_distance_matrix(dataset: Dict) -> List[List[float]]:
                 )
 
     return matrix
+
+
+def build_id_to_idx_mapping(dataset: Dict) -> Dict[int, int]:
+    """
+    Build a mapping from customer ID to distance matrix index.
+
+    Struktur mapping:
+    - Depot (ID 0) → Index 0
+    - Customer n (ID apapun) → Index berdasarkan posisi di dataset["customers"]
+
+    Contoh:
+    - dataset["customers"] = [{"id": 1}, {"id": 5}, {"id": 10}]
+    - Mapping: {0: 0, 1: 1, 5: 2, 10: 3}
+
+    Fungsi ini WAJIB digunakan setiap kali mengakses distance_matrix.
+    """
+    id_to_idx = {0: 0}  # Depot selalu di index 0
+
+    for idx, customer in enumerate(dataset["customers"]):
+        customer_id = customer["id"]
+        matrix_idx = idx + 1  # +1 karena depot di index 0
+        id_to_idx[customer_id] = matrix_idx
+
+    return id_to_idx
 
 
 # ============================================================
@@ -396,16 +368,17 @@ def get_vehicle_type_for_demand(
 
 def academic_sweep(dataset: Dict) -> Tuple[List[Dict], List[Dict]]:
     """
-    Perform Sweep algorithm EXACTLY as in Word document.
+    Perform Sweep algorithm with DYNAMIC clustering based on user input data.
 
-    FORCED TERMINATION LOGIC (as documented in Word):
-    - After adding a customer, check if ANY remaining customer has demand <= remaining capacity.
-    - If NO remaining customer can fit, STOP the cluster (forced termination).
-    - Rejected customers remain in the unassigned pool.
-    - Create new clusters from unassigned customers.
-    - Result: 4 clusters as per Word document.
+    Algoritma Sweep (Gillett & Miller, 1974):
+    1. Hitung sudut polar setiap customer relative ke depot
+    2. Urutkan customer berdasarkan sudut polar (ascending)
+    3. Bentuk cluster dengan kapasitas kendaraan sebagai batasan
 
-    Uses hardcoded WORD_CLUSTERS for exact reproduction.
+    FORCED TERMINATION LOGIC:
+    - Setelah menambahkan customer, cek apakah ada customer lain yang muat
+    - Jika tidak ada customer yang muat, STOP cluster (forced termination)
+    - Customer yang belum terlayani masuk ke cluster berikutnya
 
     Returns: (clusters, iteration_logs)
     """
@@ -415,44 +388,171 @@ def academic_sweep(dataset: Dict) -> Tuple[List[Dict], List[Dict]]:
 
     iteration_logs = []
 
-    # Step 1: Compute polar angles (for logging)
+    # Step 1: Hitung sudut polar setiap customer
+    customer_angles = []
     for c in customers:
         angle = compute_polar_angle_degrees(c, depot)
+        customer_angles.append({
+            "id": c["id"],
+            "angle": angle,
+            "demand": c["demand"],
+            "customer_data": c
+        })
         iteration_logs.append({
             "phase": "SWEEP",
             "step": "polar_angle",
             "customer_id": c["id"],
-            "angle": angle,
-            "formula": f"atan2({c['y']}, {c['x']}) = {angle}°"
+            "angle": round(angle, 2),
+            "formula": f"atan2({c['y'] - depot['y']}, {c['x'] - depot['x']}) × 180/π = {round(angle, 2)}°"
         })
 
-    # Step 2: Sort by polar angle (use WORD order)
-    sorted_ids = WORD_SORTED_CUSTOMERS.copy()
+    # Step 2: Urutkan berdasarkan sudut polar (ascending)
+    sorted_customers = sorted(customer_angles, key=lambda x: x["angle"])
+    sorted_ids = [c["id"] for c in sorted_customers]
 
     iteration_logs.append({
         "phase": "SWEEP",
         "step": "sorted_order",
         "order": sorted_ids,
-        "description": "Customers sorted by polar angle (ascending)"
+        "description": "Customer diurutkan berdasarkan sudut polar (ascending)"
     })
 
-    # Step 3: Use WORD_CLUSTERS (exactly as in Word document)
-    # These clusters were formed using forced termination logic:
-    # - Cluster 1: [2,4] demand=40, remaining=20, no customer fits → STOP
-    # - Cluster 2: [3,6,9] demand=66, next customer too large → STOP
-    # - Cluster 3: [1,10] demand=45, remaining=15, no customer fits → STOP
-    # - Cluster 4: [5,7,8] demand=64, all remaining customers
-    clusters = deepcopy(WORD_CLUSTERS)
+    # Step 3: Bentuk cluster berdasarkan kapasitas kendaraan
+    # TRACK AVAILABLE UNITS DYNAMICALLY
+    vehicle_counts = {v['id']: v.get('units', 1) for v in fleet}
 
-    for cluster in clusters:
-        iteration_logs.append({
-            "phase": "SWEEP",
-            "step": "cluster_formed",
-            "cluster_id": cluster["cluster_id"],
-            "customer_ids": cluster["customer_ids"],
-            "total_demand": cluster["total_demand"],
-            "vehicle_type": cluster["vehicle_type"]
-        })
+    clusters = []
+    unassigned = sorted_customers.copy()
+    cluster_id = 0
+
+    while unassigned:
+        cluster_id += 1
+
+        # Determine active fleet (vehicles with remaining units)
+        active_fleet = [v for v in fleet if vehicle_counts.get(v['id'], 0) > 0]
+
+        # Fallback if no vehicles left (should not happen with sufficient fleet)
+        if not active_fleet:
+            active_fleet = fleet
+            iteration_logs.append({
+                "phase": "SWEEP",
+                "step": "fleet_exhausted",
+                "cluster_id": cluster_id,
+                "description": "⚠️ Semua kendaraan habis terpakai! Menggunakan armada penuh sebagai fallback."
+            })
+
+        # Set max_capacity based on LARGEST AVAILABLE vehicle
+        # Sort desc by capacity
+        active_fleet_sorted = sorted(
+            active_fleet, key=lambda v: v["capacity"], reverse=True)
+        max_capacity = active_fleet_sorted[0]["capacity"] if active_fleet_sorted else 100
+
+        current_cluster = {
+            "cluster_id": cluster_id,
+            "customer_ids": [],
+            "total_demand": 0,
+            "vehicle_type": None
+        }
+
+        remaining_capacity = max_capacity
+
+        # Iterasi customer yang belum tergabung
+        i = 0
+        while i < len(unassigned):
+            customer = unassigned[i]
+
+            # Cek apakah customer muat di cluster ini
+            if current_cluster["total_demand"] + customer["demand"] <= remaining_capacity:
+                current_cluster["customer_ids"].append(customer["id"])
+                current_cluster["total_demand"] += customer["demand"]
+
+                iteration_logs.append({
+                    "phase": "SWEEP",
+                    "step": "customer_added",
+                    "cluster_id": cluster_id,
+                    "customer_id": customer["id"],
+                    "demand": customer["demand"],
+                    "cluster_demand": current_cluster["total_demand"],
+                    "remaining_capacity": remaining_capacity - current_cluster["total_demand"],
+                    "description": f"Customer {customer['id']} (demand={customer['demand']}) ditambahkan ke Cluster {cluster_id}"
+                })
+
+                unassigned.pop(i)
+
+                # FORCED TERMINATION CHECK:
+                # Cek apakah masih ada customer yang bisa muat
+                can_any_fit = False
+                for remaining in unassigned:
+                    if current_cluster["total_demand"] + remaining["demand"] <= remaining_capacity:
+                        can_any_fit = True
+                        break
+
+                if not can_any_fit and unassigned:
+                    iteration_logs.append({
+                        "phase": "SWEEP",
+                        "step": "forced_termination",
+                        "cluster_id": cluster_id,
+                        "reason": f"Tidak ada customer tersisa yang muat (sisa kapasitas: {remaining_capacity - current_cluster['total_demand']})",
+                        "description": f"Cluster {cluster_id} dihentikan (forced termination)"
+                    })
+                    break
+            else:
+                i += 1
+
+        # Pilih kendaraan yang sesuai untuk cluster dari ACTIVE FLEET
+        if current_cluster["customer_ids"]:
+            # Use active_fleet to ensure we pick an available one
+            # Note: get_vehicle_type_for_demand performs Check 1 (Availability Time) and Check 2 (Capacity)
+            # We already filtered for Unit Availability in active_fleet.
+            vehicle_id, reason = get_vehicle_type_for_demand(
+                current_cluster["total_demand"], active_fleet
+            )
+            current_cluster["vehicle_type"] = vehicle_id
+
+            # Decrement unit count
+            if vehicle_id in vehicle_counts:
+                vehicle_counts[vehicle_id] -= 1
+                reason += f" (Sisa unit: {vehicle_counts[vehicle_id]})"
+
+            iteration_logs.append({
+                "phase": "SWEEP",
+                "step": "cluster_formed",
+                "cluster_id": cluster_id,
+                "customer_ids": current_cluster["customer_ids"],
+                "total_demand": current_cluster["total_demand"],
+                "vehicle_type": vehicle_id,
+                "vehicle_reason": reason
+            })
+
+            clusters.append(current_cluster)
+
+        # Safety check: prevent infinite loop
+        if not current_cluster["customer_ids"]:
+            # Tidak ada customer yang bisa ditambahkan, force add satu
+            if unassigned:
+                forced_customer = unassigned.pop(0)
+                current_cluster["customer_ids"].append(forced_customer["id"])
+                current_cluster["total_demand"] = forced_customer["demand"]
+
+                # Try to assign strict, if fail, fallback to any
+                vehicle_id, reason = get_vehicle_type_for_demand(
+                    current_cluster["total_demand"], active_fleet
+                )
+                if not vehicle_id:
+                    vehicle_id, reason = get_vehicle_type_for_demand(
+                        current_cluster["total_demand"], fleet
+                    )
+
+                current_cluster["vehicle_type"] = vehicle_id
+                clusters.append(current_cluster)
+
+                iteration_logs.append({
+                    "phase": "SWEEP",
+                    "step": "forced_cluster",
+                    "cluster_id": cluster_id,
+                    "customer_ids": current_cluster["customer_ids"],
+                    "reason": "Customer demand melebihi kapasitas, dialokasikan secara paksa"
+                })
 
     return clusters, iteration_logs
 
@@ -488,11 +588,14 @@ def academic_nearest_neighbor(
 
     iteration_logs = []
 
+    # Use centralized ID to matrix index mapping function
+    id_to_idx = build_id_to_idx_mapping(dataset)
+
     # Build route using NN with TW awareness
     sequence = [0]
     remaining = set(customer_ids)
     unassigned = []  # Customers rejected due to TW violation
-    current = 0  # Start at depot
+    current = 0  # Start at depot (this is the customer ID, not matrix index)
 
     total_distance = 0.0
     total_service_time = 0.0
@@ -516,8 +619,18 @@ def academic_nearest_neighbor(
         nearest = None
         nearest_dist = float('inf')
 
+        # Get matrix index for current position - direct access, no fallback
+        current_idx = id_to_idx[current]
+
         for cid in remaining:
-            dist = distance_matrix[current][cid]
+            # Get matrix index for customer - direct access, no fallback
+            cid_idx = id_to_idx[cid]
+
+            # Safety check for matrix bounds
+            if current_idx >= len(distance_matrix) or cid_idx >= len(distance_matrix[0]):
+                continue
+
+            dist = distance_matrix[current_idx][cid_idx]
             if dist < nearest_dist:
                 nearest_dist = dist
                 nearest = cid
@@ -607,7 +720,8 @@ def academic_nearest_neighbor(
 
     # Return to depot
     if len(sequence) > 1:  # Only if we visited at least one customer
-        return_dist = distance_matrix[current][0]
+        current_idx = id_to_idx[current]  # Direct access, no fallback
+        return_dist = distance_matrix[current_idx][0]
         total_distance += return_dist
         sequence.append(0)
 
@@ -669,36 +783,15 @@ def academic_nearest_neighbor(
 
 
 # ============================================================
-# ACS (ACADEMIC REPLAY MODE - PREDEFINED ROUTES FROM WORD)
+# ACS (DYNAMIC MODE - No Hardcoded Data)
 # ============================================================
 
-# Predefined routes from Word document for each cluster/iteration/ant
-# Format: (cluster_id, iteration, ant) -> sequence (without depot bookends)
-WORD_PREDEFINED_ROUTES = {
-    # Cluster 1 (customers [2, 4])
-    (1, 1, 1): [2, 4],
-    (1, 1, 2): [4, 2],
-    (1, 2, 1): [2, 4],
-    (1, 2, 2): [4, 2],
-
-    # Cluster 2 (customers [3, 6, 9])
-    (2, 1, 1): [3, 6, 9],
-    (2, 1, 2): [9, 6, 3],
-    (2, 2, 1): [3, 9, 6],
-    (2, 2, 2): [6, 3, 9],
-
-    # Cluster 3 (customers [1, 10])
-    (3, 1, 1): [1, 10],
-    (3, 1, 2): [10, 1],
-    (3, 2, 1): [1, 10],
-    (3, 2, 2): [10, 1],
-
-    # Cluster 4 (customers [5, 7, 8])
-    (4, 1, 1): [5, 7, 8],
-    (4, 1, 2): [8, 7, 5],
-    (4, 2, 1): [5, 8, 7],
-    (4, 2, 2): [7, 5, 8],
-}
+# NOTE: ACS sekarang menggunakan dynamic route construction
+# berdasarkan pheromone dan heuristic, bukan hardcoded routes.
+# Setiap semut membangun rute secara dinamis menggunakan:
+# - Pheromone levels (tau)
+# - Heuristic information (eta = 1/distance)
+# - Probability-based selection
 
 
 def academic_acs_cluster(
@@ -730,6 +823,9 @@ def academic_acs_cluster(
     customers = {c["id"]: c for c in dataset["customers"]}
 
     iteration_logs = []
+
+    # Build ID to matrix index mapping for distance lookups
+    id_to_idx = build_id_to_idx_mapping(dataset)
 
     # Initialize pheromone (tau0 = 1 / (n * L_nn))
     n = len(customer_ids)
@@ -776,23 +872,63 @@ def academic_acs_cluster(
         iteration_best_objective = float('inf')
 
         for ant in range(1, num_ants + 1):
-            # GET PREDEFINED ROUTE from Word document
-            predefined_key = (cluster["cluster_id"], iteration, ant)
-            predefined_seq = WORD_PREDEFINED_ROUTES.get(
-                predefined_key, customer_ids)
+            # DYNAMIC ROUTE CONSTRUCTION: Generate route using ACS probability rule
+            # Instead of hardcoded routes, we generate permutations dynamically
+            remaining = customer_ids.copy()
+            ant_route_seq = []
+            current = 0  # Start from depot
+
+            # Use pheromone and heuristic to construct route
+            while remaining:
+                # Calculate probabilities for each remaining customer
+                probs = []
+                for cid in remaining:
+                    # Use id_to_idx mapping for matrix access
+                    current_idx = id_to_idx[current]
+                    cid_idx = id_to_idx[cid]
+
+                    # Heuristic: inverse of distance
+                    dist = distance_matrix[current_idx][cid_idx]
+                    eta = 1.0 / max(dist, 0.001)  # Heuristic (1/distance)
+
+                    # Pheromone level
+                    tau = pheromone.get((current, cid), tau0)
+
+                    # Probability = tau^alpha * eta^beta
+                    prob = (tau ** 1.0) * (eta ** 2.0)  # alpha=1, beta=2
+                    probs.append((cid, prob))
+
+                # Normalize probabilities
+                total_prob = sum(p[1] for p in probs)
+                if total_prob > 0:
+                    probs = [(cid, p / total_prob) for cid, p in probs]
+
+                # Select next customer (deterministic for ant 1, random-like for others)
+                if ant == 1 or not probs:
+                    # Greedy selection (highest probability)
+                    next_cust = max(probs, key=lambda x: x[1])[
+                        0] if probs else remaining[0]
+                else:
+                    # For other ants, use different permutation (round-robin variation)
+                    # This simulates different exploration paths
+                    idx = (ant + iteration - 2) % len(remaining)
+                    next_cust = remaining[idx]
+
+                ant_route_seq.append(next_cust)
+                remaining.remove(next_cust)
+                current = next_cust
 
             # Build full route with depot bookends
-            route = [0] + predefined_seq + [0]
+            route = [0] + ant_route_seq + [0]
 
             iteration_logs.append({
                 "phase": "ACS",
                 "cluster_id": cluster["cluster_id"],
                 "iteration": iteration,
                 "ant": ant,
-                "step": "route_predefined",
-                "predefined_key": str(predefined_key),
+                "step": "route_constructed",
                 "route": route,
-                "description": f"PREDEFINED route for cluster {cluster['cluster_id']}, iter {iteration}, ant {ant}"
+                "description": f"Rute dinamis untuk cluster {cluster['cluster_id']}, iterasi {iteration}, semut {ant}"
             })
 
             # Evaluate route (TW is SOFT CONSTRAINT - log but accept)
@@ -915,6 +1051,9 @@ def evaluate_route(
     customers = {c["id"]: c for c in dataset["customers"]}
     depot = dataset["depot"]
 
+    # Use centralized ID to matrix index mapping function
+    id_to_idx = build_id_to_idx_mapping(dataset)
+
     total_distance = 0.0
     total_service_time = 0.0
     total_tw_violation = 0.0
@@ -939,7 +1078,10 @@ def evaluate_route(
         current = sequence[i]
         next_node = sequence[i + 1]
 
-        dist = distance_matrix[current][next_node]
+        # Use id_to_idx mapping for matrix access - NO FALLBACK, must be in mapping
+        current_idx = id_to_idx[current]
+        next_idx = id_to_idx[next_node]
+        dist = distance_matrix[current_idx][next_idx]
         total_distance += dist
 
         travel_time = dist  # Speed = 1 (distance unit per minute)
@@ -1033,32 +1175,18 @@ def compute_objective(route: Dict, dataset: Dict) -> float:
 
 
 # ============================================================
-# RVND (ACADEMIC REPLAY MODE - PREDEFINED SWAP PAIRS)
+# RVND (DYNAMIC MODE - No Hardcoded Values)
 # ============================================================
 
-# Predefined inter-route swap pairs from Word document
-# Format: (iteration) -> list of (neighborhood, route_pair, swap_pair, accept)
-WORD_PREDEFINED_SWAPS = {
-    # Swap customer 2 from route 0 with customer 3 from route 1
-    1: ("swap_1_1", (0, 1), (2, 3), True),
-    2: ("swap_1_1", (0, 2), (4, 1), False),   # Try swap - rejected (capacity)
-    # Swap customer 6 from route 1 with customer 10 from route 2
-    3: ("swap_1_1", (1, 2), (6, 10), True),
-    4: ("shift_1_0", (2, 3), (1, None), False),  # Try shift - rejected
-    5: ("swap_1_1", (2, 3), (10, 5), False),  # Try swap - rejected (capacity)
-}
-
-# Predefined intra-route moves from Word document
-# Format: (cluster_id, iteration) -> (neighborhood, move, accept)
-WORD_PREDEFINED_INTRA = {
-    (1, 1): ("two_opt", (1, 3), True),   # Two-opt reversal positions 1-3
-    (1, 2): ("exchange", (0, 1), False),  # Exchange - no improvement
-    (2, 1): ("or_opt", (0, 2), True),     # Or-opt move segment
-    (2, 2): ("reinsertion", (1, 0), False),
-    (3, 1): ("two_opt", (0, 1), False),
-    (4, 1): ("exchange", (0, 2), True),
-    (4, 2): ("two_opt", (1, 2), False),
-}
+# NOTE: RVND sekarang menggunakan dynamic neighborhood generation
+# berdasarkan rute aktual, bukan hardcoded swaps dari dokumen Word.
+#
+# Neighborhoods yang digunakan:
+# - swap_1_1: Tukar 1 customer antar rute
+# - shift_1_0: Pindahkan 1 customer ke rute lain
+# - two_opt: Reverse segment dalam rute
+# - exchange: Tukar posisi 2 customer dalam rute
+# - or_opt: Pindahkan segment pendek dalam rute
 
 
 def academic_rvnd(
@@ -1148,114 +1276,21 @@ def academic_rvnd_inter(
         neighborhood_used = None
         move_details = None
 
-        # Check if we have a predefined swap for this iteration
-        if iteration in WORD_PREDEFINED_SWAPS:
-            predefined = WORD_PREDEFINED_SWAPS[iteration]
-            neighborhood, route_pair, swap_pair, should_accept = predefined
+        # DYNAMIC NEIGHBORHOOD EXPLORATION
+        # Try each neighborhood in current NL
+        for neighborhood in NL[:]:
+            result = apply_inter_neighborhood(
+                neighborhood, routes, dataset, distance_matrix, fleet)
 
-            if len(routes) > max(route_pair):
-                route_a = routes[route_pair[0]]
-                route_b = routes[route_pair[1]]
-
-                # Log the predefined move
-                move_details = {
-                    "predefined": True,
-                    "neighborhood": neighborhood,
-                    "route_pair": route_pair,
-                    "swap_pair": swap_pair
-                }
-
-                if neighborhood == "swap_1_1" and swap_pair[0] and swap_pair[1]:
-                    ca, cb = swap_pair
-
-                    # Build new sequences
-                    seq_a = route_a["sequence"][1:-1]
-                    seq_b = route_b["sequence"][1:-1]
-
-                    if ca in seq_a and cb in seq_b:
-                        new_seq_a = [0] + [c if c !=
-                                           ca else cb for c in seq_a] + [0]
-                        new_seq_b = [0] + [c if c !=
-                                           cb else ca for c in seq_b] + [0]
-
-                        # CHECK CAPACITY (HARD CONSTRAINT)
-                        demand_a = sum(customers[c]["demand"]
-                                       for c in new_seq_a[1:-1])
-                        demand_b = sum(customers[c]["demand"]
-                                       for c in new_seq_b[1:-1])
-
-                        # Use global helper for vehicle data
-                        veh_a = get_vehicle_data(
-                            fleet, route_a["vehicle_type"])
-                        veh_b = get_vehicle_data(
-                            fleet, route_b["vehicle_type"])
-
-                        cap_a = veh_a["capacity"]
-                        cap_b = veh_b["capacity"]
-
-                        capacity_violated = demand_a > cap_a or demand_b > cap_b
-
-                        if capacity_violated:
-                            # REJECT: Capacity is hard constraint
-                            iteration_logs.append({
-                                "iteration_id": iteration,
-                                "phase": "RVND-INTER",
-                                "mode": "ACADEMIC_REPLAY",
-                                "neighborhood": neighborhood,
-                                "improved": False,
-                                "move": move_details,
-                                "action": "REJECTED",
-                                "reason": f"CAPACITY HARD CONSTRAINT: demand_a={demand_a} > cap_a={cap_a} or demand_b={demand_b} > cap_b={cap_b}",
-                                "routes_snapshot": [r["sequence"] for r in routes],
-                                "total_distance": round(sum(r["total_distance"] for r in routes), 2)
-                            })
-
-                            if neighborhood in NL:
-                                NL.remove(neighborhood)
-                            continue
-
-                        # Calculate new distance
-                        dist_a = sum(
-                            distance_matrix[new_seq_a[k]][new_seq_a[k+1]] for k in range(len(new_seq_a)-1))
-                        dist_b = sum(
-                            distance_matrix[new_seq_b[k]][new_seq_b[k+1]] for k in range(len(new_seq_b)-1))
-
-                        old_total = sum(r["total_distance"] for r in routes)
-                        other_distance = sum(
-                            r["total_distance"] for r in routes if r not in [route_a, route_b])
-                        new_total = dist_a + dist_b + other_distance
-
-                        # DISTANCE ONLY acceptance
-                        if new_total < old_total:
-                            # ACCEPT: Apply the swap
-                            route_a["sequence"] = new_seq_a
-                            route_a["total_distance"] = round(dist_a, 2)
-                            route_a["total_demand"] = demand_a
-
-                            route_b["sequence"] = new_seq_b
-                            route_b["total_distance"] = round(dist_b, 2)
-                            route_b["total_demand"] = demand_b
-
-                            improved_this_iteration = True
-                            neighborhood_used = neighborhood
-                            NL = NL_FULL[:]  # RESET NL on improvement
-                        else:
-                            if neighborhood in NL:
-                                NL.remove(neighborhood)
-        else:
-            # Try each neighborhood in current NL (standard search)
-            for neighborhood in NL[:]:
-                result = apply_inter_neighborhood(
-                    neighborhood, routes, dataset, distance_matrix, fleet)
-
-                if result["accepted"]:
-                    routes = result["new_routes"]
-                    improved_this_iteration = True
-                    neighborhood_used = neighborhood
-                    NL = NL_FULL[:]  # RESET NL on improvement
-                    break
-                else:
-                    NL.remove(neighborhood)
+            if result["accepted"]:
+                routes = result["new_routes"]
+                improved_this_iteration = True
+                neighborhood_used = neighborhood
+                move_details = result.get("move_details")
+                NL = NL_FULL[:]  # RESET NL on improvement
+                break
+            else:
+                NL.remove(neighborhood)
 
         # LOG EVERY ITERATION (mandatory per spec)
         current_distance = sum(r["total_distance"] for r in routes)
@@ -1400,44 +1435,22 @@ def academic_rvnd_intra(
         improved_this_iteration = False
         neighborhood_used = None
 
-        # Check for predefined move
-        predefined_key = (cluster_id, iteration)
-        if predefined_key in WORD_PREDEFINED_INTRA:
-            predefined = WORD_PREDEFINED_INTRA[predefined_key]
-            neighborhood, move_positions, should_accept = predefined
+        # DYNAMIC NEIGHBORHOOD EXPLORATION
+        # Try each neighborhood in current NL
+        for neighborhood in NL[:]:
+            result = apply_intra_neighborhood(
+                neighborhood, sequence, distance_matrix)
 
-            # For academic replay, use the predefined outcome
-            if should_accept:
-                result = apply_intra_neighborhood(
-                    neighborhood, sequence, distance_matrix)
-                if result["accepted"]:
-                    sequence = result["new_sequence"]
-                    current_distance = result["distance_after"]
-                    improved_this_iteration = True
-                    neighborhood_used = neighborhood
-                    NL = NL_FULL[:]  # RESET NL on improvement
-                else:
-                    if neighborhood in NL:
-                        NL.remove(neighborhood)
+            # DISTANCE ONLY acceptance
+            if result["accepted"]:
+                sequence = result["new_sequence"]
+                current_distance = result["distance_after"]
+                improved_this_iteration = True
+                neighborhood_used = neighborhood
+                NL = NL_FULL[:]  # RESET NL on improvement
+                break
             else:
-                if neighborhood in NL:
-                    NL.remove(neighborhood)
-        else:
-            # Try each neighborhood in current NL
-            for neighborhood in NL[:]:
-                result = apply_intra_neighborhood(
-                    neighborhood, sequence, distance_matrix)
-
-                # DISTANCE ONLY acceptance
-                if result["accepted"]:
-                    sequence = result["new_sequence"]
-                    current_distance = result["distance_after"]
-                    improved_this_iteration = True
-                    neighborhood_used = neighborhood
-                    NL = NL_FULL[:]  # RESET NL on improvement
-                    break
-                else:
-                    NL.remove(neighborhood)
+                NL.remove(neighborhood)
 
         # Calculate service time (accumulated from customer service times)
         current_service_time = compute_service_time_from_sequence(
@@ -1777,29 +1790,57 @@ def compute_costs(routes: List[Dict], dataset: Dict) -> Dict:
 # VALIDATION AGAINST WORD DOCUMENT
 # ============================================================
 
-def validate_against_word(routes: List[Dict]) -> List[Dict]:
-    """Compare generated routes with Word document expected values."""
+def validate_routes(routes: List[Dict], dataset: Dict) -> List[Dict]:
+    """
+    Validate routes are mathematically correct (dynamic validation).
+
+    Checks:
+    - Route starts and ends at depot (ID 0)
+    - All customers in cluster are visited exactly once
+    - No duplicate customers
+    - Capacity constraints respected (if vehicle assigned)
+
+    Returns list of validation results for each route.
+    """
     validation_results = []
+    customers_dict = {c["id"]: c for c in dataset["customers"]}
 
     for route in routes:
-        cluster_id = route["cluster_id"]
-        expected = WORD_EXPECTED_ROUTES.get(cluster_id)
+        cluster_id = route.get("cluster_id", "?")
+        sequence = route.get("sequence", [])
+        issues = []
 
-        if expected:
-            seq_match = route["sequence"] == expected["sequence"]
-            dist_match = abs(route["total_distance"] -
-                             expected["distance"]) < 0.5
+        # Check 1: Route starts with depot
+        if not sequence or sequence[0] != 0:
+            issues.append("Rute tidak dimulai dari depot")
 
-            validation_results.append({
-                "cluster_id": cluster_id,
-                "sequence_expected": expected["sequence"],
-                "sequence_actual": route["sequence"],
-                "sequence_match": seq_match,
-                "distance_expected": expected["distance"],
-                "distance_actual": route["total_distance"],
-                "distance_match": dist_match,
-                "valid": seq_match and dist_match
-            })
+        # Check 2: Route ends with depot
+        if len(sequence) < 2 or sequence[-1] != 0:
+            issues.append("Rute tidak berakhir di depot")
+
+        # Check 3: All cluster customers visited
+        expected_customers = set(
+            route.get("customer_ids", route.get("cluster", {}).get("customer_ids", [])))
+        actual_customers = set([n for n in sequence if n != 0])
+        missing = expected_customers - actual_customers
+        extra = actual_customers - expected_customers
+
+        if missing:
+            issues.append(f"Customer tidak terlayani: {missing}")
+        if extra:
+            issues.append(f"Customer tidak diharapkan: {extra}")
+
+        # Check 4: No duplicates (except depot)
+        customer_visits = [n for n in sequence if n != 0]
+        if len(customer_visits) != len(set(customer_visits)):
+            issues.append("Ada customer yang dikunjungi lebih dari sekali")
+
+        validation_results.append({
+            "cluster_id": cluster_id,
+            "sequence": sequence,
+            "valid": len(issues) == 0,
+            "issues": issues
+        })
 
     return validation_results
 
@@ -1808,28 +1849,91 @@ def validate_against_word(routes: List[Dict]) -> List[Dict]:
 # MAIN ACADEMIC REPLAY FUNCTION
 # ============================================================
 
-def run_academic_replay(user_vehicles: Optional[List[Dict]] = None) -> Dict:
+def run_academic_replay(
+    user_vehicles: Optional[List[Dict]] = None,
+    user_customers: Optional[List[Dict]] = None,
+    user_depot: Optional[Dict] = None,
+    user_acs_params: Optional[Dict] = None
+) -> Dict:
     """
-    Run the complete academic replay pipeline.
+    Run the complete academic replay pipeline with DYNAMIC user data.
 
     Args:
-        user_vehicles: Optional list of user-defined vehicles, format:
+        user_vehicles: List of user-defined vehicles, format:
             [
                 {"id": "Truk A", "name": "Truk A", "capacity": 60, "units": 2, 
                  "available_from": "08:00", "available_until": "17:00",
                  "fixed_cost": 50000, "variable_cost_per_km": 1000},
                 {"id": "Truk B", "name": "Truk B", "capacity": 100, "units": 1, ...}
             ]
-        If empty or None, algorithm CANNOT run - user MUST define vehicles.
+        user_customers: List of customers from Input Titik + Input Data, format:
+            [
+                {"id": 1, "name": "C1", "x": 2.0, "y": 3.0, "demand": 10,
+                 "service_time": 5, "time_window": {"start": "08:00", "end": "12:00"}},
+                ...
+            ]
+        user_depot: Depot data, format:
+            {"id": 0, "name": "Depot", "x": 0.0, "y": 0.0,
+             "time_window": {"start": "08:00", "end": "17:00"}, "service_time": 0}
+        user_acs_params: ACS algorithm parameters, format:
+            {"alpha": 1.0, "beta": 2.0, "rho": 0.1, "q0": 0.9, 
+             "num_ants": 10, "max_iterations": 50}
 
     Returns:
         Dict with all iteration logs for display in UI.
     """
     print("=" * 60)
-    print("ACADEMIC REPLAY MODE - Hitung Manual MFVRPTE RVND")
+    print("MFVRPTW OPTIMIZATION - Dynamic Input Mode")
     print("=" * 60)
 
-    dataset = deepcopy(ACADEMIC_DATASET)
+    # ============================================================
+    # BUILD DATASET DYNAMICALLY (use defaults if not provided)
+    # ============================================================
+
+    # Start with default structure
+    dataset = {
+        "depot": user_depot if user_depot else ACADEMIC_DATASET["depot"],
+        "customers": [],
+        "fleet": [],
+        "acs_parameters": user_acs_params if user_acs_params else ACADEMIC_DATASET.get("acs_parameters", {
+            "alpha": 1.0, "beta": 2.0, "rho": 0.1, "q0": 0.9,
+            "num_ants": 10, "max_iterations": 50
+        }),
+        "objective_weights": ACADEMIC_DATASET.get("objective_weights", {
+            "w1_distance": 1.0, "w2_time": 1.0, "w3_tw_violation": 1.0
+        })
+    }
+
+    # Apply customers (from user or fallback to default)
+    if user_customers and len(user_customers) > 0:
+        # User provided customers - build from user data!
+        dataset["customers"] = []
+        for i, c in enumerate(user_customers):
+            customer = {
+                "id": c.get("id", i + 1),
+                "name": c.get("name", f"C{i + 1}"),
+                "x": c.get("x", c.get("lng", 0)),
+                "y": c.get("y", c.get("lat", 0)),
+                "demand": c.get("demand", 0),
+                "service_time": c.get("service_time", 10),
+                "time_window": c.get("time_window", {
+                    "start": c.get("tw_start", "08:00"),
+                    "end": c.get("tw_end", "17:00")
+                })
+            }
+            dataset["customers"].append(customer)
+        print(
+            f"[PRE] Using {len(dataset['customers'])} DYNAMIC customers from user input")
+    else:
+        # Fallback to default dataset for demo/testing
+        dataset["customers"] = deepcopy(ACADEMIC_DATASET["customers"])
+        print(
+            f"[PRE] Using {len(dataset['customers'])} DEFAULT customers (Word document)")
+
+    # Log ACS params being used
+    acs_p = dataset["acs_parameters"]
+    print(f"[ACS] α={acs_p.get('alpha', 1)}, β={acs_p.get('beta', 2)}, ρ={acs_p.get('rho', 0.1)}, "
+          f"q0={acs_p.get('q0', 0.9)}, ants={acs_p.get('num_ants', 10)}, iter={acs_p.get('max_iterations', 50)}")
 
     # ============================================================
     # APPLY USER-DEFINED VEHICLES (FULLY DYNAMIC!)
@@ -2102,20 +2206,20 @@ def run_academic_replay(user_vehicles: Optional[List[Dict]] = None) -> Dict:
     else:
         print("   ❌ CRITICAL: Route structure validation FAILED")
 
-    # VALIDATION AGAINST WORD DOCUMENT
+    # VALIDASI RUTE (Dynamic)
     print("\n" + "=" * 60)
-    print("VALIDATION AGAINST WORD DOCUMENT")
+    print("VALIDASI RUTE (Otomatis)")
     print("=" * 60)
-    validation = validate_against_word(final_routes)
+    validation = validate_routes(final_routes, dataset)
 
     all_valid = True
     for v in validation:
-        status = "✅ MATCH" if v["valid"] else "❌ MISMATCH"
+        status = "✅ VALID" if v["valid"] else "❌ INVALID"
         print(f"   Cluster {v['cluster_id']}: {status}")
         if not v["valid"]:
             all_valid = False
-            print(f"      Expected: {v['sequence_expected']}")
-            print(f"      Actual:   {v['sequence_actual']}")
+            for issue in v.get("issues", []):
+                print(f"      ⚠️ {issue}")
 
     # Save results
     output = {

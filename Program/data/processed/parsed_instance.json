@@ -1,9 +1,9 @@
 {
   "depot": {
     "id": 0,
-    "name": "Depot 0",
-    "x": 50.0,
-    "y": 50.0,
+    "name": "Depot (Gudang)",
+    "x": 0,
+    "y": 0,
     "time_window": {
       "start": "08:30",
       "end": "17:00"
@@ -13,39 +13,123 @@
   "customers": [
     {
       "id": 1,
-      "name": "Customer 1",
-      "x": 10.0,
-      "y": 30.0,
-      "demand": 0.0,
+      "name": "RSUD Kota Malang",
+      "x": 8.0,
+      "y": 12.0,
+      "demand": 51.0,
       "time_window": {
-        "start": "08:30",
-        "end": "17:00"
+        "start": "08:20",
+        "end": "10:00"
       },
-      "service_time": 0
+      "service_time": 25
     },
     {
       "id": 2,
-      "name": "Customer 2",
-      "x": 25.0,
-      "y": 47.0,
-      "demand": 0.0,
+      "name": "Puskesmas Dinoyo",
+      "x": 20.0,
+      "y": 15.0,
+      "demand": 17.0,
       "time_window": {
-        "start": "08:30",
-        "end": "17:00"
+        "start": "07:00",
+        "end": "09:45"
       },
-      "service_time": 0
+      "service_time": 9
     },
     {
       "id": 3,
-      "name": "Customer 3",
-      "x": 34.0,
-      "y": 59.0,
-      "demand": 0.0,
+      "name": "Puskesmas Mojolar",
+      "x": 5.0,
+      "y": 25.0,
+      "demand": 12.0,
+      "time_window": {
+        "start": "09:20",
+        "end": "12:00"
+      },
+      "service_time": 6
+    },
+    {
+      "id": 4,
+      "name": "Puskesmas Arjowinangun",
+      "x": 24.0,
+      "y": 4.0,
+      "demand": 40.0,
       "time_window": {
         "start": "08:30",
-        "end": "17:00"
+        "end": "11:30"
       },
-      "service_time": 0
+      "service_time": 20
+    },
+    {
+      "id": 5,
+      "name": "RS Lavalette",
+      "x": 28.0,
+      "y": 18.0,
+      "demand": 68.0,
+      "time_window": {
+        "start": "09:00",
+        "end": "11:45"
+      },
+      "service_time": 34
+    },
+    {
+      "id": 6,
+      "name": "Puskesmas Sukun",
+      "x": 14.0,
+      "y": 6.0,
+      "demand": 18.0,
+      "time_window": {
+        "start": "08:30",
+        "end": "11:00"
+      },
+      "service_time": 9
+    },
+    {
+      "id": 7,
+      "name": "Klinik Kahuripan",
+      "x": 18.0,
+      "y": 24.0,
+      "demand": 24.0,
+      "time_window": {
+        "start": "08:20",
+        "end": "11:00"
+      },
+      "service_time": 12
+    },
+    {
+      "id": 8,
+      "name": "RS Mitra Sehat",
+      "x": 32.0,
+      "y": 8.0,
+      "demand": 47.0,
+      "time_window": {
+        "start": "08:30",
+        "end": "13:00"
+      },
+      "service_time": 24
+    },
+    {
+      "id": 9,
+      "name": "Puskesmas Lowokwaru",
+      "x": 10.0,
+      "y": 22.0,
+      "demand": 28.0,
+      "time_window": {
+        "start": "09:00",
+        "end": "11:00"
+      },
+      "service_time": 15
+    },
+    {
+      "id": 10,
+      "name": "RS Panti Nirmala",
+      "x": 36.0,
+      "y": 22.0,
+      "demand": 43.0,
+      "time_window": {
+        "start": "09:00",
+        "end": "12:30"
+      },
+      "service_time": 23
     }
   ],
   "fleet": [

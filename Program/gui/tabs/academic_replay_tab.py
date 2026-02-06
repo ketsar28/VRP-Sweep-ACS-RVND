@@ -43,6 +43,10 @@ def _display_sweep_iterations(logs: List[Dict]) -> None:
         "phase") == "SWEEP" and l.get("step") == "polar_angle"]
     if angle_logs:
         st.markdown("**Step 1: Polar Angle Computation**")
+        st.info("Formula perhitungan sudut polar (derajat) untuk setiap customer:")
+        st.latex(
+            r"\theta = \arctan\left(\frac{y_i - y_{\text{depot}}}{x_i - x_{\text{depot}}}\right) \cdot \frac{180}{\pi}")
+
         df_angles = pd.DataFrame([{
             "Customer": l["customer_id"],
             "Angle (°)": l["angle"],
@@ -105,24 +109,24 @@ def _display_nn_iterations(logs: List[Dict]) -> None:
                     elif arrival != "-" and tw_start != "-" and tw_end != "-":
                         tw_display = f"{_minutes_to_time(tw_start)} - {_minutes_to_time(tw_end)}"
                         if action == "REJECTED":
-                            status = f"❌ LATE (Arrival {_minutes_to_time(arrival)} > TW_end)"
+                            status = f"❌ Terlambat (Tiba {_minutes_to_time(arrival)} > TW Selesai)"
                         elif arrival < tw_start:
                             wait = tw_start - arrival
-                            status = f"⏳ WAIT {wait:.1f} min"
+                            status = f"⏳ Menunggu {wait:.1f} menit"
                         else:
-                            status = "✅ OK"
+                            status = "✅ Memenuhi"
                     else:
                         tw_display = "-"
                         status = "-"
 
                     rows.append({
                         "Step": l["step"],
-                        "From → To": f"{l.get('from_node', 0)} → {to_node}",
-                        "Distance": l.get("distance", 0),
-                        "Arrival": _minutes_to_time(arrival) if arrival != "-" else "-",
-                        "TW (Start-End)": tw_display,
+                        "Dari → Ke": f"{l.get('from_node', 0)} → {to_node}",
+                        "Jarak (km)": l.get("distance", 0),
+                        "Waktu Tiba": _minutes_to_time(arrival) if arrival != "-" else "-",
+                        "TW (Mulai-Selesai)": tw_display,
                         "Status": status,
-                        "Description": l.get("description", "")[:50]
+                        "Keterangan": l.get("description", "")[:50]
                     })
 
                 df = pd.DataFrame(rows)
@@ -133,7 +137,7 @@ def _display_nn_iterations(logs: List[Dict]) -> None:
                     "action") == "REJECTED"]
                 if rejected:
                     st.warning(
-                        f"⚠️ {len(rejected)} customer(s) rejected due to TW violations")
+                        f"⚠️ {len(rejected)} customer ditolak karena pelanggaran Time Window (TW)")
                     for r in rejected:
                         st.caption(
                             f"Customer {r['to_node']}: {r.get('reason', '')}")
@@ -164,6 +168,7 @@ def _display_acs_iterations(logs: List[Dict]) -> None:
             init = init_logs[0]
             st.markdown(
                 f"**Pheromone Init:** τ₀ = {init['tau0']} ({init['formula']})")
+            st.latex(r"\tau_0 = \frac{1}{n \cdot Z_{nn}}")
 
         # Objective function initialization
         obj_init_logs = [l for l in cluster_logs if l.get(
@@ -172,6 +177,8 @@ def _display_acs_iterations(logs: List[Dict]) -> None:
             obj = obj_init_logs[0]
             st.markdown(
                 f"**Objective Function:** {obj.get('formula', 'Z = αD + βT + γTW')}")
+            st.latex(
+                r"Z = w_1 \cdot D_{\text{total}} + w_2 \cdot T_{\text{travel}} + w_3 \cdot V_{\text{TW}}")
             st.info(f"Initial Z = {obj.get('initial_objective', '?')} | "
                     f"Distance: {obj.get('initial_distance', '?')} | "
                     f"Time: {obj.get('initial_time', '?')} | "
@@ -262,40 +269,39 @@ def _display_acs_iterations(logs: List[Dict]) -> None:
 
 
 def _display_rvnd_inter_iterations(logs: List[Dict]) -> None:
-    """Display RVND inter-route iterations - ALL iterations including non-improvements."""
-    st.markdown("### 🔄 RVND Inter-Route Iterations")
+    """Display RVND inter-route iterations like thesis format."""
+    st.markdown("### 🔄 RVND Inter-Route - Pertukaran Customer Antar Rute")
 
     inter_logs = [l for l in logs if l.get("phase") == "RVND-INTER"]
 
     if not inter_logs:
-        st.info("No RVND inter-route iterations (single route or no moves attempted).")
+        st.info("Tidak ada iterasi inter-route (rute tunggal atau tidak ada move).")
         return
 
-    st.info(
-        f"📊 Total iterations: {len(inter_logs)} (shows ALL iterations, not just improvements)")
+    st.info(f"📊 Total iterasi: {len(inter_logs)}")
 
+    # Build table with thesis-style columns
     df = pd.DataFrame([{
-        "Iteration": l.get("iteration_id", l.get("iteration", "?")),
-        "Neighborhood": l.get("neighborhood", "none") or "none",
-        "Improved": "✅" if l.get("improved", l.get("accepted", False)) else "❌",
-        "Distance": l.get("total_distance", l.get("distance_after", 0)),
-        "Routes": str(l.get("routes_snapshot", []))[:60] + "..."
+        "Iterasi": l.get("iteration_id", l.get("iteration", "?")),
+        "Rute A → B": f"{l.get('route_pair', (1, 2))}",
+        "Move": l.get("neighborhood", "-").replace("_", " ").title() if l.get("neighborhood") else "-",
+        "Total Jarak": f"{l.get('total_distance', l.get('distance_after', 0)):.2f} km",
+        "Status": "Ada Perbaikan" if l.get("improved", l.get("accepted", False)) else "Tidak Ada Perbaikan"
     } for l in inter_logs])
     st.dataframe(df, use_container_width=True, hide_index=True)
 
 
 def _display_rvnd_intra_iterations(logs: List[Dict]) -> None:
-    """Display RVND intra-route iterations - ALL iterations including non-improvements."""
-    st.markdown("### 🔁 RVND Intra-Route Iterations")
+    """Display RVND intra-route iterations like thesis format."""
+    st.markdown("### 🔁 RVND Intra-Route - Optimasi Dalam Rute")
 
     intra_logs = [l for l in logs if l.get("phase") == "RVND-INTRA"]
 
     if not intra_logs:
-        st.info("No RVND intra-route iterations.")
+        st.info("Tidak ada iterasi intra-route.")
         return
 
-    st.info(
-        f"📊 Total iterations: {len(intra_logs)} (shows ALL iterations, not just improvements)")
+    st.info(f"📊 Total iterasi: {len(intra_logs)}")
 
     # Group by cluster
     clusters = set(l.get("cluster_id", 0)
@@ -306,14 +312,15 @@ def _display_rvnd_intra_iterations(logs: List[Dict]) -> None:
             cluster_logs = [l for l in intra_logs if l.get(
                 "cluster_id") == cluster_id]
 
-            st.caption(f"Iterations for this cluster: {len(cluster_logs)}")
+            st.caption(f"Iterasi untuk cluster ini: {len(cluster_logs)}")
 
+            # Build table with thesis-style columns
             df = pd.DataFrame([{
-                "Iteration": l.get("iteration_id", l.get("iteration", "?")),
-                "Neighborhood": l.get("neighborhood", "none") or "none",
-                "Improved": "✅" if l.get("improved", l.get("accepted", False)) else "❌",
-                "Distance": l.get("total_distance", l.get("distance_after", 0)),
-                "Route": str(l.get("routes_snapshot", l.get("sequence_after", [])))[:50] + "..."
+                "Iterasi": l.get("iteration_id", l.get("iteration", "?")),
+                "Move": l.get("neighborhood", "-").replace("_", " ").title() if l.get("neighborhood") else "-",
+                "Jarak": f"{l.get('total_distance', l.get('distance_after', 0)):.2f} km",
+                "Rute": str(l.get("routes_snapshot", l.get("sequence_after", [])))[:50],
+                "Status": "Ada Perbaikan" if l.get("improved", l.get("accepted", False)) else "Tidak Ada Perbaikan"
             } for l in cluster_logs])
             st.dataframe(df, use_container_width=True, hide_index=True)
 
@@ -453,24 +460,6 @@ def _display_time_window_analysis(result: Dict[str, Any]) -> None:
             st.warning("Some time window violations detected")
 
 
-def _display_vehicle_assignment(logs: List[Dict]) -> None:
-    """Display vehicle reassignment."""
-    st.markdown("### 🚛 Vehicle Reassignment")
-
-    vehicle_logs = [l for l in logs if l.get("phase") == "VEHICLE_REASSIGN"]
-
-    if vehicle_logs:
-        df = pd.DataFrame([{
-            "Cluster": l["cluster_id"],
-            "Demand": l["demand"],
-            "Old Vehicle": l["old_vehicle"],
-            "New Vehicle": l["new_vehicle"],
-            "Status": l.get("status", "✅"),
-            "Reason": l["reason"]
-        } for l in vehicle_logs])
-        st.dataframe(df, use_container_width=True, hide_index=True)
-
-
 def _display_user_vehicle_selection(result: Dict[str, Any]) -> None:
     """Display user's vehicle selection and decision reasons."""
     st.markdown("### 🚛 Pemilihan Kendaraan User")
@@ -485,7 +474,7 @@ def _display_user_vehicle_selection(result: Dict[str, Any]) -> None:
             "phase") == "USER_VEHICLE_SELECTION"]
 
     if not user_selection:
-        st.error("❌ Tidak ada kendaraan yang didefinisikan user!")
+        st.error("❌ Tidak ada kendaraan yang didefinisikan!")
         st.warning(
             "Silakan tambah kendaraan di tab 'Input Data' terlebih dahulu.")
         return
@@ -586,56 +575,131 @@ def _display_vehicle_availability(result: Dict[str, Any]) -> None:
         else:
             st.metric("Tidak Tersedia", 0)
 
-    # Availability explanation
-    st.markdown("---")
-    st.markdown("#### 📋 Penjelasan Ketersediaan")
 
-    for a in availability:
-        vehicle_id = a.get("vehicle_id", "?")
-        available = a.get("available", False)
-        time_window = a.get("time_window", "Tidak diset")
-        capacity = a.get("capacity", 0)
-        units = a.get("units", 1)
+def _display_vehicle_assignment(result: Dict[str, Any]) -> None:
+    """Display vehicle reassignment table."""
+    st.markdown("### 🚛 Penugasan Ulang Kendaraan (Vehicle Reassignment)")
+    st.markdown(
+        "*Tahap ini memastikan setiap rute dilayani oleh kendaraan dengan kapasitas yang sesuai.*")
 
-        if available:
-            st.success(f"**Kendaraan {vehicle_id}** (kapasitas ≤ {capacity}, {units} unit): "
-                       f"✅ TERSEDIA pada {time_window}. "
-                       f"Kendaraan ini dapat digunakan untuk routing.")
-        else:
-            st.warning(f"**Kendaraan {vehicle_id}** (kapasitas ≤ {capacity}, {units} unit): "
-                       f"❌ TIDAK TERSEDIA - {time_window}. "
-                       f"Kendaraan ini TIDAK akan digunakan dalam routing.")
+    final_routes = result.get("routes", [])
+    if not final_routes:
+        st.warning("Belum ada rute final.")
+        return
 
-    # Used vehicles summary
-    if available_vehicles:
-        st.markdown("---")
-        st.info(
-            f"**Kendaraan yang Digunakan:** {', '.join(available_vehicles)}")
+    # Build logical reassignment log from final state
+    reassignment_log = []
+
+    # Check if we have explicit logs from the reassignment phase
+    explicit_logs = [l for l in result.get(
+        "iteration_logs", []) if l.get("phase") == "VEHICLE_REASSIGNMENT"]
+
+    if explicit_logs:
+        # Use explicit logs if available
+        for log in explicit_logs:
+            status_icon = "✅" if log.get("success") else "❌"
+            reason_text = log.get('reason', '-')
+            if reason_text == "No feasible vehicle (capacity too low/exhausted)":
+                reason_text = "Tidak ada kendaraan yang memadai (kapasitas kurang / habis)"
+            elif reason_text == "Vehicle capacity sufficient":
+                reason_text = "Kapasitas kendaraan mencukupi"
+
+                reassignment_log.append({
+                    "Cluster": log.get("cluster_id"),
+                    "Muatan (Demand)": log.get("demand"),
+                    "Kendaraan": log.get("new_vehicle", "-"),
+                    "Status": f"{status_icon} {log.get('status', '')}",
+                    "Alasan": reason_text
+                })
     else:
-        st.error("**⚠️ Tidak ada kendaraan yang tersedia untuk routing!**")
+        # Fallback: Infer from final routes vs initial if needed, or just show final status
+        # For simplicity in this specialized view, we show the final assignment status
+        for route in final_routes:
+            reassignment_log.append({
+                "Cluster": route["cluster_id"],
+                "Muatan (Demand)": route["total_demand"],
+                "Kendaraan": route["vehicle_type"],
+                "Status": "✅ Final",
+                "Alasan": "Kapasitas Mencukupi"
+            })
+
+    if reassignment_log:
+        df = pd.DataFrame(reassignment_log)
+        st.dataframe(df, use_container_width=True, hide_index=True)
+
+
+def _display_time_window_analysis(result: Dict[str, Any]) -> None:
+    """Display TW analysis."""
+    st.markdown("### ⏰ Analisis Jendela Waktu (Time Window)")
+
+    routes = result.get("routes", [])
+    if not routes:
+        return
+
+    # 1. Overall Summary
+    total_viol = sum(r.get("total_tw_violation", 0) for r in routes)
+    total_wait = sum(r.get("total_wait_time", 0) for r in routes)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Total Pelanggaran TW (Menit)", f"{total_viol:.1f}")
+    with col2:
+        st.metric("Total Waktu Tunggu (Menit)", f"{total_wait:.1f}")
+
+    if total_viol > 0:
+        st.info("ℹ️ Catatan: Dalam algoritma ACS/RVND, Time Window adalah *Soft Constraint* (boleh dilanggar dengan penalti), berbeda dengan NN yang *Hard Constraint* (tolak mutlak).")
+
+    # 2. Per Route Detail
+    st.markdown("#### Detail Pelanggaran per Rute")
+
+    detail_data = []
+    for r in routes:
+        viol = r.get("total_tw_violation", 0)
+        wait = r.get("total_wait_time", 0)
+
+        status = "✅ OK" if viol == 0 else f"⚠️ {viol:.1f} mnt Force"
+
+        detail_data.append({
+            "Cluster": r["cluster_id"],
+            "Kendaraan": r["vehicle_type"],
+            "Total Pelanggaran": f"{viol:.1f}",
+            "Total Tunggu": f"{wait:.1f}",
+            "Status": status
+        })
+
+    st.dataframe(pd.DataFrame(detail_data),
+                 use_container_width=True, hide_index=True)
 
 
 def _display_final_results(result: Dict[str, Any]) -> None:
-    """Display final routes and costs."""
-    st.markdown("### 📊 Final Results")
+    """Display final routes table."""
+    st.markdown("### 🏁 Hasil Akhir (Final Routes)")
 
     routes = result.get("routes", [])
-    costs = result.get("costs", {})
+    if not routes:
+        st.warning("Tidak ada rute terbentuk.")
+        return
 
-    # Routes summary
-    if routes:
-        st.markdown("**Final Routes:**")
-        df = pd.DataFrame([{
+    data = []
+    for r in routes:
+        data.append({
             "Cluster": r["cluster_id"],
-            "Vehicle": r["vehicle_type"],
-            "Route": str(r["sequence"]),
-            "Distance": r["total_distance"],
-            "Service Time": r["total_service_time"],
-            "TW Violation": r["total_tw_violation"],
-            "Wait Time": r.get("total_wait_time", 0),
-            "Demand": r["total_demand"]
-        } for r in routes])
-        st.dataframe(df, use_container_width=True, hide_index=True)
+            "Kendaraan": r["vehicle_type"],
+            "Rute": str(r["sequence"]),
+            "Jarak (km)": f"{r['total_distance']:.2f}",
+            "Waktu Layanan (menit)": f"{r['total_service_time']:.0f}",
+            "Pelanggaran TW (menit)": f"{r.get('total_tw_violation', 0):.0f}",
+            "Waktu Tunggu (menit)": f"{r.get('total_wait_time', 0):.2f}",
+            "Muatan (kg)": r["total_demand"]
+        })
+
+    df = pd.DataFrame(data)
+    st.dataframe(df, use_container_width=True, hide_index=True)
+
+    # Cost
+    costs = result.get("costs", {})
+    st.success(
+        f"💰 **Total Biaya Transportasi:** Rp {costs.get('total_cost', 0):,.0f}")
 
     # TIME WINDOW ANALYSIS (NEW)
     st.markdown("---")
@@ -644,7 +708,7 @@ def _display_final_results(result: Dict[str, Any]) -> None:
     # Costs
     st.markdown("---")
     if costs:
-        st.markdown("**Cost Breakdown:**")
+        st.markdown("#### Rincian Biaya:")
 
         breakdown = costs.get("breakdown", [])
         if breakdown:
@@ -669,27 +733,26 @@ def _display_final_results(result: Dict[str, Any]) -> None:
 
 
 def _display_validation(result: Dict[str, Any]) -> None:
-    """Display validation against Word document."""
-    st.markdown("### ✅ Validation Against Word Document")
+    """Display validation of dynamic constraints."""
+    st.markdown("### ✅ Validasi Kendala Rute (Dinamis)")
+    st.markdown(
+        "*Memastikan rute mematuhi aturan MFVRP (Struktur, Unik, Kapasitas)*")
 
     validation = result.get("validation", [])
     all_valid = result.get("all_valid", False)
 
     if all_valid:
-        st.success("🎉 ALL ROUTES MATCH THE WORD DOCUMENT!")
+        st.success("🎉 SEMUA RUTE VALID SECARA MATEMATIS!")
     else:
-        st.error("⚠️ SOME ROUTES DO NOT MATCH - SEE DETAILS BELOW")
+        st.error("⚠️ BEBERAPA RUTE TIDAK VALID - LIHAT DETAIL DI BAWAH")
 
     if validation:
+        # Dynamic validation table
         df = pd.DataFrame([{
             "Cluster": v["cluster_id"],
-            "Expected Sequence": str(v["sequence_expected"]),
-            "Actual Sequence": str(v["sequence_actual"]),
-            "Seq Match": "✅" if v["sequence_match"] else "❌",
-            "Expected Dist": v["distance_expected"],
-            "Actual Dist": v["distance_actual"],
-            "Dist Match": "✅" if v["distance_match"] else "❌",
-            "Valid": "✅" if v["valid"] else "❌"
+            "Rute Aktual": str(v["sequence"]),
+            "Valid": "✅" if v["valid"] else "❌",
+            "Isu / Masalah": ", ".join(v["issues"]) if v["issues"] else "-"
         } for v in validation])
         st.dataframe(df, use_container_width=True, hide_index=True)
 
@@ -717,34 +780,34 @@ def _display_validation(result: Dict[str, Any]) -> None:
 
 def render_academic_replay() -> None:
     """Main render function for Academic Replay tab."""
-    st.header("📚 Academic Replay Mode")
-    st.markdown("*Validasi terhadap dokumen 'Hitung Manual MFVRPTE RVND'*")
-
-    st.divider()
-
     # Show current user-defined vehicles from Input Data
     user_vehicles = st.session_state.get("user_vehicles", [])
     if user_vehicles and len(user_vehicles) > 0:
-        st.markdown("### 🚛 Kendaraan yang Didefinisikan User (dari Input Data)")
+        # st.markdown("### 🚛 Kendaraan yang Didefinisikan")
 
-        vehicle_info = []
+        vehicle_rows = []
         for v in user_vehicles:
             name = v.get("name", v.get("id", "?"))
             cap = v.get("capacity", 0)
             units = v.get("units", 1)
             av_from = v.get("available_from", "08:00")
             av_until = v.get("available_until", "17:00")
-            vehicle_info.append(
-                f"**{name}** (Kapasitas: {cap}, {units} unit, {av_from}–{av_until})")
+            status = "✅ Aktif" if v.get("enabled", True) else "❌ Non-Aktif"
 
-        st.success(
-            f"✅ {len(user_vehicles)} kendaraan didefinisikan: " + ", ".join(vehicle_info))
+            vehicle_rows.append({
+                "Kendaraan": name,
+                "Kapasitas": cap,
+                "Unit": units,
+                "Jam Operasional": f"{av_from} - {av_until}",
+                "Status": status
+            })
+
+        df_vehicles = pd.DataFrame(vehicle_rows)
+        st.dataframe(df_vehicles, use_container_width=True, hide_index=True)
     else:
         st.error("⚠️ **Tidak ada kendaraan yang didefinisikan!**")
         st.warning(
             "Silakan tambah kendaraan di tab **'Input Data'** terlebih dahulu sebelum menjalankan Academic Replay.")
-        st.info(
-            "💡 Klik tombol **'➕ Tambah Kendaraan Baru'** di tab Input Data untuk menambah kendaraan.")
         return
 
     st.divider()
@@ -752,8 +815,8 @@ def render_academic_replay() -> None:
     # Run button
     col1, col2 = st.columns([1, 3])
     with col1:
-        if st.button("🚀 Run Academic Replay", type="primary"):
-            with st.spinner("Running academic replay..."):
+        if st.button("🚀 Run Optimization", type="primary"):
+            with st.spinner("Running MFVRPTW optimization..."):
                 try:
                     # Import and run
                     import sys
@@ -761,11 +824,65 @@ def render_academic_replay() -> None:
                         0, str(Path(__file__).resolve().parent.parent.parent))
                     from academic_replay import run_academic_replay
 
-                    # Pass user-defined vehicles from session state
+                    # === GATHER ALL DYNAMIC DATA FROM SESSION STATE ===
+
+                    # Vehicles
                     user_vehicles = st.session_state.get("user_vehicles", [])
-                    result = run_academic_replay(user_vehicles=user_vehicles)
+
+                    # Customers - from Input Titik + Input Data (TW, demand, service time)
+                    points = st.session_state.get("points", {})
+                    raw_customers = points.get("customers", [])
+                    input_data = st.session_state.get("inputData", {})
+                    customer_tw = input_data.get("customerTimeWindows", [])
+
+                    # Build user_customers list with merged TW data
+                    user_customers = []
+                    for i, c in enumerate(raw_customers):
+                        tw_data = customer_tw[i] if i < len(
+                            customer_tw) else {}
+                        customer = {
+                            "id": c.get("id", i + 1),
+                            "name": c.get("name", f"Customer {i + 1}"),
+                            "x": c.get("x", c.get("lng", 0)),
+                            "y": c.get("y", c.get("lat", 0)),
+                            "demand": tw_data.get("demand", c.get("demand", 0)),
+                            "service_time": tw_data.get("service_time", c.get("service_time", 10)),
+                            "time_window": {
+                                "start": tw_data.get("tw_start", c.get("tw_start", "08:00")),
+                                "end": tw_data.get("tw_end", c.get("tw_end", "17:00"))
+                            }
+                        }
+                        user_customers.append(customer)
+
+                    # Depot - from Input Titik
+                    raw_depots = points.get("depots", [])
+                    user_depot = None
+                    if raw_depots:
+                        d = raw_depots[0]
+                        user_depot = {
+                            "id": 0,
+                            "name": d.get("name", "Depot"),
+                            "x": d.get("x", d.get("lng", 0)),
+                            "y": d.get("y", d.get("lat", 0)),
+                            "time_window": {"start": "08:00", "end": "17:00"},
+                            "service_time": 0
+                        }
+
+                    # ACS Parameters
+                    user_acs_params = st.session_state.get("acs_params", None)
+
+                    # Run optimization with all dynamic data!
+                    result = run_academic_replay(
+                        user_vehicles=user_vehicles,
+                        user_customers=user_customers if user_customers else None,
+                        user_depot=user_depot,
+                        user_acs_params=user_acs_params
+                    )
                     st.session_state["academic_result"] = result
-                    st.success("Academic replay completed!")
+                    # Sync with main Result tab so Dashboard shows these results too
+                    st.session_state["result"] = result
+                    st.session_state["data_validated"] = True
+                    st.success("Optimization completed!")
                     st.rerun()
                 except Exception as e:
                     st.error(f"Error: {e}")
@@ -773,7 +890,7 @@ def render_academic_replay() -> None:
                     st.code(traceback.format_exc())
 
     with col2:
-        st.info("Klik untuk menjalankan validasi akademik. Algoritma hanya akan menggunakan kendaraan yang didefinisikan user di Input Data.")
+        st.info("Klik untuk menjalankan optimasi MFVRPTW dengan data yang Anda input (kendaraan, customer, parameter ACS).")
 
     st.divider()
 
@@ -791,16 +908,15 @@ def render_academic_replay() -> None:
 
     logs = result.get("iteration_logs", [])
 
-    # Create tabs for each phase
-    tab0, tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+    # Create tabs for each phase (removed Validation tab per user request)
+    tab0, tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "🚛 Vehicle Selection",
         "📐 Sweep",
         "🔗 NN",
         "🐜 ACS",
         "🔄 RVND-Inter",
         "🔁 RVND-Intra",
-        "📊 Final Results",
-        "✅ Validation"
+        "📊 Final Results"
     ])
 
     with tab0:
@@ -824,8 +940,5 @@ def render_academic_replay() -> None:
         _display_rvnd_intra_iterations(logs)
 
     with tab6:
-        _display_vehicle_assignment(logs)
+        _display_vehicle_assignment(result)
         _display_final_results(result)
-
-    with tab7:
-        _display_validation(result)

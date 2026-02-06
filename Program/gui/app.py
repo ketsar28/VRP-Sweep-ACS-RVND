@@ -64,6 +64,14 @@ except ImportError as e:
     def render_graph_hasil(): return st.error("Graph Hasil module not found")
 
 try:
+    from utils import load_from_autosave, save_to_autosave
+except ImportError as e:
+    # Fallback if utils not found or error
+    print(f"Error loading utils: {e}")
+    def load_from_autosave(): return False
+    def save_to_autosave(): pass
+
+try:
     from academic_replay_tab import render_academic_replay
 except ImportError as e:
     # Silently handle - academic replay is optional
@@ -337,142 +345,107 @@ def render_export_section(final_solution: Dict, route_table: pd.DataFrame, final
 
 
 def main() -> None:
-    st.set_page_config(page_title="MFVRPTW Route Optimisation", layout="wide")
-
-    # Theme toggle in sidebar
-    st.sidebar.markdown("## 🎨 Theme")
-    theme_options = ["🌙 Dark", "☀️ Light"]
-
-    # Initialize theme in session state
-    if "app_theme" not in st.session_state:
-        st.session_state.app_theme = "🌙 Dark"
-
-    selected_theme = st.sidebar.radio(
-        "Choose theme:",
-        theme_options,
-        index=theme_options.index(st.session_state.app_theme),
-        horizontal=True,
-        key="theme_selector"
+    st.set_page_config(
+        page_title="Optimasi Rute MFVRPTW",
+        layout="wide",
+        page_icon="🚚"
     )
-    st.session_state.app_theme = selected_theme
 
-    # Apply theme using custom CSS
-    if selected_theme == "🌙 Dark":
-        st.markdown("""
-        <style>
-            /* Dark theme */
-            .stApp {
-                background-color: #0E1117;
-                color: #FAFAFA;
-            }
-            .stSidebar {
-                background-color: #262730;
-            }
-            .stTabs [data-baseweb="tab-list"] {
-                background-color: #262730;
-            }
-            .stTabs [data-baseweb="tab"] {
-                color: #FAFAFA;
-            }
-            .stMarkdown, .stText, p, span, label, h1, h2, h3, h4, h5, h6 {
-                color: #FAFAFA !important;
-            }
-            .stDataFrame {
-                background-color: #262730;
-            }
-            .stExpander {
-                background-color: #262730;
-                border-color: #4A4A5A;
-            }
-            .stMetric {
-                background-color: #262730;
-                border-radius: 10px;
-                padding: 10px;
-            }
-            .stMetric label {
-                color: #B0B0B0 !important;
-            }
-            .stMetric [data-testid="stMetricValue"] {
-                color: #FAFAFA !important;
-            }
-            div[data-testid="stSidebarContent"] {
-                background-color: #262730;
-            }
-            .stButton>button {
-                background-color: #FF6B6B;
-                color: white;
-                border: none;
-            }
-            .stButton>button:hover {
-                background-color: #FF8585;
-            }
-        </style>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown("""
-        <style>
-            /* Light theme */
-            .stApp {
-                background-color: #FFFFFF;
-                color: #262730;
-            }
-            .stSidebar {
-                background-color: #F0F2F6;
-            }
-            .stTabs [data-baseweb="tab-list"] {
-                background-color: #F0F2F6;
-            }
-            .stTabs [data-baseweb="tab"] {
-                color: #262730;
-            }
-            .stMarkdown, .stText, p, span, label, h1, h2, h3, h4, h5, h6 {
-                color: #262730 !important;
-            }
-            .stDataFrame {
-                background-color: #FFFFFF;
-            }
-            .stExpander {
-                background-color: #F0F2F6;
-                border-color: #D0D0D0;
-            }
-            .stMetric {
-                background-color: #F0F2F6;
-                border-radius: 10px;
-                padding: 10px;
-            }
-            .stMetric label {
-                color: #666666 !important;
-            }
-            .stMetric [data-testid="stMetricValue"] {
-                color: #262730 !important;
-            }
-            div[data-testid="stSidebarContent"] {
-                background-color: #F0F2F6;
-            }
-            .stButton>button {
-                background-color: #FF6B6B;
-                color: white;
-                border: none;
-            }
-            .stButton>button:hover {
-                background-color: #FF8585;
-            }
-        </style>
-        """, unsafe_allow_html=True)
+    # ============================================================
+    # AUTOSAVE CHECK
+    # ============================================================
+    # Check if we need to load from autosave (only if session is empty/fresh)
+    if "points" not in st.session_state or not st.session_state["points"].get("depots"):
+        if load_from_autosave():
+            st.toast("♻️ Data terakhir dipulihkan", icon="💾")
 
-    st.sidebar.markdown("---")
+    # ============================================================
+    # CUSTOM CSS FOR BETTER UI
+    # ============================================================
+    st.markdown("""
+    <style>
+        /* Header styling */
+        .main-header {
+            text-align: center;
+            padding: 1rem 0;
+            margin-bottom: 1rem;
+        }
+        .main-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .main-header p {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        /* Footer styling - Clean & Static */
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            padding-bottom: 20px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #888;
+            border-top: 1px solid #eee;
+        }
+        .footer b {
+            color: #888;
+        }
+        
+        /* Sidebar improvements */
+        section[data-testid="stSidebar"] > div {
+            padding-bottom: 20px;
+        }
+        
+        /* Tab styling */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 8px;
+        }
+        .stTabs [data-baseweb="tab"] {
+            padding: 10px 20px;
+            border-radius: 8px;
+        }
+        
+        /* Better spacing for main content */
+        .block-container {
+            padding-bottom: 20px;
+        }
+    </style>
+    """, unsafe_allow_html=True)
 
-    st.title("MFVRPTW Route Optimization")
-    st.caption("Sweep → NN → ACS → RVND")
+    # ============================================================
+    # HEADER - Tampilan Judul yang Menarik
+    # ============================================================
+    st.markdown("""
+    <div class="main-header">
+        <h1>🚚 Sistem Optimasi Rute Pengiriman</h1>
+        <p>Multi-Fleet Vehicle Routing Problem with Time Windows (MFVRPTW)</p>
+        <p>Algoritma: <b>Sweep → Nearest Neighbor → Ant Colony System → RVND</b></p>
+    </div>
+    """, unsafe_allow_html=True)
 
-    # Top-level tabs: input editors, results, and academic replay
+    # ============================================================
+    # TABS UTAMA
+    # ============================================================
+    # ============================================================
+    # TABS UTAMA
+    # ============================================================
     if render_academic_replay is not None:
-        tab1, tab2, tab3, tab4, tab5 = st.tabs(
-            ["Input Titik", "Input Data", "Hasil", "Graph Hasil", "📚 Academic Replay"])
+        tab1, tab2, tab3, tab4 = st.tabs([
+            "📍 Input Titik",
+            "📋 Input Data",
+            "📊 Hasil & Visualisasi",
+            "🔬 Proses Optimasi"
+        ])
     else:
-        tab1, tab2, tab3, tab4 = st.tabs(
-            ["Input Titik", "Input Data", "Hasil", "Graph Hasil"])
-        tab5 = None
+        tab1, tab2, tab3 = st.tabs([
+            "📍 Input Titik",
+            "📋 Input Data",
+            "📊 Hasil & Visualisasi"
+        ])
+        tab4 = None
 
     with tab1:
         render_input_titik()
@@ -480,174 +453,28 @@ def main() -> None:
         render_input_data()
     with tab3:
         render_hasil()
-    with tab4:
-        render_graph_hasil()
-    if tab5 is not None:
-        with tab5:
+    if tab4 is not None:
+        with tab4:
             render_academic_replay()
 
-    if not FINAL_SOLUTION_PATH.exists() or not FINAL_SUMMARY_PATH.exists():
-        st.error(
-            "Required artifacts not found. Please ensure preprocessing has been completed.")
-        return
-
-    # Try to load existing artifacts if present (optional)
-    final_solution = load_json(
-        FINAL_SOLUTION_PATH) if FINAL_SOLUTION_PATH.exists() else None
-    final_summary_md = read_markdown(
-        FINAL_SUMMARY_PATH) if FINAL_SUMMARY_PATH.exists() else ""
-    instance_data = load_json(
-        PARSED_INSTANCE_PATH) if PARSED_INSTANCE_PATH.exists() else None
-
-    # Pipeline control (validate + run)
-    st.sidebar.markdown("## Pipeline Control")
-    agents = _load_agents_module()
-
-    # Prefer UI-driven state when available
-    state_ui = _build_state_from_ui()
-    has_ui_points = bool(state_ui.get("points") and (
-        state_ui["points"].get("customers") or state_ui["points"].get("depots")
-    ))
-    has_ui_input = bool(state_ui.get("inputData") and (
-        state_ui["inputData"].get(
-            "distanceMatrix") or state_ui["inputData"].get("customerDemand")
-    ))
-
-    if has_ui_points and has_ui_input:
-        st.sidebar.markdown("### From UI editors")
-        if st.sidebar.button("Validate UI inputs"):
-            valid, errors = agents.validate_state(state_ui)
-            st.session_state["pipeline_validated_ui"] = valid
-            st.session_state["pipeline_errors_ui"] = errors
-            if not valid:
-                for e in errors:
-                    st.sidebar.error(e)
-            else:
-                st.sidebar.success(
-                    "Validasi sukses — pipeline dapat dijalankan (UI)")
-
-        if st.session_state.get("pipeline_validated_ui", False):
-            if st.sidebar.button("Run pipeline (from UI state)"):
-                # start background thread to run pipeline and stream progress
-                if not st.session_state.get("pipeline_running", False):
-                    st.session_state["pipeline_running"] = True
-                    st.session_state.setdefault("pipeline_log", [])
-
-                    def _progress_cb(line: str):
-                        st.session_state.pipeline_log.append(line)
-                        if isinstance(line, str) and line.startswith("PROGRESS:"):
-                            parts = line.split(":", 3)
-                            if len(parts) >= 3:
-                                try:
-                                    pct = int(parts[2])
-                                    st.session_state["pipeline_percent"] = pct
-                                    st.session_state["pipeline_status"] = "running"
-                                except Exception:
-                                    pass
-
-                    def _runner():
-                        try:
-                            res = agents.run_pipeline(
-                                state_ui, progress_callback=_progress_cb)
-                            st.session_state["last_pipeline_result"] = res
-                            st.session_state["pipeline_status"] = "finished"
-                        except Exception as exc:
-                            st.session_state["pipeline_status"] = f"failed: {exc}"
-                        finally:
-                            st.session_state["pipeline_running"] = False
-
-                    thread = threading.Thread(target=_runner, daemon=True)
-                    thread.start()
-
-                else:
-                    st.sidebar.info("Pipeline sudah berjalan")
-
-    # Fallback: operate on parsed files when UI editors not used
+    # ============================================================
+  # About section
     st.sidebar.markdown("---")
-    if st.sidebar.button("Validate parsed inputs"):
-        if not PARSED_INSTANCE_PATH.exists():
-            st.sidebar.error("parsed_instance.json missing")
-        elif not PARSED_DISTANCE_PATH.exists():
-            st.sidebar.error("parsed_distance.json missing")
-        else:
-            parsed_inst = load_json(PARSED_INSTANCE_PATH)
-            parsed_dist = load_json(PARSED_DISTANCE_PATH)
-            state = _build_state_from_parsed(parsed_inst, parsed_dist)
-            valid, errors = agents.validate_state(state)
-            st.session_state["pipeline_validated"] = valid
-            st.session_state["pipeline_errors"] = errors
-            if not valid:
-                for e in errors:
-                    st.sidebar.error(e)
-            else:
-                st.sidebar.success(
-                    "Validasi sukses — pipeline dapat dijalankan")
-
-    if st.session_state.get("pipeline_validated", False):
-        if st.sidebar.button("Run pipeline (from parsed files)"):
-            if not st.session_state.get("pipeline_running", False):
-                st.session_state["pipeline_running"] = True
-                st.session_state.setdefault("pipeline_log", [])
-
-                parsed_inst = load_json(PARSED_INSTANCE_PATH)
-                parsed_dist = load_json(PARSED_DISTANCE_PATH)
-
-                def _progress_cb(line: str):
-                    st.session_state.pipeline_log.append(line)
-                    if isinstance(line, str) and line.startswith("PROGRESS:"):
-                        parts = line.split(":", 3)
-                        if len(parts) >= 3:
-                            try:
-                                pct = int(parts[2])
-                                st.session_state["pipeline_percent"] = pct
-                                st.session_state["pipeline_status"] = "running"
-                            except Exception:
-                                pass
-
-                def _runner_parsed():
-                    try:
-                        res = agents.run_pipeline(_build_state_from_parsed(
-                            parsed_inst, parsed_dist), progress_callback=_progress_cb)
-                        st.session_state["last_pipeline_result"] = res
-                        st.session_state["pipeline_status"] = "finished"
-                    except Exception as exc:
-                        st.session_state["pipeline_status"] = f"failed: {exc}"
-                    finally:
-                        st.session_state["pipeline_running"] = False
-
-                thread = threading.Thread(target=_runner_parsed, daemon=True)
-                thread.start()
-            else:
-                st.sidebar.info("Pipeline sudah berjalan")
-
-    # If a pipeline run produced a fresh result, prefer it for display
-    if st.session_state.get("last_pipeline_result"):
-        st.session_state.setdefault(
-            "result", st.session_state.get("last_pipeline_result"))
-
-    # Pipeline runtime status and logs
-    status = st.session_state.get("pipeline_status", "idle")
-    running = st.session_state.get("pipeline_running", False)
-    if running:
-        st.sidebar.markdown("### Pipeline running")
-        st.sidebar.info("Pipeline is running in background")
-    pct = st.session_state.get("pipeline_percent", 0)
-    if pct:
-        st.sidebar.progress(pct)
-    if st.session_state.get("pipeline_log"):
-        with st.sidebar.expander("Pipeline Log", expanded=False):
-            for line in st.session_state.pipeline_log[-200:]:
-                st.text(line)
-    if status.startswith("failed"):
-        st.sidebar.error(status)
-    elif status == "finished":
-        st.sidebar.success("Pipeline finished — results loaded")
-
-    st.sidebar.header("About")
+    st.sidebar.markdown("### ℹ️ Tentang Aplikasi")
     st.sidebar.info(
-        "This dashboard provides UI for manual inputs and displays stored results. "
-        "Computation runs only when triggered from the 'Input Data' menu."
+        "Dashboard ini menyediakan antarmuka untuk input data dan menampilkan hasil optimasi rute. "
+        "Komputasi dijalankan ketika tombol 'Lanjutkan Proses' diklik di tab Input Data."
     )
+    # ============================================================
+    # FOOTER
+    # ============================================================
+    st.markdown("""
+    <div class="footer">
+        © 2025 <b>Nabilah Eva Nurhayati</b> | 
+        Mahasiswi Program Studi Matematika, Universitas Negeri Malang |
+        Tugas Akhir Optimasi Rute Pengiriman
+    </div>
+    """, unsafe_allow_html=True)
 
 
 if __name__ == "__main__":
