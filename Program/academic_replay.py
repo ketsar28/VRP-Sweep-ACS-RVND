@@ -1283,6 +1283,7 @@ def academic_rvnd_inter(
     NL = NL_FULL[:]
 
     iteration = 0
+    current_distance = sum(r["total_distance"] for r in routes)
 
     # Log every iteration up to max_iterations
     while iteration < max_iterations:
@@ -1298,12 +1299,19 @@ def academic_rvnd_inter(
                 neighborhood, routes, dataset, distance_matrix, fleet)
 
             if result["accepted"]:
-                routes = result["new_routes"]
-                improved_this_iteration = True
-                neighborhood_used = neighborhood
-                move_details = result.get("move_details")
-                NL = NL_FULL[:]  # RESET NL on improvement
-                break
+                new_dist = result["distance_after"]
+                # STRICT IMPROVEMENT CHECK to prevent oscillation
+                if new_dist < current_distance - 1e-4:
+                    routes = result["new_routes"]
+                    improved_this_iteration = True
+                    neighborhood_used = neighborhood
+                    move_details = result.get("move_details")
+                    current_distance = new_dist  # Update distance immediately
+                    NL = NL_FULL[:]  # RESET NL on improvement
+                    break
+                else:
+                    # Move accepted but no significant improvement (delta ~ 0) -> Treat as failure to prevent loop
+                    NL.remove(neighborhood)
             else:
                 NL.remove(neighborhood)
 
@@ -1328,6 +1336,10 @@ def academic_rvnd_inter(
 
         if move_details:
             log_entry["move"] = move_details
+
+        # Simpan kandidat moves untuk UI Feasibility Log
+        if "candidates" in result and result["candidates"]:
+            log_entry["candidates"] = result["candidates"]
 
         iteration_logs.append(log_entry)
 
@@ -1356,15 +1368,62 @@ def apply_inter_neighborhood(
     Apply inter-route neighborhood operator.
     CAPACITY is HARD CONSTRAINT - reject if violated.
     DISTANCE ONLY acceptance.
+
+    FIXED: Now actually applies the best move found!
     """
+    from copy import deepcopy
+
+    # EPSILON untuk hindari stagnasi floating point
+    EPSILON = 1e-4
+
     current_distance = sum(r["total_distance"] for r in routes)
     customers = {c["id"]: c for c in dataset["customers"]}
     best_move = None
     best_routes = None
     best_distance = current_distance
 
+    # Kandidat moves untuk logging (max 10 sampel)
+    candidates = []
+    MAX_CANDIDATES = 10
+
+    def calc_route_distance(seq):
+        """Helper: Calculate total distance for a sequence."""
+        return sum(distance_matrix[seq[k]][seq[k+1]] for k in range(len(seq)-1))
+
+    def calc_route_demand(seq, customers_dict):
+        """Helper: Calculate total demand for a sequence (excluding depot)."""
+        return sum(customers_dict[c]["demand"] for c in seq[1:-1])
+
+    def rebuild_route(route, new_seq, new_dist, new_demand):
+        """Helper: Create updated route dict with new values."""
+        updated = deepcopy(route)
+        updated["sequence"] = new_seq
+        updated["total_distance"] = round(new_dist, 2)
+        updated["total_demand"] = new_demand
+        return updated
+
+    def find_suitable_vehicle(demand, current_vehicle_type):
+        """
+        Helper: Find suitable vehicle for new demand.
+        First checks current vehicle, then tries to upgrade to larger vehicle.
+        Returns (vehicle_type, capacity) or (None, 0) if no vehicle fits.
+        """
+        # First check if current vehicle still fits
+        if current_vehicle_type in fleet:
+            current_cap = fleet[current_vehicle_type]["capacity"]
+            if demand <= current_cap:
+                return (current_vehicle_type, current_cap)
+
+        # Sort fleet by capacity (ascending) to find smallest fitting vehicle
+        sorted_vehicles = sorted(fleet.items(), key=lambda x: x[1]["capacity"])
+        for vid, vdata in sorted_vehicles:
+            if demand <= vdata["capacity"]:
+                return (vid, vdata["capacity"])
+
+        return (None, 0)  # No vehicle fits
+
     if neighborhood == "swap_1_1":
-        # Swap 1 customer between 2 routes
+        # Swap 1 customer from route A with 1 customer from route B
         for i, route_a in enumerate(routes):
             for j, route_b in enumerate(routes):
                 if i >= j:
@@ -1375,44 +1434,337 @@ def apply_inter_neighborhood(
 
                 for ca in seq_a:
                     for cb in seq_b:
-                        new_seq_a = [0] + [c if c !=
-                                           ca else cb for c in seq_a] + [0]
-                        new_seq_b = [0] + [c if c !=
-                                           cb else ca for c in seq_b] + [0]
+                        # Build new sequences with swapped customers
+                        new_seq_a = [0] + [cb if c ==
+                                           ca else c for c in seq_a] + [0]
+                        new_seq_b = [0] + [ca if c ==
+                                           cb else c for c in seq_b] + [0]
 
-                        # CAPACITY HARD CONSTRAINT
-                        demand_a = sum(customers[c]["demand"]
-                                       for c in new_seq_a[1:-1])
-                        demand_b = sum(customers[c]["demand"]
-                                       for c in new_seq_b[1:-1])
+                        # CAPACITY CHECK WITH DYNAMIC VEHICLE UPGRADE
+                        demand_a = calc_route_demand(new_seq_a, customers)
+                        demand_b = calc_route_demand(new_seq_b, customers)
 
-                        cap_a = fleet[route_a["vehicle_type"]]["capacity"]
-                        cap_b = fleet[route_b["vehicle_type"]]["capacity"]
+                        # Try to find suitable vehicles (may upgrade if needed)
+                        new_vtype_a, cap_a = find_suitable_vehicle(
+                            demand_a, route_a["vehicle_type"])
+                        new_vtype_b, cap_b = find_suitable_vehicle(
+                            demand_b, route_b["vehicle_type"])
 
-                        if demand_a > cap_a or demand_b > cap_b:
-                            continue  # REJECT: Capacity violation
+                        if new_vtype_a is None or new_vtype_b is None:
+                            # Log kandidat Tidak Layak (no vehicle can handle demand)
+                            if len(candidates) < MAX_CANDIDATES:
+                                violation_msg = "Kapasitas: "
+                                if new_vtype_a is None:
+                                    violation_msg += f"R{i+1}({demand_a}>max) "
+                                if new_vtype_b is None:
+                                    violation_msg += f"R{j+1}({demand_b}>max)"
+                                candidates.append({
+                                    "type": "swap_1_1",
+                                    "detail": f"C{ca} <-> C{cb}",
+                                    "routes": (i+1, j+1),
+                                    "feasible": False,
+                                    "reason": violation_msg.strip(),
+                                    "delta": None
+                                })
+                            continue  # REJECT: No vehicle fits
 
-                        dist_a = sum(
-                            distance_matrix[new_seq_a[k]][new_seq_a[k+1]] for k in range(len(new_seq_a)-1))
-                        dist_b = sum(
-                            distance_matrix[new_seq_b[k]][new_seq_b[k+1]] for k in range(len(new_seq_b)-1))
-
-                        other_distance = sum(
-                            r["total_distance"] for r in routes if r not in [route_a, route_b])
+                        # Calculate new distances
+                        dist_a = calc_route_distance(new_seq_a)
+                        dist_b = calc_route_distance(new_seq_b)
+                        other_distance = sum(r["total_distance"] for idx, r in enumerate(
+                            routes) if idx not in [i, j])
                         total_new = dist_a + dist_b + other_distance
 
-                        if total_new < best_distance:
-                            best_distance = total_new
-                            best_move = {"swap": (ca, cb), "routes": (i, j)}
+                        if total_new < best_distance - EPSILON:
+                            # Log kandidat Layak (improved)
+                            delta = round(total_new - current_distance, 2)
+                            upgrade_info = ""
+                            if new_vtype_a != route_a["vehicle_type"]:
+                                upgrade_info += f" R{i+1}:{route_a['vehicle_type']}->{new_vtype_a}"
+                            if new_vtype_b != route_b["vehicle_type"]:
+                                upgrade_info += f" R{j+1}:{route_b['vehicle_type']}->{new_vtype_b}"
 
-    accepted = best_move is not None and best_distance < current_distance
+                            if len(candidates) < MAX_CANDIDATES:
+                                candidates.append({
+                                    "type": "swap_1_1",
+                                    "detail": f"C{ca} <-> C{cb}{upgrade_info}",
+                                    "routes": (i+1, j+1),
+                                    "feasible": True,
+                                    "reason": "Layak" + (" (upgrade)" if upgrade_info else ""),
+                                    "delta": delta
+                                })
+                            best_distance = total_new
+                            best_move = {"type": "swap_1_1",
+                                         "swap": (ca, cb), "routes": (i, j),
+                                         "vehicle_upgrades": {i: new_vtype_a, j: new_vtype_b}}
+                            # BUILD THE NEW ROUTES WITH UPDATED VEHICLE TYPES
+                            best_routes = deepcopy(routes)
+                            best_routes[i] = rebuild_route(
+                                route_a, new_seq_a, dist_a, demand_a)
+                            best_routes[i]["vehicle_type"] = new_vtype_a
+                            best_routes[j] = rebuild_route(
+                                route_b, new_seq_b, dist_b, demand_b)
+                            best_routes[j]["vehicle_type"] = new_vtype_b
+
+    elif neighborhood == "shift_1_0":
+        # Move 1 customer from route A to route B
+        for i, route_a in enumerate(routes):
+            if len(route_a["sequence"]) <= 3:  # Need at least 1 customer to shift
+                continue
+            for j, route_b in enumerate(routes):
+                if i == j:
+                    continue
+
+                seq_a = route_a["sequence"][1:-1]
+                seq_b = route_b["sequence"][1:-1]
+
+                for ca in seq_a:
+                    # Remove ca from route A
+                    new_seq_a_inner = [c for c in seq_a if c != ca]
+                    if not new_seq_a_inner:  # Can't empty route
+                        continue
+                    new_seq_a = [0] + new_seq_a_inner + [0]
+
+                    # Try inserting ca at each position in route B
+                    for insert_pos in range(len(seq_b) + 1):
+                        new_seq_b_inner = seq_b[:insert_pos] + \
+                            [ca] + seq_b[insert_pos:]
+                        new_seq_b = [0] + new_seq_b_inner + [0]
+
+                        # CAPACITY CHECK WITH DYNAMIC VEHICLE UPGRADE
+                        demand_a = calc_route_demand(new_seq_a, customers)
+                        demand_b = calc_route_demand(new_seq_b, customers)
+
+                        # Route A usually gets smaller, but check anyway
+                        new_vtype_a, cap_a = find_suitable_vehicle(
+                            demand_a, route_a["vehicle_type"])
+                        new_vtype_b, cap_b = find_suitable_vehicle(
+                            demand_b, route_b["vehicle_type"])
+
+                        if new_vtype_b is None:
+                            # Log kandidat Tidak Layak
+                            if len(candidates) < MAX_CANDIDATES:
+                                candidates.append({
+                                    "type": "shift_1_0",
+                                    "detail": f"C{ca} -> R{j+1}",
+                                    "routes": (i+1, j+1),
+                                    "feasible": False,
+                                    "reason": f"Kapasitas: R{j+1}({demand_b}>max)",
+                                    "delta": None
+                                })
+                            continue  # REJECT: No vehicle fits for B
+
+                        # Calculate distances
+                        dist_a = calc_route_distance(new_seq_a)
+                        dist_b = calc_route_distance(new_seq_b)
+                        other_distance = sum(r["total_distance"] for idx, r in enumerate(
+                            routes) if idx not in [i, j])
+                        total_new = dist_a + dist_b + other_distance
+
+                        if total_new < best_distance - EPSILON:
+                            # Log kandidat Layak
+                            delta = round(total_new - current_distance, 2)
+                            upgrade_info = ""
+                            if new_vtype_b != route_b["vehicle_type"]:
+                                upgrade_info = f" (R{j+1}:{route_b['vehicle_type']}->{new_vtype_b})"
+                            if len(candidates) < MAX_CANDIDATES:
+                                candidates.append({
+                                    "type": "shift_1_0",
+                                    "detail": f"C{ca} -> R{j+1}{upgrade_info}",
+                                    "routes": (i+1, j+1),
+                                    "feasible": True,
+                                    "reason": "Layak" + (" (upgrade)" if upgrade_info else ""),
+                                    "delta": delta
+                                })
+                            best_distance = total_new
+                            best_move = {"type": "shift_1_0", "customer": ca,
+                                         "from_route": i, "to_route": j, "insert_pos": insert_pos}
+                            best_routes = deepcopy(routes)
+                            best_routes[i] = rebuild_route(
+                                route_a, new_seq_a, dist_a, demand_a)
+                            if new_vtype_a:
+                                best_routes[i]["vehicle_type"] = new_vtype_a
+                            best_routes[j] = rebuild_route(
+                                route_b, new_seq_b, dist_b, demand_b)
+                            best_routes[j]["vehicle_type"] = new_vtype_b
+
+    elif neighborhood == "swap_2_1":
+        # Swap 2 customers from route A with 1 customer from route B
+        for i, route_a in enumerate(routes):
+            if len(route_a["sequence"]) < 4:  # Need at least 2 customers
+                continue
+            for j, route_b in enumerate(routes):
+                if i >= j:
+                    continue
+
+                seq_a = route_a["sequence"][1:-1]
+                seq_b = route_b["sequence"][1:-1]
+
+                # All pairs of customers from A
+                for idx1, ca1 in enumerate(seq_a):
+                    for idx2, ca2 in enumerate(seq_a):
+                        if idx1 >= idx2:
+                            continue
+                        for cb in seq_b:
+                            # Remove ca1, ca2 from A, add cb
+                            new_seq_a_inner = [
+                                cb if c == ca1 else c for c in seq_a if c != ca2]
+                            new_seq_a = [0] + new_seq_a_inner + [0]
+
+                            # Remove cb from B, add ca1, ca2
+                            new_seq_b_inner = [
+                                c for c in seq_b if c != cb] + [ca1, ca2]
+                            new_seq_b = [0] + new_seq_b_inner + [0]
+
+                            # CAPACITY CHECK WITH DYNAMIC VEHICLE UPGRADE
+                            demand_a = calc_route_demand(new_seq_a, customers)
+                            demand_b = calc_route_demand(new_seq_b, customers)
+
+                            new_vtype_a, cap_a = find_suitable_vehicle(
+                                demand_a, route_a["vehicle_type"])
+                            new_vtype_b, cap_b = find_suitable_vehicle(
+                                demand_b, route_b["vehicle_type"])
+
+                            if new_vtype_a is None or new_vtype_b is None:
+                                continue  # No vehicle fits
+
+                            dist_a = calc_route_distance(new_seq_a)
+                            dist_b = calc_route_distance(new_seq_b)
+                            other_distance = sum(r["total_distance"] for idx, r in enumerate(
+                                routes) if idx not in [i, j])
+                            total_new = dist_a + dist_b + other_distance
+
+                            if total_new < best_distance - EPSILON:
+                                best_distance = total_new
+                                best_move = {"type": "swap_2_1", "from_a": (
+                                    ca1, ca2), "from_b": cb, "routes": (i, j)}
+                                best_routes = deepcopy(routes)
+                                best_routes[i] = rebuild_route(
+                                    route_a, new_seq_a, dist_a, demand_a)
+                                best_routes[i]["vehicle_type"] = new_vtype_a
+                                best_routes[j] = rebuild_route(
+                                    route_b, new_seq_b, dist_b, demand_b)
+                                best_routes[j]["vehicle_type"] = new_vtype_b
+
+    elif neighborhood == "swap_2_2":
+        # Swap 2 customers from route A with 2 customers from route B
+        for i, route_a in enumerate(routes):
+            if len(route_a["sequence"]) < 4:
+                continue
+            for j, route_b in enumerate(routes):
+                if i >= j or len(route_b["sequence"]) < 4:
+                    continue
+
+                seq_a = route_a["sequence"][1:-1]
+                seq_b = route_b["sequence"][1:-1]
+
+                for idx1, ca1 in enumerate(seq_a):
+                    for idx2, ca2 in enumerate(seq_a):
+                        if idx1 >= idx2:
+                            continue
+                        for jdx1, cb1 in enumerate(seq_b):
+                            for jdx2, cb2 in enumerate(seq_b):
+                                if jdx1 >= jdx2:
+                                    continue
+
+                                # Swap pairs
+                                new_seq_a_inner = [cb1 if c == ca1 else (
+                                    cb2 if c == ca2 else c) for c in seq_a]
+                                new_seq_b_inner = [ca1 if c == cb1 else (
+                                    ca2 if c == cb2 else c) for c in seq_b]
+                                new_seq_a = [0] + new_seq_a_inner + [0]
+                                new_seq_b = [0] + new_seq_b_inner + [0]
+
+                                demand_a = calc_route_demand(
+                                    new_seq_a, customers)
+                                demand_b = calc_route_demand(
+                                    new_seq_b, customers)
+
+                                # CAPACITY CHECK WITH DYNAMIC VEHICLE UPGRADE
+                                new_vtype_a, cap_a = find_suitable_vehicle(
+                                    demand_a, route_a["vehicle_type"])
+                                new_vtype_b, cap_b = find_suitable_vehicle(
+                                    demand_b, route_b["vehicle_type"])
+
+                                if new_vtype_a is None or new_vtype_b is None:
+                                    continue
+
+                                dist_a = calc_route_distance(new_seq_a)
+                                dist_b = calc_route_distance(new_seq_b)
+                                other_distance = sum(r["total_distance"] for idx, r in enumerate(
+                                    routes) if idx not in [i, j])
+                                total_new = dist_a + dist_b + other_distance
+
+                                if total_new < best_distance - EPSILON:
+                                    best_distance = total_new
+                                    best_move = {"type": "swap_2_2", "from_a": (
+                                        ca1, ca2), "from_b": (cb1, cb2), "routes": (i, j)}
+                                    best_routes = deepcopy(routes)
+                                    best_routes[i] = rebuild_route(
+                                        route_a, new_seq_a, dist_a, demand_a)
+                                    best_routes[i]["vehicle_type"] = new_vtype_a
+                                    best_routes[j] = rebuild_route(
+                                        route_b, new_seq_b, dist_b, demand_b)
+                                    best_routes[j]["vehicle_type"] = new_vtype_b
+
+    elif neighborhood == "cross":
+        # Cross exchange: swap tail segments between two routes
+        for i, route_a in enumerate(routes):
+            for j, route_b in enumerate(routes):
+                if i >= j:
+                    continue
+
+                seq_a = route_a["sequence"]
+                seq_b = route_b["sequence"]
+
+                # Try all cross points
+                for cut_a in range(1, len(seq_a) - 1):  # Position after which to cut
+                    for cut_b in range(1, len(seq_b) - 1):
+                        # Swap tails: A[:cut_a] + B[cut_b:-1] + [0]
+                        new_seq_a = seq_a[:cut_a] + seq_b[cut_b:-1] + [0]
+                        new_seq_b = seq_b[:cut_b] + seq_a[cut_a:-1] + [0]
+
+                        demand_a = calc_route_demand(new_seq_a, customers)
+                        demand_b = calc_route_demand(new_seq_b, customers)
+
+                        # CAPACITY CHECK WITH DYNAMIC VEHICLE UPGRADE
+                        new_vtype_a, cap_a = find_suitable_vehicle(
+                            demand_a, route_a["vehicle_type"])
+                        new_vtype_b, cap_b = find_suitable_vehicle(
+                            demand_b, route_b["vehicle_type"])
+
+                        if new_vtype_a is None or new_vtype_b is None:
+                            continue
+
+                        dist_a = calc_route_distance(new_seq_a)
+                        dist_b = calc_route_distance(new_seq_b)
+                        other_distance = sum(r["total_distance"] for idx, r in enumerate(
+                            routes) if idx not in [i, j])
+                        total_new = dist_a + dist_b + other_distance
+
+                        if total_new < best_distance - EPSILON:
+                            best_distance = total_new
+                            best_move = {"type": "cross", "cut_a": cut_a,
+                                         "cut_b": cut_b, "routes": (i, j)}
+                            best_routes = deepcopy(routes)
+                            best_routes[i] = rebuild_route(
+                                route_a, new_seq_a, dist_a, demand_a)
+                            best_routes[i]["vehicle_type"] = new_vtype_a
+                            best_routes[j] = rebuild_route(
+                                route_b, new_seq_b, dist_b, demand_b)
+                            best_routes[j]["vehicle_type"] = new_vtype_b
+
+    # Determine acceptance (dengan EPSILON tolerance)
+    accepted = best_move is not None and best_distance < current_distance - EPSILON
 
     return {
         "best_move": best_move,
         "accepted": accepted,
         "distance_before": round(current_distance, 2),
         "distance_after": round(best_distance, 2),
-        "new_routes": routes  # Would need to rebuild routes with the move
+        "new_routes": best_routes if accepted else routes,
+        "move_details": best_move,
+        "candidates": candidates  # Daftar kandidat untuk logging UI
     }
 
 
@@ -1948,7 +2300,7 @@ def run_academic_replay(
 
     # Log ACS params being used
     acs_p = dataset["acs_parameters"]
-    print(f"[ACS] α={acs_p.get('alpha', 1)}, β={acs_p.get('beta', 2)}, ρ={acs_p.get('rho', 0.1)}, "
+    print(f"[ACS] alpha={acs_p.get('alpha', 1)}, beta={acs_p.get('beta', 2)}, rho={acs_p.get('rho', 0.1)}, "
           f"q0={acs_p.get('q0', 0.9)}, ants={acs_p.get('num_ants', 10)}, iter={acs_p.get('max_iterations', 50)}")
 
     # ============================================================
@@ -2027,7 +2379,7 @@ def run_academic_replay(
             }
     else:
         # NO USER VEHICLES = CANNOT RUN!
-        print("\n[PRE] ❌ CRITICAL: No fleet defined by user!")
+        print("\n[PRE] [X] CRITICAL: No fleet defined by user!")
         print("   User MUST add fleet in Input Data tab before running.")
         return {
             "mode": "ACADEMIC_REPLAY",

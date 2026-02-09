@@ -39,6 +39,11 @@ _tabs_dir = Path(__file__).resolve().parent / "tabs"
 if str(_tabs_dir) not in sys.path:
     sys.path.insert(0, str(_tabs_dir))
 
+# Add project root to path for absolute imports (e.g. Program.gui.utils)
+_project_root = Path(__file__).resolve().parent.parent.parent
+if str(_project_root) not in sys.path:
+    sys.path.insert(0, str(_project_root))
+
 try:
     from input_titik import render_input_titik
 except ImportError as e:

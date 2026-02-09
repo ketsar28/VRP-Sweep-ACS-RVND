@@ -386,7 +386,7 @@ def _display_acs_iterations(logs: List[Dict]) -> None:
 
 
 def _display_rvnd_inter_iterations(logs: List[Dict]) -> None:
-    """Display RVND inter-route iterations like thesis format."""
+    """Display RVND inter-route iterations with improved formatting."""
     st.markdown("### 🔄 RVND Inter-Route - Pertukaran Customer Antar Rute")
 
     inter_logs = [l for l in logs if l.get("phase") == "RVND-INTER"]
@@ -395,50 +395,237 @@ def _display_rvnd_inter_iterations(logs: List[Dict]) -> None:
         st.info("Tidak ada iterasi inter-route (rute tunggal atau tidak ada move).")
         return
 
-    st.info(f"📊 Total iterasi: {len(inter_logs)}")
+    # === SUMMARY CARDS ===
+    total_iters = len(inter_logs)
+    improved_count = sum(1 for l in inter_logs if l.get("improved", False))
 
-    # Build table with thesis-style columns
-    df = pd.DataFrame([{
-        "Iterasi": l.get("iteration_id", l.get("iteration", "?")),
-        "Rute A → B": f"{l.get('route_pair', (1, 2))}",
-        "Move": l.get("neighborhood", "-").replace("_", " ").title() if l.get("neighborhood") else "-",
-        "Total Jarak": f"{l.get('total_distance', l.get('distance_after', 0)):.2f} km",
-        "Status": "Ada Perbaikan" if l.get("improved", l.get("accepted", False)) else "Tidak Ada Perbaikan"
-    } for l in inter_logs])
+    # Get distance progression
+    distances = [l.get("total_distance", 0) for l in inter_logs]
+    first_distance = distances[0] if distances else 0
+    last_distance = distances[-1] if distances else 0
+    delta_pct = ((last_distance - first_distance) /
+                 first_distance * 100) if first_distance > 0 else 0
+
+    # Count neighborhood usage
+    neighborhood_counts = {}
+    for l in inter_logs:
+        nh = l.get("neighborhood", "unknown")
+        neighborhood_counts[nh] = neighborhood_counts.get(nh, 0) + 1
+
+    # Display summary
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Total Iterasi", total_iters)
+    with col2:
+        st.metric("Ada Perbaikan",
+                  f"{improved_count} ({improved_count/total_iters*100:.0f}%)" if total_iters > 0 else "0")
+    with col3:
+        st.metric("Jarak Awal", f"{first_distance:.2f} km")
+    with col4:
+        delta_color = "inverse" if delta_pct < 0 else "normal"
+        st.metric("Jarak Akhir", f"{last_distance:.2f} km",
+                  f"{delta_pct:+.1f}%", delta_color=delta_color)
+
+    # Neighborhood usage bar
+    if neighborhood_counts:
+        nh_text = " | ".join([f"**{k.replace('_', ' ').title()}**: {v}x" for k,
+                             v in sorted(neighborhood_counts.items(), key=lambda x: -x[1])])
+        st.caption(f"📊 Penggunaan Neighborhood: {nh_text}")
+
+    st.divider()
+
+    # === ITERATION TABLE ===
+    # Helper function to format route sequence
+    def format_route(seq):
+        if isinstance(seq, list):
+            return "→".join(str(n) for n in seq)
+        return str(seq)
+
+    # Build table with improved columns
+    table_data = []
+    prev_distance = None
+
+    for l in inter_logs:
+        iter_id = l.get("iteration_id", l.get("iteration", "?"))
+        neighborhood = l.get("neighborhood", "-")
+        improved = l.get("improved", False)
+        total_dist = l.get("total_distance", 0)
+        routes_snapshot = l.get("routes_snapshot", [])
+
+        # Calculate delta from previous
+        if prev_distance is not None:
+            delta = total_dist - prev_distance
+            delta_str = f"{delta:+.2f}" if delta != 0 else "0.00"
+        else:
+            delta_str = "-"
+
+        # Format routes - tampilkan semua rute dengan jelas
+        routes_display = []
+        for i, route in enumerate(routes_snapshot):
+            route_str = format_route(route)
+            # Batasi panjang per rute
+            if len(route_str) > 20:
+                nodes = route if isinstance(route, list) else []
+                if len(nodes) > 5:
+                    route_str = f"0→...({len(nodes)-2} node)...→0"
+            routes_display.append(f"R{i+1}:{route_str}")
+        routes_str = " | ".join(routes_display)
+
+        # Format neighborhood nicely
+        nh_display = neighborhood.replace("_", "(").replace(
+            "1", "1)").replace("2", "2)") if neighborhood else "-"
+        nh_display = nh_display.replace("()", "").title()
+
+        # Status yang lebih informatif - BERDASARKAN DELTA SEBENARNYA (FLOAT)
+        if prev_distance is not None:
+            delta_val = total_dist - prev_distance
+            if delta_val < -0.001:  # Ada penghematan nyata (toleransi 0.001)
+                status_str = "✅ Hemat"
+            elif abs(delta_val) <= 0.001:  # Delta mendekati 0
+                status_str = "⏸️ Stagnan"
+            else:  # Delta positif (lebih buruk)
+                status_str = "⏭️ Tidak Ada Perbaikan"
+        else:
+            status_str = "-"  # Iterasi pertama
+
+        table_data.append({
+            "Iter": iter_id,
+            "Neighborhood": nh_display,
+            "Rute Hasil": routes_str if routes_str else "-",
+            "Total Jarak": f"{total_dist:.2f} km",
+            "Δ Jarak": delta_str,
+            "Status": status_str
+        })
+
+        prev_distance = total_dist
+
+    df = pd.DataFrame(table_data)
     st.dataframe(df, use_container_width=True, hide_index=True)
 
 
 def _display_rvnd_intra_iterations(logs: List[Dict]) -> None:
-    """Display RVND intra-route iterations like thesis format."""
+    """Display RVND intra-route iterations with improved formatting."""
     st.markdown("### 🔁 RVND Intra-Route - Optimasi Dalam Rute")
 
-    intra_logs = [l for l in logs if l.get("phase") == "RVND-INTRA"]
+    intra_logs = [log for log in logs if log.get("phase") == "RVND-INTRA"]
 
     if not intra_logs:
         st.info("Tidak ada iterasi intra-route.")
         return
 
-    st.info(f"📊 Total iterasi: {len(intra_logs)}")
+    # === OVERALL SUMMARY ===
+    total_iters = len(intra_logs)
+    improved_count = sum(1 for log in intra_logs if log.get("improved", False))
+
+    # Count neighborhoods used
+    neighborhood_counts = {}
+    for log in intra_logs:
+        nh = log.get("neighborhood", "none")
+        if nh and nh != "none":
+            neighborhood_counts[nh] = neighborhood_counts.get(nh, 0) + 1
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Total Iterasi Intra-Route", total_iters)
+    with col2:
+        st.metric("Total Perbaikan",
+                  f"{improved_count} ({improved_count/total_iters*100:.0f}%)" if total_iters > 0 else "0")
+
+    if neighborhood_counts:
+        nh_text = " | ".join([f"**{k.replace('_', '-').title()}**: {v}x" for k,
+                             v in sorted(neighborhood_counts.items(), key=lambda x: -x[1])])
+        st.caption(f"📊 Move yang Berhasil: {nh_text}")
+
+    st.divider()
+
+    # Helper function to format route sequence
+    def format_route(seq):
+        if isinstance(seq, list):
+            # Handle nested list (routes_snapshot often contains [[0,1,2,0]])
+            if len(seq) > 0 and isinstance(seq[0], list):
+                return "→".join(str(n) for n in seq[0])
+            return "→".join(str(n) for n in seq)
+        return str(seq)
 
     # Group by cluster
-    clusters = set(l.get("cluster_id", 0)
-                   for l in intra_logs if "cluster_id" in l)
+    clusters = set(log.get("cluster_id", 0)
+                   for log in intra_logs if "cluster_id" in log)
 
     for cluster_id in sorted(clusters):
-        with st.expander(f"Cluster {cluster_id}", expanded=True):
-            cluster_logs = [l for l in intra_logs if l.get(
-                "cluster_id") == cluster_id]
+        cluster_logs = [log for log in intra_logs if log.get(
+            "cluster_id") == cluster_id]
 
-            st.caption(f"Iterasi untuk cluster ini: {len(cluster_logs)}")
+        if not cluster_logs:
+            continue
 
-            # Build table with thesis-style columns
-            df = pd.DataFrame([{
-                "Iterasi": l.get("iteration_id", l.get("iteration", "?")),
-                "Move": l.get("neighborhood", "-").replace("_", " ").title() if l.get("neighborhood") else "-",
-                "Jarak": f"{l.get('total_distance', l.get('distance_after', 0)):.2f} km",
-                "Rute": str(l.get("routes_snapshot", l.get("sequence_after", [])))[:50],
-                "Status": "Ada Perbaikan" if l.get("improved", l.get("accepted", False)) else "Tidak Ada Perbaikan"
-            } for l in cluster_logs])
+        # Calculate cluster-specific metrics
+        cluster_improved = sum(
+            1 for log in cluster_logs if log.get("improved", False))
+        distances = [log.get("total_distance", 0) for log in cluster_logs]
+        first_dist = distances[0] if distances else 0
+        last_dist = distances[-1] if distances else 0
+        delta_pct = ((last_dist - first_dist) / first_dist *
+                     100) if first_dist > 0 else 0
+        vehicle_type = cluster_logs[0].get(
+            "vehicle_type", "?") if cluster_logs else "?"
+
+        with st.expander(f"🚛 Cluster {cluster_id} ({vehicle_type}) - {len(cluster_logs)} iterasi, {cluster_improved} perbaikan", expanded=False):
+            # Cluster summary
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                st.metric("Jarak Awal", f"{first_dist:.2f} km")
+            with c2:
+                delta_color = "inverse" if delta_pct < 0 else "normal"
+                st.metric("Jarak Akhir", f"{last_dist:.2f} km",
+                          f"{delta_pct:+.1f}%", delta_color=delta_color)
+            with c3:
+                st.metric("Penghematan",
+                          f"{abs(last_dist - first_dist):.2f} km")
+
+            # Build iteration table with before/after comparison
+            table_data = []
+            prev_route = None
+            prev_distance = None
+
+            for log in cluster_logs:
+                iter_id = log.get("iteration_id", log.get("iteration", "?"))
+                neighborhood = log.get("neighborhood", "none")
+                improved = log.get("improved", False)
+                total_dist = log.get("total_distance", 0)
+                routes_snapshot = log.get(
+                    "routes_snapshot", log.get("sequence_after", []))
+
+                # Current route
+                current_route = format_route(routes_snapshot)
+
+                # Before route (from previous iteration)
+                before_route = prev_route if prev_route else "-"
+
+                # Delta distance
+                if prev_distance is not None:
+                    delta = total_dist - prev_distance
+                    delta_str = f"{delta:+.2f}"
+                else:
+                    delta_str = "-"
+
+                # Format neighborhood
+                nh_display = neighborhood.replace(
+                    "_", "-").title() if neighborhood and neighborhood != "none" else "-"
+
+                table_data.append({
+                    "Iter": iter_id,
+                    "Move": nh_display,
+                    "Rute Sebelum": before_route if before_route != current_route else "(sama)",
+                    "Rute Sesudah": current_route,
+                    "Jarak": f"{total_dist:.2f} km",
+                    "Δ": delta_str,
+                    "Status": "✅" if improved else "⏭️"
+                })
+
+                prev_route = current_route
+                prev_distance = total_dist
+
+            df = pd.DataFrame(table_data)
             st.dataframe(df, use_container_width=True, hide_index=True)
 
 
