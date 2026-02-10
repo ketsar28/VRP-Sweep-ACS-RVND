@@ -610,16 +610,16 @@ def _display_rvnd_intra_iterations(logs: List[Dict]) -> None:
 
                 # Format neighborhood
                 nh_display = neighborhood.replace(
-                    "_", "-").title() if neighborhood and neighborhood != "none" else "-"
+                    "_", "-").title() if neighborhood and neighborhood != "none" else "(Cek Optimasi)"
 
                 table_data.append({
                     "Iter": iter_id,
                     "Move": nh_display,
-                    "Rute Sebelum": before_route if before_route != current_route else "(sama)",
+                    "Rute Sebelum": before_route if before_route != current_route else "(Tetap)",
                     "Rute Sesudah": current_route,
                     "Jarak": f"{total_dist:.2f} km",
                     "Δ": delta_str,
-                    "Status": "✅" if improved else "⏭️"
+                    "Status": "✅ Berhasil" if improved else "➖ Tetap"
                 })
 
                 prev_route = current_route
@@ -627,6 +627,14 @@ def _display_rvnd_intra_iterations(logs: List[Dict]) -> None:
 
             df = pd.DataFrame(table_data)
             st.dataframe(df, use_container_width=True, hide_index=True)
+
+            st.caption("""
+            **Keterangan Kolom:**
+            *   **Move**: Jenis perbaikan yang dicoba (Swap/Relocate). *(Cek Optimasi)* artinya sedang mencari peluang.
+            *   **Delta (Δ)**: Penghematan jarak dibanding iterasi sebelumnya.
+            *   **Status**: ✅ Berhasil (Jarak berkurang), ➖ Tetap (Tidak ada perubahan yang lebih baik).
+            *   *Catatan:* Jika "Total Perbaikan = 0", berarti rute awal sudah optimal secara lokal.
+            """)
 
 
 def _minutes_to_time(minutes: float) -> str:
@@ -896,25 +904,29 @@ def _display_vehicle_assignment(result: Dict[str, Any]) -> None:
 
     # Check if we have explicit logs from the reassignment phase
     explicit_logs = [l for l in result.get(
-        "iteration_logs", []) if l.get("phase") == "VEHICLE_REASSIGNMENT"]
+        "iteration_logs", []) if l.get("phase") == "VEHICLE_REASSIGN"]
 
     if explicit_logs:
         # Use explicit logs if available
         for log in explicit_logs:
-            status_icon = "✅" if log.get("success") else "❌"
+            status_icon = "✅" if log.get("status") == "✅ Assigned" else "❌"
             reason_text = log.get('reason', '-')
-            if reason_text == "No feasible vehicle (capacity too low/exhausted)":
-                reason_text = "Tidak ada fleet yang memadai (kapasitas kurang / habis)"
-            elif reason_text == "Vehicle capacity sufficient":
-                reason_text = "Kapasitas fleet mencukupi"
 
-                reassignment_log.append({
-                    "Cluster": log.get("cluster_id"),
-                    "Muatan (Demand)": log.get("demand"),
-                    "Fleet": log.get("new_vehicle", "-"),
-                    "Status": f"{status_icon} {log.get('status', '')}",
-                    "Alasan": reason_text
-                })
+            # Translate common backend messages to Indonesian
+            if "No feasible vehicle" in reason_text:
+                reason_text = "Tidak ada fleet yang memadai (kapasitas kurang / habis)"
+            elif "Demand" in reason_text and "capacity" in reason_text:
+                # Keep technical reason but make it cleaner, e.g. "Demand 130 <= capacity 150"
+                pass
+
+            reassignment_log.append({
+                "Cluster": log.get("cluster_id"),
+                "Muatan (Demand)": log.get("demand"),
+                "Fleet Lama": log.get("old_vehicle", "-"),
+                "Fleet Baru": log.get("new_vehicle", "-"),
+                "Status": f"{status_icon} {log.get('status', '').replace('✅ Assigned', 'Final').replace('❌ No Vehicle', 'Gagal')}",
+                "Alasan": reason_text
+            })
     else:
         # Fallback: Infer from final routes vs initial if needed, or just show final status
         # For simplicity in this specialized view, we show the final assignment status
@@ -985,15 +997,43 @@ def _display_final_results(result: Dict[str, Any]) -> None:
         return
 
     data = []
+
+    # Get fleet data for capacity lookup
+    dataset = result.get("dataset", {})
+    fleet_dict = {f["id"]: f for f in dataset.get("fleet", [])}
+
     for r in routes:
+        # Calculate Duration
+        travel_time = r.get('total_travel_time', 0)
+        service_time = r['total_service_time']
+        wait_time = r.get('total_wait_time', 0)
+        total_duration = travel_time + service_time + wait_time
+
+        # Calculate Utilization
+        vehicle_type = r["vehicle_type"]
+        capacity = 0
+        if vehicle_type in fleet_dict:
+            capacity = fleet_dict[vehicle_type]["capacity"]
+        elif f"Vehicle {vehicle_type}" in fleet_dict:  # fallback
+            capacity = fleet_dict[f"Vehicle {vehicle_type}"]["capacity"]
+
+        utilization = 0
+        if capacity > 0:
+            utilization = (r["total_demand"] / capacity) * 100
+
+        utilization_str = f"{utilization:.1f}%"
+        if utilization > 100:
+            utilization_str += " ⚠️"
+
         data.append({
             "Cluster": r["cluster_id"],
             "Fleet": r["vehicle_type"],
             "Rute": str(r["sequence"]),
             "Jarak (km)": f"{r['total_distance']:.2f}",
-            "Waktu Layanan (menit)": f"{r['total_service_time']:.0f}",
+            "Durasi (menit)": f"{total_duration:.0f}",
+            "Utilisasi (%)": utilization_str,
             "Pelanggaran TW (menit)": f"{r.get('total_tw_violation', 0):.0f}",
-            "Waktu Tunggu (menit)": f"{r.get('total_wait_time', 0):.2f}",
+            "Waktu Tunggu (menit)": f"{wait_time:.1f}",
             "Muatan (kg)": r["total_demand"]
         })
 

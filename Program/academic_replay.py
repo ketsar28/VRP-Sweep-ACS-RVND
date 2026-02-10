@@ -1939,6 +1939,7 @@ def apply_intra_neighborhood(
 # VEHICLE REASSIGNMENT
 # ============================================================
 
+
 def reassign_vehicles(
     routes: List[Dict],
     dataset: Dict,
@@ -1973,7 +1974,6 @@ def reassign_vehicles(
         route_start = 480.0  # 08:00 default departure
         total_time = route.get("total_time", 0) or route.get(
             "total_distance", 0) * 2  # Estimate
-        route_end = route_start + total_time
 
         # Find smallest feasible and available vehicle
         new_vehicle = None
@@ -1991,15 +1991,38 @@ def reassign_vehicles(
                 continue
 
             # Check availability time window (if enabled)
+            # LOGIC UPDATE: Allow time shift.
+            # If vehicle starts at 08:30 but route planned for 08:00,
+            # we check if (08:30 + duration) <= vehicle_end.
+            is_time_feasible = True
+            shift_msg = ""
+
             if check_availability:
-                if not does_route_fit_vehicle_availability(route_start, route_end, f):
-                    continue
+                v_start = parse_time_to_minutes(
+                    f.get("available_from", "00:00"))
+                v_end = parse_time_to_minutes(
+                    f.get("available_until", "23:59"))
+
+                # Effective start is max(planned_start, vehicle_start)
+                effective_start = max(route_start, v_start)
+                effective_end = effective_start + total_time
+
+                if effective_end > v_end:
+                    is_time_feasible = False
+                elif v_start > route_start:
+                    time_diff = v_start - route_start
+                    shift_msg = f" (Start ditunda {time_diff:.0f} menit menyesuaikan jadwal)"
+
+            if not is_time_feasible:
+                continue
 
             # Vehicle is feasible
             new_vehicle = vehicle_id
-            selection_reason = f"Demand {demand} ≤ capacity {f['capacity']}"
-            if check_availability and f.get("available_from") and f.get("available_until"):
-                selection_reason += f", available {f['available_from']}–{f['available_until']}"
+            selection_reason = f"Muatan {demand} ≤ Kapasitas {f['capacity']}"
+            if shift_msg:
+                selection_reason += shift_msg
+            elif check_availability and f.get("available_from"):
+                selection_reason += f", tersedia {f['available_from']}–{f['available_until']}"
             break
 
         if new_vehicle:
@@ -2023,7 +2046,7 @@ def reassign_vehicles(
                 "demand": demand,
                 "old_vehicle": old_vehicle,
                 "new_vehicle": None,
-                "reason": "No feasible vehicle: all unavailable or insufficient capacity",
+                "reason": "No feasible vehicle: all units busy or insufficient capacity/time",
                 "status": "❌ No Vehicle"
             })
 
@@ -2170,7 +2193,11 @@ def validate_routes(routes: List[Dict], dataset: Dict) -> List[Dict]:
     Returns list of validation results for each route.
     """
     validation_results = []
-    customers_dict = {c["id"]: c for c in dataset["customers"]}
+
+    # 2026-02-10 FIX: Ensure customer_ids in routes are FRESH (not stale from initial clusters)
+    # The RVND process moves customers, so we must rely on 'sequence'
+    for r in routes:
+        r['customer_ids'] = [n for n in r['sequence'] if n != 0]
 
     for route in routes:
         cluster_id = route.get("cluster_id", "?")
@@ -2186,8 +2213,8 @@ def validate_routes(routes: List[Dict], dataset: Dict) -> List[Dict]:
             issues.append("Rute tidak berakhir di depot")
 
         # Check 3: All cluster customers visited
-        expected_customers = set(
-            route.get("customer_ids", route.get("cluster", {}).get("customer_ids", [])))
+        # We rely on the FRESH `customer_ids` we just updated
+        expected_customers = set(route.get("customer_ids", []))
         actual_customers = set([n for n in sequence if n != 0])
         missing = expected_customers - actual_customers
         extra = actual_customers - expected_customers
