@@ -16,7 +16,7 @@ if str(_gui_dir) not in sys.path:
 try:
     from utils import save_to_autosave
 except ImportError:
-    # Kalau utils nggak ketemu buat dummy aja biar nggak error
+    # Jika utils tidak ditemukan, dibuat fungsi dummy
     def save_to_autosave(): pass
 
 
@@ -30,7 +30,7 @@ def _update_vehicle_field(idx: int, field: str, value) -> None:
 
 
 def _get_next_vehicle_letter() -> str:
-    """Cari huruf selanjutnya buat ID armada (A, B, C...)"""
+    """Mencari huruf selanjutnya untuk ID armada (A, B, C...)"""
     user_vehicles = st.session_state.get("user_vehicles", [])
 
     # Get all used letters
@@ -62,7 +62,7 @@ def _get_default_capacity_for_letter(letter: str) -> int:
 
 
 def render_input_data() -> None:
-    """Render tab Input Data. Di sini kita set kapasitas, iterasi, demand, dll."""
+    """Render tab Input Data. Di sini saya mengatur kapasitas, iterasi, demand, dll."""
 
     # st.header("📋 Input Data") # Removed redundant header
 
@@ -193,8 +193,8 @@ def render_input_data() -> None:
                     
                     save_to_autosave()
         else:
-            st.info(
-                "ℹ️ Klik tombol di bawah kalau mau nambah armada kendaraan.")
+            st.warning(
+                "⚠️ Belum ada rute optimasi. Silakan klik tombol di bawah untuk menjalankan proses optimasi.")
 
         if st.button("➕ Tambah Kendaraan Baru", key="btn_add_vehicle", type="primary"):
             next_letter = _get_next_vehicle_letter()
@@ -237,8 +237,8 @@ def render_input_data() -> None:
                 st.error(
                     "⚠️ Belum ada armada yang aktif. Minimal aktifin 1 ya biar bisa running.")
         else:
-            st.error(
-                "❌ **Kosong!** Nggak bisa jalan tanpa armada. Tambah baru dulu di bawah.")
+            st.info(
+                "ℹ️ Tidak bisa menjalankan optimasi tanpa armada. Tambahkan unit armada baru di bawah.")
 
     st.divider()
 

@@ -10,13 +10,13 @@ def render_graph_hasil(show_labels: bool = True, show_grid: bool = True) -> None
     result = st.session_state.get("result") or st.session_state.get("last_pipeline_result")
     
     if not data_validated or not result:
-        st.info("ℹ️ **Hasil Visualisasi Belum Ada**")
+        st.info("ℹ️ **Hasil Visualisasi Belum Tersedia**")
         st.markdown("""
-        Biar bisa rutenya muncul, coba ikutin ini dulu:
-        1. Validasi data di tab **'Input Data'**.
-        2. Klik tombol optimasi di tab **'Proses Optimasi'**.
+        Untuk menampilkan rute, silakan ikuti langkah berikut:
+        1. Validasi data pada tab **'Input Data'**.
+        2. Klik tombol optimasi pada tab **'Proses Optimasi'**.
         
-        Nanti peta rutenya bakal muncul otomatis di sini kalau sudah beres hitung.
+        Peta rute akan ditampilkan secara otomatis setelah proses perhitungan selesai.
         """)
         return
 
@@ -37,13 +37,13 @@ def render_graph_hasil(show_labels: bool = True, show_grid: bool = True) -> None
                 })
     
     if failed_clusters:
-        st.error(f"⚠️ **Waduh, ada {len(failed_clusters)} rute yang gagal dilayani!** (Yang ada tanda silang abu-abu)")
+        st.error(f"⚠️ **Peringatan: Terdapat {len(failed_clusters)} rute tidak terlayani.** (Ditandai dengan silang abu-abu)")
         
-        with st.expander("Kenapa gagal & solusinya?", expanded=True):
+        with st.expander("Analisis Kendala & Solusi", expanded=True):
             for fail in failed_clusters:
                 st.markdown(f"""
                 - **Rute {fail['id']}**: {fail.get('reason', 'Alokasi Gagal')}
-                  - **Saran saya**: Coba tambahin unit **{fail['needed']}** di *Input Data* atau muatannya dikurangi dikit.
+                  - **Saran**: Coba tambahkan unit **{fail['needed']}** pada tab *Input Data* atau sesuaikan jumlah muatan.
                 """)
         st.divider()
     # ------------------------------------------------------------
@@ -56,7 +56,7 @@ def render_graph_hasil(show_labels: bool = True, show_grid: bool = True) -> None
 
     points = st.session_state.get("points", {"depots": [], "customers": []})
     
-    # Pake ID unik biar nggak tabrakan lokasinya (D buat Depot, C buat Pelanggan)
+    # Menggunakan ID unik untuk menghindari duplikasi lokasi (D: Depot, C: Pelanggan)
     depot_coords = {}
     customer_coords = {}
     
@@ -350,6 +350,6 @@ def render_graph_hasil(show_labels: bool = True, show_grid: bool = True) -> None
                         "Muatan (kg)": cdata.get("demand", 0)
                     })
                 st.dataframe(unserved_list, hide_index=True, use_container_width=True)
-                st.warning("⚠️ Pelanggan ini nggak masuk rute, mungkin gara-gara kapasitas penuh atau jam operasionalnya mepet banget.")
+                st.warning("⚠️ Pelanggan ini tidak masuk dalam rute, kemungkinan karena kapasitas penuh atau batasan waktu operasional.")
             else:
                 st.success("Semua pelanggan terlayani!")

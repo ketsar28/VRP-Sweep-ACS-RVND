@@ -1,7 +1,7 @@
 """
 Tab Hasil Replay Akademik
 
-Di sini saya nampilin semua iterasi proses perhitungan:
+Di sini saya menampilkan semua iterasi proses perhitungan:
 - Iterasi ACS (per cluster)
 - Iterasi RVND inter-route & intra-route
 - Hasil final validasinya
@@ -43,7 +43,7 @@ def _display_sweep_iterations(logs: List[Dict]) -> None:
         "phase") == "SWEEP" and l.get("step") == "polar_angle"]
     if angle_logs:
         st.markdown("**Langkah 1: Perhitungan Sudut Polar**")
-        st.info("Sudut polar saya pake buat nentuin posisi relatif pelanggan terhadap depot.")
+        st.info("Sudut polar saya gunakan untuk menentukan posisi relatif pelanggan terhadap depot.")
         st.latex(
             r"\theta = \arctan\left(\frac{y_i - y_{\text{depot}}}{x_i - x_{\text{depot}}}\right) \cdot \frac{180}{\pi}")
 
@@ -82,7 +82,7 @@ def _display_nn_iterations(logs: List[Dict]) -> None:
     st.markdown("""
     <div style="background-color: #f8f9fa; padding: 18px; border-radius: 12px; border-left: 6px solid #4a90e2; margin-bottom: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
         <strong style="color: #2c3e50; font-size: 1.1em;">⏱️ Konsep Perhitungan Waktu (Time Window)</strong><br>
-            Rute saya bangun dengan nyari pelanggan terdekat yang masih masuk di jam operasional mereka (Time Window).
+            Rute saya bangun dengan mencari pelanggan terdekat yang masih masuk di jam operasional mereka (Time Window).
         <hr style="margin: 12px 0; border: 0; border-top: 1px solid #dee2e6;">
         <p style="font-family: 'Inter', sans-serif; font-weight: 600; color: #34495e; font-size: 1.05em; text-align: center;">
             Waktu Tiba = Waktu Berangkat + Waktu Perjalanan

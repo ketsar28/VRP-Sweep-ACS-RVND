@@ -482,8 +482,8 @@ def main() -> None:
   # About section
     st.sidebar.markdown("### ℹ️ Tentang Aplikasi")
     st.sidebar.info(
-        "Dashboard ini saya buat untuk input data titik dan nampilin hasil rute terbaik. "
-        "Proses hitung bakal jalan kalau tombol 'Simpan & Validasi Data' di tab Input Data diklik."
+        "Aplikasi ini dirancang untuk melakukan input data koordinat dan menghasilkan visualisasi rute pengiriman yang optimal. "
+        "Proses optimasi akan dijalankan setelah konfigurasi armada dan data pelanggan berhasil divalidasi pada tab 'Input Data'."
     )
     # ============================================================
     # FOOTER
