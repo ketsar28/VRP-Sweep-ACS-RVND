@@ -1009,7 +1009,7 @@ def _display_time_window_analysis(result: Dict[str, Any]) -> None:
         st.metric("Total Waktu Tunggu (Menit)", f"{total_wait:.1f}")
 
     if total_viol > 0:
-        st.info("ℹ️ Catatan buat saya: Di ACS/RVND, Time Window itu 'Soft Constraint' (boleh dilanggar tapi kena penalti), beda sama NN yang 'Hard Constraint'.")
+        st.info("ℹ️ **Informasi Optimasi**: Sistem ini menggunakan pendekatan *Soft Constraint* untuk batasan waktu operasional (Time Window). Layanan tetap diupayakan pada rute yang tersedia meskipun terjadi keterlambatan (penalti biaya), guna memastikan seluruh pelanggan tetap terlayani.")
 
     # 2. Per Route Detail
     st.markdown("#### Detail Pelanggaran per Rute")
@@ -1019,14 +1019,15 @@ def _display_time_window_analysis(result: Dict[str, Any]) -> None:
         viol = r.get("total_tw_violation", 0)
         wait = r.get("total_wait_time", 0)
 
-        status = "✅ OK" if viol == 0 else f"⚠️ {viol:.1f} mnt Force"
+        # Menggunakan terminologi professional untuk status rute dengan delay
+        status = "✅ Sesuai Jadwal" if viol == 0 else f"⚠️ Terlambat {viol:.1f} mnt (Soft Constraint)"
 
         detail_data.append({
             "Cluster": r["cluster_id"],
             "Fleet": r["vehicle_type"],
-            "Total Pelanggaran": f"{viol:.1f}",
-            "Total Tunggu": f"{wait:.1f}",
-            "Status": status
+            "Total Pelanggaran (Mnt)": f"{viol:.1f}",
+            "Total Tunggu (Mnt)": f"{wait:.1f}",
+            "Status Operasional": status
         })
 
     st.dataframe(pd.DataFrame(detail_data),
