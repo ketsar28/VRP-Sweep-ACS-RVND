@@ -933,6 +933,24 @@ def _display_vehicle_availability(result: Dict[str, Any]) -> None:
             st.metric("Tidak Tersedia", 0)
 
 
+def _get_reassignment_map(result: Dict[str, Any]) -> Dict[int, Dict[str, Any]]:
+    """Helper to parse reassignment logs into a cluster_id -> info map."""
+    reassignment_map = {}
+    explicit_logs = [l for l in result.get("iteration_logs", []) if l.get("phase") == "VEHICLE_REASSIGN"]
+    
+    for log in explicit_logs:
+        c_id = log.get("cluster_id")
+        if c_id is not None:
+             reassignment_map[c_id] = {
+                 "status": log.get("status", ""),
+                 "new_vehicle": log.get("new_vehicle", "-"),
+                 "old_vehicle": log.get("old_vehicle", "-"),
+                 "reason": log.get("reason", ""),
+                 "demand": log.get("demand", 0)
+             }
+    return reassignment_map
+
+
 def _display_vehicle_assignment(result: Dict[str, Any]) -> None:
     """Display vehicle reassignment table."""
     st.markdown("### 🚛 Penugasan Ulang Armada (Fleet Reassignment)")
@@ -944,28 +962,19 @@ def _display_vehicle_assignment(result: Dict[str, Any]) -> None:
         st.warning("Belum ada rute final.")
         return
 
-    # Build logical reassignment log from final state
+    reassignment_map = _get_reassignment_map(result)
     reassignment_log = []
 
-    # Check if we have explicit logs from the reassignment phase
-    explicit_logs = [l for l in result.get(
-        "iteration_logs", []) if l.get("phase") == "VEHICLE_REASSIGN"]
-
-    if explicit_logs:
-        # Use explicit logs if available
-        for log in explicit_logs:
+    if reassignment_map:
+        for c_id, log in reassignment_map.items():
             status_icon = "✅" if log.get("status") == "✅ Assigned" else "❌"
             reason_text = log.get('reason', '-')
 
-            # Translate common backend messages to Indonesian
             if "No feasible vehicle" in reason_text:
                 reason_text = "Tidak ada armada yang memadai (kapasitas kurang / habis)"
-            elif "Demand" in reason_text and "capacity" in reason_text:
-                # Keep technical reason but make it cleaner, e.g. "Demand 130 <= capacity 150"
-                pass
 
             reassignment_log.append({
-                "Cluster": log.get("cluster_id"),
+                "Cluster": c_id,
                 "Muatan (Demand)": log.get("demand"),
                 "Armada Lama": log.get("old_vehicle", "-"),
                 "Armada Baru": log.get("new_vehicle", "-"),
@@ -973,8 +982,6 @@ def _display_vehicle_assignment(result: Dict[str, Any]) -> None:
                 "Alasan": reason_text
             })
     else:
-        # Fallback: Infer from final routes vs initial if needed, or just show final status
-        # For simplicity in this specialized view, we show the final assignment status
         for route in final_routes:
             reassignment_log.append({
                 "Cluster": route["cluster_id"],
@@ -990,7 +997,7 @@ def _display_vehicle_assignment(result: Dict[str, Any]) -> None:
         st.caption("ℹ️ **Catatan:** Jika *Armada Baru* bernilai `None`, berarti **Stok Armada Habis** atau tidak ada kendaraan yang memiliki *sisa kapasitas* cukup untuk rute tersebut.")
 
 
-def _display_time_window_analysis(result: Dict[str, Any]) -> None:
+def _display_time_window_analysis(result: Dict[str, Any], reassignment_map: Dict[int, Any] = None) -> None:
     """Display TW analysis."""
     st.markdown("### ⏰ Analisis Jendela Waktu (Time Window)")
 
@@ -998,9 +1005,24 @@ def _display_time_window_analysis(result: Dict[str, Any]) -> None:
     if not routes:
         return
 
-    # 1. Overall Summary
-    total_viol = sum(r.get("total_tw_violation", 0) for r in routes)
-    total_wait = sum(r.get("total_wait_time", 0) for r in routes)
+    if reassignment_map is None:
+        reassignment_map = _get_reassignment_map(result)
+
+    # Filter out failed routes for common metrics to avoid misleading data
+    valid_routes = []
+    for r in routes:
+        cluster_id = r["cluster_id"]
+        is_failed = False
+        if cluster_id in reassignment_map:
+            re_status = reassignment_map[cluster_id]["status"]
+            if "No Vehicle" in re_status or "Gagal" in re_status:
+                is_failed = True
+        if not is_failed:
+            valid_routes.append(r)
+
+    # 1. Overall Summary (Valid Routes Only)
+    total_viol = sum(r.get("total_tw_violation", 0) for r in valid_routes)
+    total_wait = sum(r.get("total_wait_time", 0) for r in valid_routes)
 
     col1, col2 = st.columns(2)
     with col1:
@@ -1009,24 +1031,43 @@ def _display_time_window_analysis(result: Dict[str, Any]) -> None:
         st.metric("Total Waktu Tunggu (Menit)", f"{total_wait:.1f}")
 
     if total_viol > 0:
-        st.info("ℹ️ **Informasi Optimasi**: Sistem ini menggunakan pendekatan *Soft Constraint* untuk batasan waktu operasional (Time Window). Layanan tetap diupayakan pada rute yang tersedia meskipun terjadi keterlambatan (penalti biaya), guna memastikan seluruh pelanggan tetap terlayani.")
+        st.info("ℹ️ **Informasi Jadwal**: Sistem tetap mengusahakan agar semua pelanggan terlayani meskipun ada rute yang sedikit terlambat dari jam operasionalnya.")
 
     # 2. Per Route Detail
     st.markdown("#### Detail Pelanggaran per Rute")
 
     detail_data = []
     for r in routes:
+        cluster_id = r["cluster_id"]
         viol = r.get("total_tw_violation", 0)
         wait = r.get("total_wait_time", 0)
+        
+        display_vehicle = r["vehicle_type"]
+        is_failed = False
+        
+        if cluster_id in reassignment_map:
+            re_info = reassignment_map[cluster_id]
+            if "No Vehicle" in re_info["status"] or "Gagal" in re_info["status"]:
+                is_failed = True
+                display_vehicle = "❌ GAGAL (Stok Habis)"
+            elif "Assigned" in re_info["status"]:
+                display_vehicle = re_info["new_vehicle"]
 
-        # Menggunakan terminologi professional untuk status rute dengan delay
-        status = "✅ Sesuai Jadwal" if viol == 0 else f"⚠️ Terlambat {viol:.1f} mnt (Soft Constraint)"
+        # Menggunakan bahasa yang lebih sederhana dan sopan
+        if is_failed:
+            status = "❌ Tidak Terlayani (Stok Habis)"
+            viol_str = "-"
+            wait_str = "-"
+        else:
+            status = "✅ Tepat Waktu" if viol == 0 else f"⚠️ Terlambat {viol:.1f} mnt (Tetap dilayani)"
+            viol_str = f"{viol:.1f}"
+            wait_str = f"{wait:.1f}"
 
         detail_data.append({
-            "Cluster": r["cluster_id"],
-            "Fleet": r["vehicle_type"],
-            "Total Pelanggaran (Mnt)": f"{viol:.1f}",
-            "Total Tunggu (Mnt)": f"{wait:.1f}",
+            "Cluster": cluster_id,
+            "Fleet": display_vehicle,
+            "Total Pelanggaran (Mnt)": viol_str,
+            "Total Tunggu (Mnt)": wait_str,
             "Status Operasional": status
         })
 
@@ -1044,25 +1085,16 @@ def _display_final_results(result: Dict[str, Any]) -> None:
         return
 
     # --- 1. PARSE REASSIGNMENT LOGS ---
-    reassignment_map = {} 
-    explicit_logs = [l for l in result.get("iteration_logs", []) if l.get("phase") == "VEHICLE_REASSIGN"]
-    
+    reassignment_map = _get_reassignment_map(result)
     failed_clusters = []
     
-    for log in explicit_logs:
-        c_id = log.get("cluster_id")
-        if c_id is not None:
-             reassignment_map[c_id] = {
-                 "status": log.get("status", ""),
-                 "new_vehicle": log.get("new_vehicle", "-"),
-                 "reason": log.get("reason", "")
-             }
-             if "No Vehicle" in log.get("status", ""):
-                 failed_clusters.append({
-                     "id": c_id,
-                     "reason": log.get("reason", ""),
-                     "needed": log.get("old_vehicle", "Unknown")
-                 })
+    for c_id, log in reassignment_map.items():
+        if "No Vehicle" in log.get("status", ""):
+            failed_clusters.append({
+                "id": c_id,
+                "reason": log.get("reason", ""),
+                "needed": log.get("old_vehicle", "Unknown")
+            })
 
     # --- 2. RECOMMENDATIONS (If Failures Exist) ---
     if failed_clusters:
@@ -1160,7 +1192,7 @@ def _display_final_results(result: Dict[str, Any]) -> None:
 
     # TIME WINDOW ANALYSIS (NEW)
     st.markdown("---")
-    _display_time_window_analysis(result)
+    _display_time_window_analysis(result, reassignment_map=reassignment_map)
 
     # Costs Details
     st.markdown("---")
