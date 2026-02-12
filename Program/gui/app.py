@@ -490,7 +490,7 @@ def main() -> None:
     # ============================================================
     st.markdown("""
     <div class="footer">
-        © 2025 <b>Nabilah Eva Nurhayati</b> | 
+        © 2026 <b>Nabilah Eva Nurhayati</b> | 
         Mahasiswi Program Studi Matematika, Universitas Negeri Malang |
         Tugas Akhir Optimasi Rute Pengiriman
     </div>
