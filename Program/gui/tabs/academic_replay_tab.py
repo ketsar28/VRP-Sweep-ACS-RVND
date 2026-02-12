@@ -1187,8 +1187,6 @@ def _display_final_results(result: Dict[str, Any]) -> None:
     # Cost Summary (Valid Only)
     st.success(
         f"💰 **Total Biaya Transportasi (Valid):** Rp {valid_total_cost:,.0f}")
-    if valid_total_cost < costs.get('total_cost', 0):
-        st.caption(f"*(Total awal Rp {costs.get('total_cost', 0):,.0f} dikurangi rute gagal)*")
 
     # TIME WINDOW ANALYSIS (NEW)
     st.markdown("---")
