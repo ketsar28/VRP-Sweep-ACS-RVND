@@ -94,36 +94,65 @@ def main() -> None:
     rvnd_map = {entry["cluster_id"]: entry for entry in rvnd_data["routes"]}
     acs_map = {entry["cluster_id"]: entry for entry in acs_data["clusters"]}
 
-    for idx, cluster in enumerate(clusters_data["clusters"]):
-        cid = cluster["cluster_id"]
-        rvnd_entry = rvnd_map[cid]
+    # 2026-02-13 CHANGE: Iterate over RVND routes directly to handle SPLIT/NEW routes
+    # The number of final routes may be greater than initial clusters due to splitting.
+    final_routes_list = rvnd_data["routes"]
+    
+    # Filter out empty routes that remained empty (Sequence length <= 2: Depot-Depot)
+    active_routes = [r for r in final_routes_list if len(r["improved"]["sequence"]) > 2]
+    
+    print(f"PROGRESS:final_integration:25:processing {len(active_routes)} active routes (from {len(final_routes_list)} total)")
+
+    for idx, rvnd_entry in enumerate(active_routes):
+        cid = rvnd_entry["cluster_id"]
         improved = rvnd_entry["improved"]
+        
+        # Determine origin sequences (handle new routes gracefully)
+        if cid in initial_routes_data["routes"] and cid <= len(initial_routes_data["routes"]):
+             # Note: list index is 0-based, cid is 1-based usually
+             # But if cid > len, it's a new route.
+             try:
+                 initial_seq = initial_routes_data["routes"][cid - 1]["sequence"]
+             except IndexError:
+                 initial_seq = [0, 0]
+        else:
+             initial_seq = [0, 0]
+             
+        if cid in acs_map:
+            acs_seq = acs_map[cid]["sequence"]
+        else:
+            acs_seq = [0, 0]
+
         route_summary = {
             "cluster_id": cid,
-            "vehicle_type": cluster["vehicle_type"],
+            "vehicle_type": rvnd_entry["vehicle_type"],
             "sequence": improved["sequence"],
-            "stops": improved["stops"],
+            "stops": improved.get("stops", []), # Ensure stops exist
             "total_distance": improved["total_distance"],
-            "total_travel_time": improved["total_travel_time"],
-            "total_service_time": improved["total_service_time"],
-            "total_time_component": improved["total_time_component"],
+            "total_travel_time": improved.get("total_travel_time", 0.0),
+            "total_service_time": improved.get("total_service_time", 0.0),
+            "total_time_component": improved.get("total_time_component", 0.0),
             "total_tw_violation": improved["total_tw_violation"],
             "objective": improved["objective"],
-            "initial_sequence": initial_routes_data["routes"][cid - 1]["sequence"],
-            "acs_sequence": acs_map[cid]["sequence"],
+            "initial_sequence": initial_seq,
+            "acs_sequence": acs_seq,
             "rvnd_sequence": improved["sequence"]
         }
         final_routes.append(route_summary)
         total_distance += improved["total_distance"]
-        total_time_component += improved["total_time_component"]
+        total_time_component += improved.get("total_time_component", 0.0)
         total_violation += improved["total_tw_violation"]
         total_objective += improved["objective"]
         try:
-            pct = 20 + int((idx + 1) / max(1, len(clusters_data.get("clusters", []))) * 70)
-            print(f"PROGRESS:final_integration:{pct}:processed cluster {idx+1}")
+            pct = 20 + int((idx + 1) / max(1, len(active_routes)) * 70)
+            print(f"PROGRESS:final_integration:{pct}:processed route {cid}")
         except Exception:
             pass
 
+    # Update Validation to Check Final Routes vs Instance (Not Clusters vs Instance)
+    # Because clusters might be split, we must check if ALL instance customers are visited
+    # across ALL final routes.
+    
     total_cost, fleet_usage = aggregate_costs(instance, final_routes)
     validations = validate_solution(instance, distance_data, clusters_data, final_routes)
 

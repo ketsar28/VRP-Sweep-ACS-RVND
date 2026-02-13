@@ -2,98 +2,6 @@
   "routes": [
     {
       "cluster_id": 1,
-      "vehicle_type": "C",
-      "improved": {
-        "sequence": [
-          0,
-          10,
-          1,
-          8,
-          0
-        ],
-        "stops": [
-          {
-            "node_id": 0,
-            "arrival": 510,
-            "arrival_str": "08:30",
-            "departure": 510,
-            "departure_str": "08:30",
-            "wait": 0.0,
-            "violation": 0.0
-          },
-          {
-            "node_id": 10,
-            "arrival": 540,
-            "arrival_str": "09:00",
-            "departure": 563,
-            "departure_str": "09:23",
-            "wait": 29.97629999999998,
-            "violation": 0.0
-          },
-          {
-            "node_id": 1,
-            "arrival": 563.03363,
-            "arrival_str": "09:23+02s",
-            "departure": 588.03363,
-            "departure_str": "09:48+02s",
-            "wait": 0.0,
-            "violation": 0.0
-          },
-          {
-            "node_id": 8,
-            "arrival": 588.0752600000001,
-            "arrival_str": "09:48+05s",
-            "departure": 612.0752600000001,
-            "departure_str": "10:12+05s",
-            "wait": 0.0,
-            "violation": 0.0
-          },
-          {
-            "node_id": 0,
-            "arrival": 612.10558,
-            "arrival_str": "10:12+06s",
-            "departure": 612.10558,
-            "departure_str": "10:12+06s",
-            "wait": 0.0,
-            "violation": 0.0
-          }
-        ],
-        "total_distance": 0.12928,
-        "total_travel_time": 0.12928,
-        "total_service_time": 72.0,
-        "total_time_component": 72.12928,
-        "total_tw_violation": 0.0,
-        "total_demand": 141.0,
-        "capacity_violation": 0.0,
-        "objective": 72.25855999999999,
-        "feasible": true,
-        "iteration_logs": [
-          {
-            "iteration_id": 1,
-            "phase": "RVND-INTRA",
-            "neighborhood": "none",
-            "improved": false,
-            "routes_snapshot": [
-              [
-                0,
-                10,
-                1,
-                8,
-                0
-              ]
-            ],
-            "total_distance": 0.12928,
-            "total_service_time": 72.0,
-            "total_travel_time": 0.12928,
-            "objective": 72.25855999999999,
-            "cluster_id": 1
-          }
-        ],
-        "vehicle_assignment_failed": false
-      }
-    },
-    {
-      "cluster_id": 2,
       "vehicle_type": "B",
       "improved": {
         "sequence": [
@@ -169,84 +77,11 @@
         "capacity_violation": 0.0,
         "objective": 47.3899,
         "feasible": true,
-        "iteration_logs": [
-          {
-            "iteration_id": 1,
-            "phase": "RVND-INTRA",
-            "neighborhood": "none",
-            "improved": false,
-            "routes_snapshot": [
-              [
-                0,
-                7,
-                6,
-                3,
-                4,
-                0
-              ]
-            ],
-            "total_distance": 0.19495,
-            "total_service_time": 47.0,
-            "total_travel_time": 0.19495,
-            "objective": 47.3899,
-            "cluster_id": 2
-          }
-        ],
         "vehicle_assignment_failed": false
       }
     },
     {
-      "cluster_id": 3,
-      "vehicle_type": "A",
-      "improved": {
-        "sequence": [
-          0,
-          2,
-          0
-        ],
-        "stops": [
-          {
-            "node_id": 0,
-            "arrival": 510,
-            "arrival_str": "08:30",
-            "departure": 510,
-            "departure_str": "08:30",
-            "wait": 0.0,
-            "violation": 0.0
-          },
-          {
-            "node_id": 2,
-            "arrival": 510.04,
-            "arrival_str": "08:30+02s",
-            "departure": 519.04,
-            "departure_str": "08:39+02s",
-            "wait": 0.0,
-            "violation": 0.0
-          },
-          {
-            "node_id": 0,
-            "arrival": 519.0799999999999,
-            "arrival_str": "08:39+05s",
-            "departure": 519.0799999999999,
-            "departure_str": "08:39+05s",
-            "wait": 0.0,
-            "violation": 0.0
-          }
-        ],
-        "total_distance": 0.08,
-        "total_travel_time": 0.08,
-        "total_service_time": 9.0,
-        "total_time_component": 9.08,
-        "total_tw_violation": 0.0,
-        "total_demand": 17.0,
-        "capacity_violation": 0.0,
-        "objective": 9.16,
-        "feasible": true,
-        "vehicle_assignment_failed": false
-      }
-    },
-    {
-      "cluster_id": 4,
+      "cluster_id": 2,
       "vehicle_type": "B",
       "improved": {
         "sequence": [
@@ -302,6 +137,167 @@
         "capacity_violation": 0.0,
         "objective": 49.2513,
         "feasible": true,
+        "iteration_logs": [
+          {
+            "iteration_id": 1,
+            "phase": "RVND-INTRA",
+            "neighborhood": "none",
+            "improved": false,
+            "routes_snapshot": [
+              [
+                0,
+                5,
+                9,
+                0
+              ]
+            ],
+            "total_distance": 0.12564999999999998,
+            "total_service_time": 49.0,
+            "total_travel_time": 0.12564999999999998,
+            "objective": 49.2513,
+            "cluster_id": 2
+          }
+        ],
+        "vehicle_assignment_failed": false
+      }
+    },
+    {
+      "cluster_id": 3,
+      "vehicle_type": "C",
+      "improved": {
+        "sequence": [
+          0,
+          10,
+          1,
+          8,
+          0
+        ],
+        "stops": [
+          {
+            "node_id": 0,
+            "arrival": 510,
+            "arrival_str": "08:30",
+            "departure": 510,
+            "departure_str": "08:30",
+            "wait": 0.0,
+            "violation": 0.0
+          },
+          {
+            "node_id": 10,
+            "arrival": 540,
+            "arrival_str": "09:00",
+            "departure": 563,
+            "departure_str": "09:23",
+            "wait": 29.97629999999998,
+            "violation": 0.0
+          },
+          {
+            "node_id": 1,
+            "arrival": 563.03363,
+            "arrival_str": "09:23+02s",
+            "departure": 588.03363,
+            "departure_str": "09:48+02s",
+            "wait": 0.0,
+            "violation": 0.0
+          },
+          {
+            "node_id": 8,
+            "arrival": 588.0752600000001,
+            "arrival_str": "09:48+05s",
+            "departure": 612.0752600000001,
+            "departure_str": "10:12+05s",
+            "wait": 0.0,
+            "violation": 0.0
+          },
+          {
+            "node_id": 0,
+            "arrival": 612.10558,
+            "arrival_str": "10:12+06s",
+            "departure": 612.10558,
+            "departure_str": "10:12+06s",
+            "wait": 0.0,
+            "violation": 0.0
+          }
+        ],
+        "total_distance": 0.12928,
+        "total_travel_time": 0.12928,
+        "total_service_time": 72.0,
+        "total_time_component": 72.12928,
+        "total_tw_violation": 0.0,
+        "total_demand": 141.0,
+        "capacity_violation": 0.0,
+        "objective": 72.25855999999999,
+        "feasible": true,
+        "vehicle_assignment_failed": false
+      }
+    },
+    {
+      "cluster_id": 4,
+      "vehicle_type": "A",
+      "improved": {
+        "sequence": [
+          0,
+          2,
+          0
+        ],
+        "stops": [
+          {
+            "node_id": 0,
+            "arrival": 510,
+            "arrival_str": "08:30",
+            "departure": 510,
+            "departure_str": "08:30",
+            "wait": 0.0,
+            "violation": 0.0
+          },
+          {
+            "node_id": 2,
+            "arrival": 510.04,
+            "arrival_str": "08:30+02s",
+            "departure": 519.04,
+            "departure_str": "08:39+02s",
+            "wait": 0.0,
+            "violation": 0.0
+          },
+          {
+            "node_id": 0,
+            "arrival": 519.0799999999999,
+            "arrival_str": "08:39+05s",
+            "departure": 519.0799999999999,
+            "departure_str": "08:39+05s",
+            "wait": 0.0,
+            "violation": 0.0
+          }
+        ],
+        "total_distance": 0.08,
+        "total_travel_time": 0.08,
+        "total_service_time": 9.0,
+        "total_time_component": 9.08,
+        "total_tw_violation": 0.0,
+        "total_demand": 17.0,
+        "capacity_violation": 0.0,
+        "objective": 9.16,
+        "feasible": true,
+        "iteration_logs": [
+          {
+            "iteration_id": 1,
+            "phase": "RVND-INTRA",
+            "neighborhood": "none",
+            "improved": false,
+            "routes_snapshot": [
+              [
+                0,
+                2,
+                0
+              ]
+            ],
+            "total_distance": 0.08,
+            "total_service_time": 9.0,
+            "total_travel_time": 0.08,
+            "objective": 9.16,
+            "cluster_id": 4
+          }
+        ],
         "vehicle_assignment_failed": false
       }
     }
@@ -331,13 +327,13 @@
       "reinsertion",
       "exchange"
     ],
-    "max_inter_iterations": 50,
-    "max_intra_iterations": 100,
+    "max_inter_iterations": 150,
+    "max_intra_iterations": 200,
     "seed": 84
   },
   "vehicle_usage": {
-    "C": 1,
     "B": 2,
+    "C": 1,
     "A": 1
   },
   "iteration_logs": [
@@ -348,6 +344,7 @@
       "improved": true,
       "total_distance": 0.7,
       "unassigned": 0,
+      "penalty": 3.41,
       "move": {
         "type": "cross",
         "detail": "Split at A:4, B:2"
@@ -360,6 +357,7 @@
       "improved": true,
       "total_distance": 0.66,
       "unassigned": 0,
+      "penalty": 3.25,
       "move": {
         "type": "swap_1_1",
         "detail": "10, 7"
@@ -372,6 +370,7 @@
       "improved": true,
       "total_distance": 0.6,
       "unassigned": 0,
+      "penalty": 3.35,
       "move": {
         "type": "shift_1_0",
         "detail": "3 -> R2"
@@ -384,6 +383,7 @@
       "improved": true,
       "total_distance": 0.6,
       "unassigned": 0,
+      "penalty": 3.35,
       "move": {
         "type": "swap_2_1",
         "detail": "(10,1), 4"
@@ -396,6 +396,7 @@
       "improved": true,
       "total_distance": 0.57,
       "unassigned": 0,
+      "penalty": 3.58,
       "move": {
         "type": "shift_1_0",
         "detail": "8 -> R4"
@@ -407,7 +408,8 @@
       "neighborhood": "swap_2_2",
       "improved": false,
       "total_distance": 0.57,
-      "unassigned": 0
+      "unassigned": 0,
+      "penalty": 3.58
     },
     {
       "iteration_id": 7,
@@ -415,15 +417,21 @@
       "neighborhood": "swap_1_1",
       "improved": false,
       "total_distance": 0.57,
-      "unassigned": 0
+      "unassigned": 0,
+      "penalty": 3.58
     },
     {
       "iteration_id": 8,
       "phase": "RVND-INTER",
       "neighborhood": "shift_2_0",
-      "improved": false,
+      "improved": true,
       "total_distance": 0.57,
-      "unassigned": 0
+      "unassigned": 0,
+      "penalty": 3.59,
+      "move": {
+        "type": "shift_2_0",
+        "detail": "(3,2) -> R1"
+      }
     },
     {
       "iteration_id": 9,
@@ -432,106 +440,113 @@
       "improved": true,
       "total_distance": 0.55,
       "unassigned": 0,
+      "penalty": 3.54,
       "move": {
         "type": "swap_2_1",
-        "detail": "(7,6), 5"
+        "detail": "(2,9), 4"
       }
     },
     {
       "iteration_id": 10,
       "phase": "RVND-INTER",
       "neighborhood": "swap_2_1",
-      "improved": true,
+      "improved": false,
       "total_distance": 0.55,
       "unassigned": 0,
-      "move": {
-        "type": "swap_2_1",
-        "detail": "(5,9), 4"
-      }
+      "penalty": 3.54
     },
     {
       "iteration_id": 11,
       "phase": "RVND-INTER",
-      "neighborhood": "swap_2_2",
-      "improved": false,
-      "total_distance": 0.55,
-      "unassigned": 0
-    },
-    {
-      "iteration_id": 12,
-      "phase": "RVND-INTER",
-      "neighborhood": "swap_1_1",
-      "improved": true,
-      "total_distance": 0.53,
-      "unassigned": 0,
-      "move": {
-        "type": "swap_1_1",
-        "detail": "4, 2"
-      }
-    },
-    {
-      "iteration_id": 13,
-      "phase": "RVND-INTER",
-      "neighborhood": "swap_2_2",
-      "improved": false,
-      "total_distance": 0.53,
-      "unassigned": 0
-    },
-    {
-      "iteration_id": 14,
-      "phase": "RVND-INTER",
-      "neighborhood": "shift_2_0",
-      "improved": false,
-      "total_distance": 0.53,
-      "unassigned": 0
-    },
-    {
-      "iteration_id": 15,
-      "phase": "RVND-INTER",
-      "neighborhood": "swap_2_1",
-      "improved": true,
-      "total_distance": 0.53,
-      "unassigned": 0,
-      "move": {
-        "type": "swap_2_1",
-        "detail": "(5,9), 2"
-      }
-    },
-    {
-      "iteration_id": 16,
-      "phase": "RVND-INTER",
-      "neighborhood": "swap_2_2",
-      "improved": false,
-      "total_distance": 0.53,
-      "unassigned": 0
-    },
-    {
-      "iteration_id": 17,
-      "phase": "RVND-INTER",
-      "neighborhood": "swap_2_1",
-      "improved": false,
-      "total_distance": 0.53,
-      "unassigned": 0
-    },
-    {
-      "iteration_id": 18,
-      "phase": "RVND-INTER",
       "neighborhood": "cross",
       "improved": true,
-      "total_distance": 0.52,
+      "total_distance": 0.54,
       "unassigned": 0,
+      "penalty": 3.54,
       "move": {
         "type": "cross",
         "detail": "Split at A:1, B:1"
       }
     },
     {
-      "iteration_id": 19,
+      "iteration_id": 12,
       "phase": "RVND-INTER",
       "neighborhood": "cross",
       "improved": false,
+      "total_distance": 0.54,
+      "unassigned": 0,
+      "penalty": 3.54
+    },
+    {
+      "iteration_id": 13,
+      "phase": "RVND-INTER",
+      "neighborhood": "swap_1_1",
+      "improved": true,
+      "total_distance": 0.53,
+      "unassigned": 0,
+      "penalty": 3.82,
+      "move": {
+        "type": "swap_1_1",
+        "detail": "2, 5"
+      }
+    },
+    {
+      "iteration_id": 14,
+      "phase": "RVND-INTER",
+      "neighborhood": "swap_2_2",
+      "improved": false,
+      "total_distance": 0.53,
+      "unassigned": 0,
+      "penalty": 3.82
+    },
+    {
+      "iteration_id": 15,
+      "phase": "RVND-INTER",
+      "neighborhood": "shift_2_0",
+      "improved": false,
+      "total_distance": 0.53,
+      "unassigned": 0,
+      "penalty": 3.82
+    },
+    {
+      "iteration_id": 16,
+      "phase": "RVND-INTER",
+      "neighborhood": "swap_2_1",
+      "improved": false,
+      "total_distance": 0.53,
+      "unassigned": 0,
+      "penalty": 3.82
+    },
+    {
+      "iteration_id": 17,
+      "phase": "RVND-INTER",
+      "neighborhood": "cross",
+      "improved": true,
       "total_distance": 0.52,
-      "unassigned": 0
+      "unassigned": 0,
+      "penalty": 3.82,
+      "move": {
+        "type": "cross",
+        "detail": "Split at A:1, B:1"
+      }
+    },
+    {
+      "iteration_id": 18,
+      "phase": "RVND-INTER",
+      "neighborhood": "swap_2_1",
+      "improved": false,
+      "total_distance": 0.52,
+      "unassigned": 0,
+      "penalty": 3.82
+    },
+    {
+      "iteration_id": 19,
+      "phase": "RVND-INTER",
+      "neighborhood": "swap_2_2",
+      "improved": false,
+      "total_distance": 0.52,
+      "unassigned": 0,
+      "penalty": 3.82
     },
     {
       "iteration_id": 20,
@@ -539,15 +554,17 @@
       "neighborhood": "swap_1_1",
       "improved": false,
       "total_distance": 0.52,
-      "unassigned": 0
+      "unassigned": 0,
+      "penalty": 3.82
     },
     {
       "iteration_id": 21,
       "phase": "RVND-INTER",
-      "neighborhood": "shift_2_0",
+      "neighborhood": "cross",
       "improved": false,
       "total_distance": 0.52,
-      "unassigned": 0
+      "unassigned": 0,
+      "penalty": 3.82
     },
     {
       "iteration_id": 22,
@@ -555,43 +572,17 @@
       "neighborhood": "shift_1_0",
       "improved": false,
       "total_distance": 0.52,
-      "unassigned": 0
+      "unassigned": 0,
+      "penalty": 3.82
     },
     {
       "iteration_id": 23,
       "phase": "RVND-INTER",
-      "neighborhood": "swap_2_2",
+      "neighborhood": "shift_2_0",
       "improved": false,
       "total_distance": 0.52,
-      "unassigned": 0
-    },
-    {
-      "iteration_id": 24,
-      "phase": "RVND-INTER",
-      "neighborhood": "swap_2_1",
-      "improved": false,
-      "total_distance": 0.52,
-      "unassigned": 0
-    },
-    {
-      "iteration_id": 1,
-      "phase": "RVND-INTRA",
-      "neighborhood": "none",
-      "improved": false,
-      "routes_snapshot": [
-        [
-          0,
-          10,
-          1,
-          8,
-          0
-        ]
-      ],
-      "total_distance": 0.12928,
-      "total_service_time": 72.0,
-      "total_travel_time": 0.12928,
-      "objective": 72.25855999999999,
-      "cluster_id": 1
+      "unassigned": 0,
+      "penalty": 3.82
     },
     {
       "iteration_id": 1,
@@ -612,25 +603,7 @@
       "total_service_time": 47.0,
       "total_travel_time": 0.19495,
       "objective": 47.3899,
-      "cluster_id": 2
-    },
-    {
-      "iteration_id": 1,
-      "phase": "RVND-INTRA",
-      "neighborhood": "none",
-      "improved": false,
-      "routes_snapshot": [
-        [
-          0,
-          2,
-          0
-        ]
-      ],
-      "total_distance": 0.08,
-      "total_service_time": 9.0,
-      "total_travel_time": 0.08,
-      "objective": 9.16,
-      "cluster_id": 3
+      "cluster_id": 1
     },
     {
       "iteration_id": 1,
@@ -649,7 +622,69 @@
       "total_service_time": 49.0,
       "total_travel_time": 0.12564999999999998,
       "objective": 49.2513,
+      "cluster_id": 2
+    },
+    {
+      "iteration_id": 1,
+      "phase": "RVND-INTRA",
+      "neighborhood": "none",
+      "improved": false,
+      "routes_snapshot": [
+        [
+          0,
+          10,
+          1,
+          8,
+          0
+        ]
+      ],
+      "total_distance": 0.12928,
+      "total_service_time": 72.0,
+      "total_travel_time": 0.12928,
+      "objective": 72.25855999999999,
+      "cluster_id": 3
+    },
+    {
+      "iteration_id": 1,
+      "phase": "RVND-INTRA",
+      "neighborhood": "none",
+      "improved": false,
+      "routes_snapshot": [
+        [
+          0,
+          2,
+          0
+        ]
+      ],
+      "total_distance": 0.08,
+      "total_service_time": 9.0,
+      "total_travel_time": 0.08,
+      "objective": 9.16,
       "cluster_id": 4
+    },
+    {
+      "phase": "VEHICLE_REASSIGN",
+      "cluster_id": 1,
+      "status": "Assigned",
+      "new_vehicle": "B"
+    },
+    {
+      "phase": "VEHICLE_REASSIGN",
+      "cluster_id": 2,
+      "status": "Assigned",
+      "new_vehicle": "B"
+    },
+    {
+      "phase": "VEHICLE_REASSIGN",
+      "cluster_id": 3,
+      "status": "Assigned",
+      "new_vehicle": "C"
+    },
+    {
+      "phase": "VEHICLE_REASSIGN",
+      "cluster_id": 4,
+      "status": "Assigned",
+      "new_vehicle": "A"
     }
   ]
 }

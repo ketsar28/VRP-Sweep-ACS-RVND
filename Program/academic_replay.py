@@ -2406,7 +2406,14 @@ def reassign_vehicles(
     fleet_sorted = sorted(available_fleet, key=lambda f: f["capacity"])
     available_units = {f["id"]: f["units"] for f in available_fleet}
 
-    for route in routes:
+    # 2026-02-13 FIX: Sort routes by Demand (Descending) to prioritize hard-to-fit routes
+    # This comes from the "Global Best Fit" strategy to prevent small routes from 
+    # consuming large vehicles needed by later, larger routes.
+    # We create a list of (index, route) to process in order, but the original 'routes' list
+    # objects are mutable, so updating 'route' works in place.
+    routes_prioritized = sorted(routes, key=lambda r: r["total_demand"], reverse=True)
+
+    for route in routes_prioritized:
         demand = route["total_demand"]
         old_vehicle = route.get("vehicle_type", "?")
 
