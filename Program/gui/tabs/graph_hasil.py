@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 
 
 def render_graph_hasil(show_labels: bool = True, show_grid: bool = True) -> None:
-    # st.header("Visualisasi Rute") # Removed to avoid redundancy with tab title
+
     data_validated = st.session_state.get("data_validated", False)
     result = st.session_state.get("result") or st.session_state.get("last_pipeline_result")
     
@@ -48,11 +48,6 @@ def render_graph_hasil(show_labels: bool = True, show_grid: bool = True) -> None
         st.divider()
     # ------------------------------------------------------------
 
-    # --- SIDEBAR CONTROLS (MOVED TO APP.PY) ---
-    # with st.sidebar:
-    #     st.header("⚙️ Kontrol Peta")
-    #     show_labels = st.toggle("Tampilkan Label", value=True, key="viz_show_labels")
-    #     show_grid = st.toggle("Tampilkan Grid", value=True, key="viz_show_grid")
 
     points = st.session_state.get("points", {"depots": [], "customers": []})
     
@@ -120,7 +115,7 @@ def render_graph_hasil(show_labels: bool = True, show_grid: bool = True) -> None
             continue
             
         seq = route.get("sequence") or []
-        # Removed duplicate seq line
+
         xs = []
         ys = []
         hover_texts = [] # Custom hover for route points

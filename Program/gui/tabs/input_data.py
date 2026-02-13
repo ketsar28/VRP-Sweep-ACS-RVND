@@ -64,7 +64,6 @@ def _get_default_capacity_for_letter(letter: str) -> int:
 def render_input_data() -> None:
     """Render tab Input Data. Di sini saya mengatur kapasitas, iterasi, demand, dll."""
 
-    # st.header("📋 Input Data") # Removed redundant header
 
     # Initialize session state
     if "inputData" not in st.session_state:
@@ -86,9 +85,6 @@ def render_input_data() -> None:
     # ===== SECTION 1: Kendaraan User-Defined (DYNAMIC) =====
     with st.container():
         st.subheader("🚛 Armada Kendaraan")
-        # st.markdown(
-        #     "*Pilih kendaraan yang **tersedia** untuk digunakan. Algoritma hanya akan menggunakan kendaraan yang di pilih.*")
-
         user_vehicles = st.session_state["user_vehicles"]
 
         # Migration: Rename "Vehicle" to "Fleet" if present
@@ -244,9 +240,6 @@ def render_input_data() -> None:
 
     # ===== SECTION 2: ACS Parameters =====
     with st.expander("⚙️ Parameter ACS (Ant Colony System)", expanded=True):
-        # st.subheader("2️⃣ Parameter ACS (Ant Colony System)")
-        # st.markdown("*Parameter untuk mengontrol algoritma optimasi ACS*")
-
         # Initialize ACS params in session state
         if "acs_params" not in st.session_state:
             st.session_state["acs_params"] = {
@@ -469,10 +462,6 @@ def render_input_data() -> None:
     if size == 0:
         st.info("ℹ️ Set dulu depot & pelanggan di tab 'Input Titik' biar matriksnya muncul.")
     else:
-        # st.write("**Masukkan jarak antar titik secara manual.**")
-        # st.write(
-        #     "*Diagonal (jarak ke diri sendiri) otomatis diatur 0*")
-
         # Show node mapping for reference in a cleaner way
         with st.expander("📋 Pemetaan Node", expanded=False):
             # Create a clean dataframe for mapping

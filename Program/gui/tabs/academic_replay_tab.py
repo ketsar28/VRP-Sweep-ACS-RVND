@@ -10,6 +10,7 @@ Di sini saya menampilkan semua iterasi proses perhitungan:
 from __future__ import annotations
 
 import json
+import math
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -77,11 +78,11 @@ def _display_sweep_iterations(logs: List[Dict]) -> None:
 
 def _display_nn_iterations(logs: List[Dict]) -> None:
     """Display Nearest Neighbor iterations with Time Window analysis."""
-    st.markdown("### 🔗 Algoritma Nearest Neighbor - Rute Awal")
+    st.markdown("### Algoritma Nearest Neighbor - Rute Awal")
 
     st.markdown("""
     <div style="background-color: #f8f9fa; padding: 18px; border-radius: 12px; border-left: 6px solid #4a90e2; margin-bottom: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-        <strong style="color: #2c3e50; font-size: 1.1em;">⏱️ Konsep Perhitungan Waktu (Time Window)</strong><br>
+        **Konsep Perhitungan Waktu (Time Window)**<br>
             Rute saya bangun dengan mencari pelanggan terdekat yang masih masuk di jam operasional mereka (Time Window).
         <hr style="margin: 12px 0; border: 0; border-top: 1px solid #dee2e6;">
         <p style="font-family: 'Inter', sans-serif; font-weight: 600; color: #34495e; font-size: 1.05em; text-align: center;">
@@ -114,7 +115,7 @@ def _display_nn_iterations(logs: List[Dict]) -> None:
                     "phase") == "NN_SUMMARY" and l.get("cluster_id") == cluster_id), None)
                 if summary:
                     st.success(
-                        f"**Rute Terbentuk:** {summary['route_sequence']} menggunakan armada **{summary['vehicle_type']}** | **Total Jarak:** {total_dist:.2f} km", icon="🚚")
+                        f"**Rute Terbentuk:** {summary['route_sequence']} menggunakan armada **{summary['vehicle_type']}** | **Total Jarak:** {total_dist:.2f} km")
 
                 # Build table with TIME WINDOW data
                 rows = []
@@ -129,7 +130,7 @@ def _display_nn_iterations(logs: List[Dict]) -> None:
                     if to_node == 0:
                         # Depot - no TW analysis needed
                         tw_display = "-"
-                        status = "🏠 Depot"
+                        status = "Hub Utama"
                     elif arrival != "-" and tw_start != "-" and tw_end != "-":
                         tw_display = f"{_minutes_to_time(tw_start)} - {_minutes_to_time(tw_end)}"
                         if action == "REJECTED":
@@ -190,17 +191,18 @@ def _display_acs_progress_chart(cluster_logs: List[Dict], cluster_id: int) -> No
     df = pd.DataFrame(iter_data).sort_values("Iterasi")
 
     # Create chart
-    fig = px.line(df, x="Iterasi", y="Objective Z",
-                  title=f"Konvergensi Fungsi Tujuan - Cluster {cluster_id}",
+    # Create chart - NOW PLOTTING DISTANCE (JARAK) PER USER REQUEST "Ganti Biaya Rute jadi Total Jarak"
+    fig = px.line(df, x="Iterasi", y="Jarak",
+                  title=f"Konvergensi Total Jarak - Cluster {cluster_id}",
                   markers=True)
-    fig.update_layout(yaxis_title="Objective Function (Z)",
+    fig.update_layout(yaxis_title="Total Jarak (km)",
                       xaxis_title="Iterasi")
     st.plotly_chart(fig, use_container_width=True)
 
 
 def _display_acs_iterations(logs: List[Dict]) -> None:
     """Display ACS iterations with full detail."""
-    st.markdown("### 🐜 Ant Colony System - Iterasi Semut")
+    st.markdown("### Ant Colony System - Iterasi Semut")
 
     acs_logs = [l for l in logs if l.get("phase") == "ACS"]
 
@@ -223,11 +225,11 @@ def _display_acs_iterations(logs: List[Dict]) -> None:
             with st.expander("ℹ️ Keterangan Rumus & Inisialisasi"):
                 st.markdown("**Inisialisasi Pheromone:**")
                 st.latex(
-                    r"\tau_0 = \frac{1}{n \cdot Z_{nn}}")
+                    r"\tau_0 = \frac{1}{n \cdot \text{Total Jarak}}")
                 st.markdown("""
                 **Keterangan:**
                 *   $n$: Jumlah customer
-                *   $Z_{nn}$: Biaya rute dari algoritma Nearest Neighbor
+                *   Total Jarak: Total Jarak dari algoritma Nearest Neighbor
                 """)
 
         # Objective function initialization
@@ -399,10 +401,152 @@ def _display_acs_iterations(logs: List[Dict]) -> None:
                         else:
                             m4.metric("Status", "✅ Layak")
 
+    # Display ACS iterations with full detail.\n    # ... (existing code)
 
-def _display_rvnd_inter_iterations(logs: List[Dict]) -> None:
+def _generate_verification_log(routes_snapshot: List[List[int]], dataset: Dict[str, Any]) -> None:
+    """
+    Generate detailed manual verification log (Time & Cost) for the best solution.
+    Mimics the user's manual calculation format.
+    """
+    st.divider()
+    st.markdown("#### Log Verifikasi Manual (Waktu & Biaya)")
+    st.caption("Perhitungan detail waktu tiba, service, dan time window check untuk solusi terbaik ini.")
+
+    if not dataset:
+        st.warning("Data detail (titik & fleet) tidak tersedia untuk verifikasi.")
+        return
+
+    # Helper for distance
+    def calc_dist(n1, n2):
+        return math.hypot(n1["x"] - n2["x"], n1["y"] - n2["y"])
+
+    # Node map for quick access
+    nodes = {0: dataset["depot"]}
+    for c in dataset["customers"]:
+        nodes[c["id"]] = c
+
+    total_dist_global = 0
+    total_cost_global = 0
+    
+    # 1. PER RUTE DETAIL
+    for i, seq in enumerate(routes_snapshot):
+        if not seq: continue
+        
+        # Determine Vehicle Type (This is tricky since snapshot only has sequences)
+        # We'll try to infer or get from dataset if available, but for now we assume implicit logic
+        # In RVND, vehicle assignment updates. Here we just recalculate based on *demand*.
+        route_demand = sum(nodes[n]["demand"] for n in seq if n != 0)
+        
+        # Find suitable vehicle from fleet
+        # Fixed logic: Sort fleet by capacity, pick smallest that fits
+        fleet_sorted = sorted(dataset["fleet"], key=lambda x: x["capacity"])
+        assigned_vehicle = next((v for v in fleet_sorted if v["capacity"] >= route_demand), None)
+        
+        veh_name = assigned_vehicle["name"] if assigned_vehicle else "N/A"
+        veh_cost_per_km = assigned_vehicle.get("variable_cost_per_km", 0) if assigned_vehicle else 0
+        veh_cap = assigned_vehicle["capacity"] if assigned_vehicle else 0
+
+        st.markdown(f"**Rute {i+1} (Vehicle: {veh_name}, Cap: {route_demand}/{veh_cap})**")
+        
+        # Header Table
+        # columns: Urutan | Waktu Tiba | Service | TW | Keterangan
+        
+        table_rows = []
+        
+        # Start at Depot
+        current_time = 480 # 08:00 in minutes (Use depot start window?)
+        # User manual starts at 08:30 (510 min)
+        depot_start = nodes[0]["time_window"]["start"]
+        h, m = map(int, depot_start.split(":"))
+        current_time = h * 60 + m
+        
+        prev_node_id = 0
+        departure_time = current_time # Start time
+        
+        # Row 0: Start
+        start_tw = f"{nodes[0]['time_window']['start']}-{nodes[0]['time_window']['end']}"
+        table_rows.append({
+            "Urutan": "Start (0)",
+            "Waktu Tiba": "-",
+            "Service": "-",
+            "TW": start_tw,
+            "Keterangan": "-"
+        })
+
+        route_dist = 0
+        
+        # Iterate sequence (skip first 0 if present, but usually sequence is [0, 1, 2, 0])
+        # We handle the full sequence logic
+        
+        for j, node_id in enumerate(seq):
+            if j == 0: continue # Skip first 0 (Start)
+            
+            node = nodes[node_id]
+            dist = calc_dist(nodes[prev_node_id], node)
+            route_dist += dist
+            travel_time = dist # Assuming 1 km = 1 min
+            
+            arrival_time = departure_time + travel_time
+            
+            # TW Logic
+            tw_start_str = node["time_window"]["start"]
+            tw_end_str = node["time_window"]["end"]
+            h_s, m_s = map(int, tw_start_str.split(":"))
+            h_e, m_e = map(int, tw_end_str.split(":"))
+            tw_start_min = h_s * 60 + m_s
+            tw_end_min = h_e * 60 + m_e
+            
+            status = "Memenuhi"
+            if arrival_time > tw_end_min:
+                status = "Terlambat (Tidak Layak)"
+            elif arrival_time < tw_start_min:
+                status = "Menunggu"
+                
+            # Service calculation
+            start_service = max(arrival_time, tw_start_min)
+            svc_duration = node["service_time"]
+            finish_service = start_service + svc_duration
+            
+            # Formatting strings like "08:30+37,5=09:07,5"
+            def fmt_time(mins):
+                h = int(mins // 60)
+                m = mins % 60
+                return f"{h:02d}:{m:04.1f}".replace(".", ",")
+
+            arrival_str = f"{fmt_time(departure_time)}+{dist:.1f}={fmt_time(arrival_time)}"
+            service_str = f"{fmt_time(start_service)}+{svc_duration}={fmt_time(finish_service)}"
+            tw_str = f"{tw_start_str}-{tw_end_str}"
+            
+            if node_id == 0:
+                # Depot return
+                 service_str = "-"
+                 finish_service = arrival_time # No service at end depot
+            
+            table_rows.append({
+                "Urutan": str(node_id),
+                "Waktu Tiba": arrival_str,
+                "Service": service_str,
+                "TW": tw_str,
+                "Keterangan": status
+            })
+            
+            prev_node_id = node_id
+            departure_time = finish_service
+            
+        # Display Route Table
+        st.dataframe(pd.DataFrame(table_rows), use_container_width=True, hide_index=True)
+        
+        route_cost = route_dist * veh_cost_per_km
+        total_dist_global += route_dist
+        total_cost_global += route_cost
+
+    # 3. GLOBAL SUMMARY
+    st.info(f"💰 **Total Estimasi:** Jarak {total_dist_global:.1f} km | Biaya Rp {_format_number(total_cost_global)}")
+
+
+def _display_rvnd_inter_iterations(logs: List[Dict], dataset: Dict[str, Any] = None) -> None:
     """Display RVND inter-route iterations with improved formatting."""
-    st.markdown("### 🔄 RVND Inter-Route - Pertukaran Pelanggan Antar Rute")
+    st.markdown("### RVND Inter-Route - Pertukaran Pelanggan Antar Rute")
 
     inter_logs = [l for l in logs if l.get("phase") == "RVND-INTER"]
 
@@ -478,10 +622,14 @@ def _display_rvnd_inter_iterations(logs: List[Dict]) -> None:
         total_dist = l.get("total_distance", 0)
         routes_snapshot = l.get("routes_snapshot", [])
 
-        # Itung delta dari iterasi sebelumnya
+        # Itung delta dari iterasi sebelumnya (Pastikan tanda - muncul untuk penghematan)
         if prev_distance is not None:
             delta = total_dist - prev_distance
-            delta_str = f"{delta:+.2f}" if delta != 0 else "0.00"
+            if abs(delta) < 0.001:
+                delta_str = "0,00"
+            else:
+                # Force negative sign for improvements (total_dist < prev_distance)
+                delta_str = f"{delta:+.2f}".replace(".", ",")
         else:
             delta_str = "-"
 
@@ -495,9 +643,7 @@ def _display_rvnd_inter_iterations(logs: List[Dict]) -> None:
 
         # Format neighborhood nicely
         # Format neighborhood nicely
-        nh_display = neighborhood.replace("_", "(").replace(
-            "1", "1)").replace("2", "2)") if neighborhood else "-"
-        nh_display = nh_display.replace("()", "").title()
+        nh_display = neighborhood.replace("_", " ").title() if neighborhood else "-"
 
         # Status yang lebih informatif - BERDASARKAN DELTA SEBENARNYA (FLOAT)
         if prev_distance is not None:
@@ -509,7 +655,7 @@ def _display_rvnd_inter_iterations(logs: List[Dict]) -> None:
             else:  # Delta positif (lebih buruk)
                 status_str = "⏭️ Tidak Ada Perbaikan"
         else:
-            status_str = "-"  # Iterasi pertama
+            status_str = "Basis Awal"  # Iterasi pertama
 
         table_data.append({
             "Iter": iter_id,
@@ -517,7 +663,8 @@ def _display_rvnd_inter_iterations(logs: List[Dict]) -> None:
             "Rute Hasil": routes_str if routes_str else "-",
             "Total Jarak": f"{total_dist:.2f} km",
             "Δ Jarak": delta_str,
-            "Status": status_str
+            "Status": status_str,
+            "_candidates": l.get("candidates", []) # Store hidden column for detail view
         })
 
         prev_distance = total_dist
@@ -529,158 +676,315 @@ def _display_rvnd_inter_iterations(logs: List[Dict]) -> None:
         hide_index=True,
         column_config={
             "Rute Hasil": st.column_config.TextColumn("Rute Hasil", width="medium"),
+            "_candidates": None # Hide this column
         }
     )
 
+    # DETAILED VIEW PER ITERATION (FOR CANDIDATES TABLE)
+    st.markdown("#### 🔍 Detail Validasi Kapasitas (Per Iterasi)")
+    min_iter = int(table_data[0]["Iter"])
+    max_iter = int(table_data[-1]["Iter"])
+    
+    selected_iter = st.number_input("Pilih Iterasi untuk Detail:", min_value=min_iter, max_value=max_iter, value=min_iter)
+    
+    # Find selected log
+    selected_log = next((l for l in inter_logs if l.get("iteration_id") == selected_iter or l.get("iteration") == selected_iter), None)
+    
+    if selected_log and "candidates" in selected_log:
+        candidates = selected_log["candidates"]
+        st.markdown(f"**Hitung Kelayakan Kapasitas (Iterasi {selected_iter}) - Matrix View**")
+        st.caption("Tabel detail kelayakan per rute untuk setiap kandidat pergerakan.")
+        
+        # Determine max number of routes from candidates
+        max_routes = 0
+        if candidates:
+            # Check first few candidates to find max route count
+            for c in candidates:
+                loads = c.get("route_loads", [])
+                if len(loads) > max_routes:
+                    max_routes = len(loads)
+        
+        cand_rows = []
+        for c in candidates:
+            row_data = {
+                "Detail Move": c.get("detail", "?"),
+            }
+            
+            # Fill Rute & Kapasitas columns dynamically
+            current_loads = c.get("route_loads", [])
+            current_seqs = c.get("route_sequences", [])
+            
+            for i in range(max_routes):
+                r_idx = i + 1
+                # Rute Sequence
+                seq = current_seqs[i] if i < len(current_seqs) else "-"
+                row_data[f"Rute {r_idx}"] = seq
+                
+                # Kapasitas Log (e.g., "150 (Fleet A)")
+                load = current_loads[i] if i < len(current_loads) else "-"
+                row_data[f"Kap {r_idx}"] = load
+            
+            # Common Status columns
+            is_feasible = c.get("feasible", False)
+            row_data["Status"] = "Layak" if is_feasible else "Tidak Layak"
+            row_data["Alasan"] = c.get("reason", "-")
+            row_data["Delta Jarak"] = f"{c.get('delta'):+.2f}" if c.get("delta") is not None else ""
+            
+            cand_rows.append(row_data)
+            
+        if cand_rows:
+            df_cand = pd.DataFrame(cand_rows)
+            
+            # Reorder columns: Detail -> Rute 1..N -> Kap 1..N -> Status -> Alasan -> Delta
+            cols_order = ["Detail Move"]
+            for i in range(max_routes):
+                cols_order.append(f"Rute {i+1}")
+            for i in range(max_routes):
+                cols_order.append(f"Kap {i+1}")
+            cols_order.extend(["Status", "Alasan", "Delta Jarak"])
+            
+            # Ensure only existing columns are selected
+            final_cols = [col for col in cols_order if col in df_cand.columns]
+            df_cand = df_cand[final_cols]
 
-def _display_rvnd_intra_iterations(logs: List[Dict]) -> None:
-    """Display RVND intra-route iterations with improved formatting."""
-    st.markdown("### 🔁 RVND Intra-Route - Optimasi Dalam Rute")
+            # Apply Styling
+            def highlight_status(row):
+                status_color = ''
+                if row.get("Status") == "Tidak Layak":
+                    status_color = 'background-color: #ffcccc; color: #990000;'
+                return [status_color] * len(row)
+
+            st.dataframe(
+                df_cand.style.apply(highlight_status, axis=1),
+                use_container_width=True, 
+                hide_index=True
+            )
+        else:
+            st.info("Tidak ada data kandidat untuk ditampilkan.")
+
+        # --- LEGEND & EXPLANATION (CAPACITY) ---
+        with st.expander("📝 Keterangan Notasi & Istilah"):
+            st.markdown("""
+            **Istilah Gerakan (Detail Move):**
+            - **A -> RY**: Memindahkan pelanggan A ke Rute Y (Shift).
+            - **A, B**: Menukar posisi pelanggan A dengan pelanggan B (Swap).
+            - **(A,B), C**: Menukar sepasang pelanggan (A,B) dengan pelanggan C.
+            - **Cross A, B**: Memotong jalur di titik A dan B, lalu menyambung silang.
+            """)
+
+        # --- DISTANCE CHECK MATRIX (Hitung Jarak) ---
+        st.markdown(f"**Hitung Perubahan Jarak (Iterasi {selected_iter})**")
+        st.caption("Tabel detail jarak tempuh per rute. Selisih negatif (-) berarti penghematan jarak.")
+
+        dist_rows = []
+        for c in candidates:
+            # Only show if route_distances data is available
+            dists = c.get("route_distances", [])
+            if not dists:
+                continue
+
+            row_data = {
+                "Detail Move": c.get("detail", "?"),
+            }
+            
+            # Fill Distance columns
+            for i in range(max_routes):
+                r_idx = i + 1
+                d_val = dists[i] if i < len(dists) else 0
+                row_data[f"Jarak R{r_idx}"] = f"{d_val:.2f}"
+            
+            # Add Logic Column (User Request: "lebih besar dan lebih kecil")
+            current_total = c.get("total_distance", 0)
+            delta = c.get("delta", 0)
+            prev_total = current_total - delta if delta is not None else 0
+            
+            if delta is not None:
+                if delta < -0.001:
+                    row_data["Keterangan"] = f"{current_total:.2f} < {prev_total:.2f} (Lebih Hemat)"
+                elif delta > 0.001:
+                    row_data["Keterangan"] = f"{current_total:.2f} > {prev_total:.2f} (Lebih Boros)"
+                else:
+                    row_data["Keterangan"] = f"{current_total:.2f} = {prev_total:.2f} (Sama)"
+            else:
+                row_data["Keterangan"] = "-"
+
+            dist_rows.append(row_data)
+
+        if dist_rows:
+            df_dist = pd.DataFrame(dist_rows)
+            
+            # Reorder columns
+            cols_dist = ["Detail Move"]
+            for i in range(max_routes):
+                cols_dist.append(f"Jarak R{i+1}")
+            cols_dist.extend(["Total Jarak", "Selisih (Delta)", "Keterangan", "Status"])
+            
+            final_cols_dist = [col for col in cols_dist if col in df_dist.columns]
+            df_dist = df_dist[final_cols_dist]
+
+            def highlight_delta(row):
+                color = ''
+                try:
+                    delta_val = float(row.get("Selisih (Delta)", 0))
+                    if delta_val < -0.001:
+                        color = 'background-color: #ccffcc; color: #006600;' # Green for improvement
+                    elif row.get("Status") == "Tidak Layak":
+                        color = 'color: #999999;' # Grey text for invalid
+                except Exception:
+                    pass
+                return [color] * len(row)
+
+            st.dataframe(
+                df_dist.style.apply(highlight_delta, axis=1),
+                use_container_width=True, 
+                hide_index=True
+            )
+
+
+
+        # CONCLUSION SECTION (Single Source of Truth)
+        best_cand = next((c for c in candidates if c.get("feasible") and c.get("delta", 0) < -0.001), None)
+        
+        st.markdown("**Kesimpulan Iterasi:**")
+        
+        if best_cand:
+            # Combine details from both old blocks for a richer summary
+            num_cands = len(candidates)
+            st.success(f"✅ **Ditemukan Solusi Lebih Baik!** Dari {num_cands} kandidat gerakan, ditemukan rute terbaik: **{best_cand.get('detail')}** yang valid dan menghemat jarak sebesar **{abs(best_cand.get('delta',0)):.2f} km**.")
+            
+            # Show Detailed Verification for this move
+            _generate_verification_log(selected_log["routes_snapshot"], dataset)
+            
+        else:
+             st.info(f"ℹ️ **Posisi Belum Berubah.** Dari {len(candidates)} kandidat, tidak ada pergerakan yang valid atau menghasilkan penghematan jarak (Stagnan). Algoritma memeriksa opsi pergerakan acak namun belum menemukan yang lebih baik.")
+
+    elif selected_log:
+        if selected_iter == 0:
+             st.info("🏁 **Basis Awal Optimasi.** Ini adalah kondisi rute mula-mula (dari algoritma semut) sebelum dilakukan perbaikan RVND.")
+        else:
+             st.info(f"ℹ️ **Iterasi Stagnan.** Pada iterasi {selected_iter}, algoritma tidak menemukan pergerakan yang valid atau menguntungkan. Mencoba kombinasi tetangga (neighborhood) lain...")
+        
+        
+    
+def _display_rvnd_intra_iterations(logs: List[Dict], dataset: Dict[str, Any] = None) -> None:
+    """Display RVND intra-route iterations with manual calculation alignment."""
+    st.markdown("### RVND Intra-Route - Optimasi Dalam Rute")
+    st.caption("Proses perbaikan urutan kunjungan dalam satu rute untuk meminimalkan total jarak tempuh.")
 
     intra_logs = [log for log in logs if log.get("phase") == "RVND-INTRA"]
 
     if not intra_logs:
-        st.info("Belum ada iterasi intra-route nih.")
+        st.info("Belum ada data iterasi intra-route.")
         return
 
-    # === OVERALL SUMMARY ===
+    # Metrics Summary
     total_iters = len(intra_logs)
     improved_count = sum(1 for log in intra_logs if log.get("improved", False))
-
-    # Count neighborhoods used
-    neighborhood_counts = {}
-    for log in intra_logs:
-        nh = log.get("neighborhood", "none")
-        if nh and nh not in ["none", "initial", "stagnan"]:
-            neighborhood_counts[nh] = neighborhood_counts.get(nh, 0) + 1
-
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("Total Iterasi Intra-Route", total_iters)
-    with col2:
-        st.metric("Total Perbaikan",
-                  f"{improved_count} ({improved_count/total_iters*100:.0f}%)" if total_iters > 0 else "0")
-
-    if neighborhood_counts:
-        nh_text = " | ".join([f"**{k.replace('_', '-').title()}**: {v}x" for k,
-                             v in sorted(neighborhood_counts.items(), key=lambda x: -x[1])])
-        st.caption(f"📊 Gerakan yang Berhasil: {nh_text}")
+    
+    c1, c2 = st.columns(2)
+    with c1:
+        st.metric("Total Percobaan Gerakan", total_iters)
+    with c2:
+        st.metric("Total Perbaikan Berhasil", f"{improved_count} kali")
 
     st.divider()
 
-    # Helper function to format route sequence
-    def format_route(seq):
-        if isinstance(seq, list):
-            # Handle nested list (routes_snapshot often contains [[0,1,2,0]])
-            if len(seq) > 0 and isinstance(seq[0], list):
-                return "→".join(str(n) for n in seq[0])
-            return "→".join(str(n) for n in seq)
-        return str(seq)
+    with st.expander("ℹ️ Apa itu Two-Opt, Reinsertion, dan Exchange? (Strategi Optimasi)"):
+        st.markdown("""
+        Strategi ini digunakan untuk memperbaiki urutan pelanggan di dalam satu rute agar lebih pendek:
+        - **Two-Opt**: Strategi untuk menghilangkan jalur yang bersilangan (crossing). Cara kerjanya adalah dengan menghapus dua garis rute dan menyambungkannya kembali secara terbalik. Bayangkan seperti meluruskan benang yang kusut.
+        - **Reinsertion**: Memindahkan satu pelanggan dari posisi asalnya ke posisi lain yang lebih efisien dalam rute yang sama.
+        - **Exchange (Swap)**: Menukarkan posisi dua pelanggan di dalam satu rute. Misalnya, urutan 1-2 ditukar menjadi 2-1 untuk melihat mana yang lebih singkat jarak tempuhnya.
+        - **Or-Opt**: Mirip dengan Reinsertion, namun yang dipindahkan adalah sekumpulan pelanggan (blok) sekaligus ke posisi lain.
+        """)
 
     # Group by cluster
-    clusters = set(log.get("cluster_id", 0)
-                   for log in intra_logs if "cluster_id" in log)
+    clusters = sorted(list(set(log.get("cluster_id", 0) for log in intra_logs)))
 
-    for cluster_id in sorted(clusters):
-        cluster_logs = [log for log in intra_logs if log.get(
-            "cluster_id") == cluster_id]
-
+    for cluster_id in clusters:
+        cluster_logs = [log for log in intra_logs if log.get("cluster_id") == cluster_id]
         if not cluster_logs:
             continue
-
-        # Calculate cluster-specific metrics
-        cluster_improved = sum(
-            1 for log in cluster_logs if log.get("improved", False))
-        distances = [log.get("total_distance", 0) for log in cluster_logs]
-        first_dist = distances[0] if distances else 0
-        last_dist = distances[-1] if distances else 0
-        delta_pct = ((last_dist - first_dist) / first_dist *
-                     100) if first_dist > 0 else 0
-        vehicle_type = cluster_logs[0].get("vehicle_type", "N/A") if cluster_logs else "N/A"
         
+        vehicle_type = cluster_logs[0].get("vehicle_type", "N/A")
         v_label = f"({vehicle_type})" if vehicle_type not in ["?", "N/A"] else ""
-        with st.expander(f"🚛 Cluster {cluster_id} {v_label} - {len(cluster_logs)} iterasi, {cluster_improved} perbaikan", expanded=False):
-            # Cluster summary
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                st.metric("Jarak Awal", f"{first_dist:.2f} km")
-            with c2:
-                delta_color = "inverse" if delta_pct < 0 else "normal"
-                st.metric("Jarak Akhir", f"{last_dist:.2f} km",
-                          f"{delta_pct:+.1f}%", delta_color=delta_color)
-            with c3:
-                st.metric("Penghematan",
-                          f"{abs(last_dist - first_dist):.2f} km")
+        
+        with st.expander(f"Cluster {cluster_id} {v_label} - Perbaikan Dalam Rute", expanded=False):
+            # Distance Metrics
+            dists = [log.get("total_distance", 0) for log in cluster_logs if log.get("total_distance") is not None]
+            first_d, last_d = dists[0], dists[-1]
+            saving = first_d - last_d
+            
+            sc1, sc2, sc3 = st.columns(3)
+            with sc1:
+                st.metric("Jarak Sebelum", f"{first_d:.2f} km")
+            with sc2:
+                st.metric("Jarak Sesudah", f"{last_d:.2f} km", f"{-saving:.2f} km" if saving > 0.001 else None, delta_color="inverse")
+            with sc3:
+                st.metric("Hasil Pencarian", "Ditemukan Perbaikan" if saving > 0.001 else "Rute Sudah Optimal")
 
-            # Build iteration table with before/after comparison
-            table_data = []
-            prev_route = None
-            prev_distance = None
-
+            # Iteration-by-Iteration Details
             for log in cluster_logs:
-                iter_id = log.get("iteration_id", log.get("iteration", "?"))
-                neighborhood = log.get("neighborhood", "none")
-                improved = log.get("improved", False)
-                total_dist = log.get("total_distance", 0)
-                routes_snapshot = log.get(
-                    "routes_snapshot", log.get("sequence_after", []))
-
-                # Current route
-                current_route = format_route(routes_snapshot)
-
-                # Before route (from previous iteration)
-                before_route = prev_route if prev_route else "-"
-
-                # Delta distance
-                if prev_distance is not None:
-                    delta = total_dist - prev_distance
-                    delta_str = f"{delta:+.2f}"
-                else:
-                    delta_str = "-"
-
-                # Format neighborhood
+                iter_id = log.get("iteration_id", 0)
+                neighborhood = log.get("neighborhood", "N/A")
+                
                 if neighborhood == "initial":
-                    nh_display = "🏁 Posisi Awal"
-                elif neighborhood == "or_opt":
-                    nh_display = "🔀 Or-Opt (Pindah)"
-                elif neighborhood == "two_opt":
-                    nh_display = "🔄 2-Opt (Tukar)"
-                elif neighborhood == "stagnan":
-                    nh_display = "⏸️ Stagnan"
+                    st.info("🏁 **Basis Awal**: Urutan rute sebelum perbaikan intra-route.")
+                    st.code(" → ".join(map(str, log["routes_snapshot"][0] if (log.get("routes_snapshot") and len(log["routes_snapshot"]) > 0) else [])))
+                    continue
+                
+                if neighborhood == "stagnan":
+                    st.warning(f"🏁 **Kesimpulan Cluster {cluster_id}**: {log.get('action', 'Optimal Lokal.')}")
+                    continue
+                
+                # Manual Calculation Style Section
+                st.markdown(f"#### Percobaan {iter_id}")
+                
+                # Neighborhood State (NL')
+                nl_list = log.get("nl_list", [])
+                if nl_list:
+                    nl_str = "{" + ", ".join([n.replace("_", "-").title() for n in nl_list]) + "}"
+                    st.markdown(f"**Daftar Strategi Aktif**: `{nl_str}`")
+                
+                nh_display = neighborhood.replace("_", "-").title()
+                st.markdown(f"👉 **Mencoba Strategi**: **{nh_display}**")
+                
+                # Candidates Table (Matrix)
+                candidates = log.get("candidates", [])
+                if candidates:
+                    st.markdown("**Evaluasi Kemungkinan Urutan Baru:**")
+                    matrix_data = []
+                    # Filter candidates to show at most 50 to avoid lag if it's too huge
+                    disp_cands = candidates[:50]
+                    
+                    for c in disp_cands:
+                        row = {"Pilihan": c.get("detail", "?")}
+                        # Individual route distances (we only care about current cluster rute usually, 
+                        # but keeping matrix for consistency with inter-route)
+                        rdists = c.get("route_distances", [])
+                        for i, d in enumerate(rdists):
+                            row[f"R{i+1}"] = f"{d:.2f}"
+                        
+                        row["Total Div."] = f"{c.get('total_distance', 0):.2f}"
+                        row["Status Perubahan"] = c.get("reason", "-")
+                        matrix_data.append(row)
+                    
+                    df_matrix = pd.DataFrame(matrix_data)
+                    st.dataframe(df_matrix, use_container_width=True, hide_index=True)
+                    if len(candidates) > 50:
+                        st.caption(f"*Menampilkan 50 dari {len(candidates)} kemungkinan urutan.*")
+
+                # Improvement Found?
+                improved = log.get("improved", False)
+                if improved:
+                    st.success(f"✅ **Sukses!** Strategi **{nh_display}** berhasil menghemat jarak menjadi **{log.get('total_distance'):.2f} km**.")
+                    if dataset:
+                        _generate_verification_log(log["routes_snapshot"], dataset)
+                    st.markdown("**Action**: Reset pencarian menggunakan semua strategi.")
                 else:
-                    nh_display = neighborhood.replace("_", "-").title() if neighborhood and neighborhood != "none" else "🔍 Mencari Peluang"
+                    st.info(f"➖ **Belum Berubah.** Strategi {nh_display} tidak menemukan urutan yang lebih hemat. {log.get('action', '')}")
 
-                table_data.append({
-                    "Iter": iter_id,
-                    "Move": nh_display,
-                    "Rute Sebelum": before_route if before_route != current_route and neighborhood != "initial" else "-", 
-                    "Rute Sesudah": current_route,
-                    "Jarak": f"{total_dist:.2f} km",
-                    "Δ (Selisih)": delta_str,
-                    "Status": "✅ Berhasil" if improved else "➖ Tetap"
-                })
-
-                prev_route = current_route
-                prev_distance = total_dist
-
-            df = pd.DataFrame(table_data)
-            st.dataframe(
-                df, 
-                use_container_width=True, 
-                hide_index=True,
-                column_config={
-                    "Rute Sebelum": st.column_config.TextColumn("Rute Sebelum", width="medium"),
-                    "Rute Sesudah": st.column_config.TextColumn("Rute Sesudah", width="medium"),
-                }
-            )
-
-            st.caption("""
-            **Keterangan Kolom:**
-            *   **Move**: Jenis perbaikan yang dicoba (Swap/Relocate). *(Cek Optimasi)* artinya sedang mencari peluang.
-            *   **Delta (Δ)**: Penghematan jarak dibanding iterasi sebelumnya.
-            *   **Status**: ✅ Berhasil (Jarak berkurang), ➖ Tetap (Tidak ada perubahan yang lebih baik).
-            *   *Catatan:* Jika "Total Perbaikan = 0", berarti rute awal sudah optimal secara lokal.
-            """)
+                st.divider()
 
 
 def _minutes_to_time(minutes: float) -> str:
@@ -713,7 +1017,7 @@ def _display_time_window_analysis(result: Dict[str, Any]) -> None:
         vehicle_type = route.get("vehicle_type", "?")
         stops = route.get("stops", [])
 
-        with st.expander(f"🚛 Cluster {cluster_id} - {vehicle_type}", expanded=True):
+        with st.expander(f"Cluster {cluster_id} - {vehicle_type}", expanded=True):
             # Depot start info
             if stops:
                 depot_stop = stops[0]
@@ -792,7 +1096,7 @@ def _display_time_window_analysis(result: Dict[str, Any]) -> None:
 
     # Overall summary
     st.markdown("---")
-    st.markdown("#### 📊 Ringkasan Jadwal Keseluruhan")
+    st.markdown("#### Ringkasan Jadwal Keseluruhan")
 
     total_routes_compliant = sum(
         1 for r in routes if r.get("total_tw_violation", 0) == 0)
@@ -941,13 +1245,13 @@ def _get_reassignment_map(result: Dict[str, Any]) -> Dict[int, Dict[str, Any]]:
     for log in explicit_logs:
         c_id = log.get("cluster_id")
         if c_id is not None:
-             reassignment_map[c_id] = {
-                 "status": log.get("status", ""),
-                 "new_vehicle": log.get("new_vehicle", "-"),
-                 "old_vehicle": log.get("old_vehicle", "-"),
-                 "reason": log.get("reason", ""),
-                 "demand": log.get("demand", 0)
-             }
+            reassignment_map[c_id] = {
+                "status": log.get("status", ""),
+                "new_vehicle": log.get("new_vehicle", "-"),
+                "old_vehicle": log.get("old_vehicle", "-"),
+                "reason": log.get("reason", ""),
+                "demand": log.get("demand", 0)
+            }
     return reassignment_map
 
 
@@ -1398,6 +1702,7 @@ def render_academic_replay() -> None:
         return
 
     logs = result.get("iteration_logs", [])
+    dataset = result.get("dataset", {})
 
     # ============================================================
     # SECTION 4: Streamlined Tabs (6 tabs, merged from 7)
@@ -1421,7 +1726,7 @@ def render_academic_replay() -> None:
 
     with tab_rvnd:
         # Combined RVND Inter + Intra in one tab
-        _display_rvnd_inter_iterations(logs)
+        _display_rvnd_inter_iterations(logs, dataset=dataset)
         st.markdown("---")
         _display_rvnd_intra_iterations(logs)
 

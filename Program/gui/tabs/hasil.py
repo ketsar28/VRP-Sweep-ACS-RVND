@@ -63,11 +63,11 @@ def _display_final_routes_table(result: Dict[str, Any]) -> None:
         return
 
     # Use clearer text explanation
-    st.info("✅ **Hasil Optimasi Final:** Tabel di bawah ini adalah rencana perjalanan yang **paling akurat** dan siap dieksekusi, karena telah melalui proses penugasan armada (Fleet Reassignment) sesuai dengan ketersediaan unit yang Anda input.")
+    st.info("✅ **Hasil Optimasi Final:** Tabel di bawah ini adalah rencana perjalanan yang **paling akurat** dan siap dieksekusi, karena telah melalui proses penugasan armada (Fleet Reassignment) sesuai dengan ketersediaan unit yang diinput.")
 
     # --- 1. PARSE REASSIGNMENT LOGS to get ACTUAL status ---
     reassignment_map = {} 
-    explicit_logs = [l for l in result.get("iteration_logs", []) if l.get("phase") == "VEHICLE_REASSIGN"]
+    explicit_logs = [log for log in result.get("iteration_logs", []) if log.get("phase") == "VEHICLE_REASSIGN"]
     
     for log in explicit_logs:
         c_id = log.get("cluster_id")
@@ -109,7 +109,7 @@ def _display_final_routes_table(result: Dict[str, Any]) -> None:
 
         # Metrics
         dist = route.get("total_distance", 0)
-        load = route.get("total_load", 0)
+        load = route.get("total_demand", 0)
         
         # If failed, show 0 or indicator
         dist_str = f"{dist:.2f}" if not is_failed else "(0)"
@@ -388,7 +388,6 @@ def _render_summary_academic(result: Dict[str, Any]) -> None:
         "Total Jarak (km)": f"{total_distance:,.2f}",
         "Biaya Tetap (Rp)": f"{total_fixed:,.0f}",
         "Biaya Variabel (Rp)": f"{total_variable:,.0f}",
-        "Total Biaya (Rp)": f"{total_variable:,.0f}",
         "Total Biaya (Rp)": f"{total_cost:,.0f}",
         "Jumlah Pelanggan": len(all_customers),
         "Daftar Pelanggan": cust_str
@@ -439,8 +438,7 @@ def render_hasil() -> None:
     # --- RESULT STATE ---
     
     # Context
-    st.success(
-        "🎉 **Optimasi Selesai!** Berikut adalah ringkasan hasil penjadwalan armada Anda.")
+    st.success("🎉 **Optimasi Selesai!** Berikut adalah ringkasan hasil penjadwalan armada.")
 
     # 1. Executive Summary KPIs
     _display_executive_kpis(result)
@@ -462,7 +460,7 @@ def render_hasil() -> None:
     
     # Need to reconstruct reassignment map here locally
     reassignment_map = {}
-    explicit_logs = [l for l in result.get("iteration_logs", []) if l.get("phase") == "VEHICLE_REASSIGN"]
+    explicit_logs = [log for log in result.get("iteration_logs", []) if log.get("phase") == "VEHICLE_REASSIGN"]
     for log in explicit_logs:
         c_id = log.get("cluster_id")
         if c_id is not None:
@@ -557,7 +555,7 @@ def _get_clean_export_data(result: Dict[str, Any]) -> pd.DataFrame:
         
     # Reassignment Map for accurate status
     reassignment_map = {}
-    explicit_logs = [l for l in result.get("iteration_logs", []) if l.get("phase") == "VEHICLE_REASSIGN"]
+    explicit_logs = [log for log in result.get("iteration_logs", []) if log.get("phase") == "VEHICLE_REASSIGN"]
     for log in explicit_logs:
         c_id = log.get("cluster_id")
         if c_id is not None:
@@ -573,7 +571,6 @@ def _get_clean_export_data(result: Dict[str, Any]) -> pd.DataFrame:
         # Determine Status & Vehicle
         veh = r.get("vehicle_type", "-")
         status = "Valid"
-        note = ""
         
         if cid in reassignment_map:
             re_info = reassignment_map[cid]
@@ -620,11 +617,10 @@ def _get_clean_export_data(result: Dict[str, Any]) -> pd.DataFrame:
 def _display_executive_kpis(result: Dict[str, Any]) -> None:
     """Display big metrics at top of Detail Tab (Excluding Failed Routes)."""
     routes = result.get("routes", [])
-    courses = result.get("costs", {})
     
     # Re-map reassignment failures
     reassignment_map = {}
-    explicit_logs = [l for l in result.get("iteration_logs", []) if l.get("phase") == "VEHICLE_REASSIGN"]
+    explicit_logs = [log for log in result.get("iteration_logs", []) if log.get("phase") == "VEHICLE_REASSIGN"]
     for log in explicit_logs:
         c_id = log.get("cluster_id")
         if c_id is not None:
@@ -637,7 +633,6 @@ def _display_executive_kpis(result: Dict[str, Any]) -> None:
     # For KPIs, let's just sum valid routes.
     
     dataset = result.get("dataset", {})
-    fleet_dict = {f["id"]: f for f in dataset.get("fleet", [])}
     
     valid_cost = 0
 

@@ -64,9 +64,6 @@ def render_input_titik(show_labels: bool = True, show_grid: bool = True) -> None
 
         st.divider()
 
-        # st.header("⚙️ Kontrol Peta")
-        # show_labels = st.toggle("Tampilkan Label", value=True)
-        # show_grid = st.toggle("Tampilkan Grid", value=True)
 
     # Peta untuk melihat sebaran koordinat titik
     st.subheader("🗺️ Peta Titik")
@@ -181,8 +178,7 @@ def render_input_titik(show_labels: bool = True, show_grid: bool = True) -> None
                 save_to_autosave()
                 st.rerun()
 
-    # Reset button moved to bottom right or main tools area
-    # st.markdown("---")
+
     if st.button("🔄 Reset Semua Titik", key="btn_reset_canvas"):
         st.session_state["points"] = {"depots": [], "customers": []}
         save_to_autosave()

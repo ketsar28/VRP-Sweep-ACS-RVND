@@ -22,87 +22,7 @@ MODE = "ACADEMIC_REPLAY"  # default for validation
 DATA_DIR = Path(__file__).resolve().parent / "data" / "processed"
 ACADEMIC_OUTPUT_PATH = DATA_DIR / "academic_replay_results.json"
 
-# ============================================================
-# HARD-CODED DATASET FROM WORD DOCUMENT
-# ============================================================
-
-ACADEMIC_DATASET = {
-    "depot": {
-        "id": 0,
-        "name": "Depot",
-        "x": 0.0,
-        "y": 0.0,
-        "time_window": {"start": "08:00", "end": "17:00"},
-        "service_time": 0
-    },
-    "customers": [
-        {"id": 1, "name": "C1", "x": 2.0, "y": 3.0, "demand": 10,
-            "service_time": 5, "time_window": {"start": "08:00", "end": "12:00"}},
-        {"id": 2, "name": "C2", "x": 5.0, "y": 1.0, "demand": 15,
-            "service_time": 10, "time_window": {"start": "08:00", "end": "14:00"}},
-        {"id": 3, "name": "C3", "x": 6.0, "y": 4.0, "demand": 20,
-            "service_time": 8, "time_window": {"start": "09:00", "end": "15:00"}},
-        {"id": 4, "name": "C4", "x": 8.0, "y": 2.0, "demand": 25,
-            "service_time": 12, "time_window": {"start": "08:30", "end": "16:00"}},
-        {"id": 5, "name": "C5", "x": 3.0, "y": 6.0, "demand": 30,
-            "service_time": 15, "time_window": {"start": "10:00", "end": "14:00"}},
-        {"id": 6, "name": "C6", "x": 7.0, "y": 5.0, "demand": 18,
-            "service_time": 7, "time_window": {"start": "08:00", "end": "13:00"}},
-        {"id": 7, "name": "C7", "x": 4.0, "y": 8.0, "demand": 22,
-            "service_time": 9, "time_window": {"start": "09:00", "end": "16:00"}},
-        {"id": 8, "name": "C8", "x": 1.0, "y": 5.0, "demand": 12,
-            "service_time": 6, "time_window": {"start": "08:00", "end": "11:00"}},
-        {"id": 9, "name": "C9", "x": 9.0, "y": 7.0, "demand": 28,
-            "service_time": 11, "time_window": {"start": "10:00", "end": "15:00"}},
-        {"id": 10, "name": "C10", "x": 5.0, "y": 9.0, "demand": 35,
-            "service_time": 14, "time_window": {"start": "09:00", "end": "17:00"}}
-    ],
-    "fleet": [
-        {"id": "A", "capacity": 60, "units": 2, "fixed_cost": 50000,
-            "variable_cost_per_km": 1000, "available_from": "08:00", "available_until": "17:00"},
-        {"id": "B", "capacity": 100, "units": 2, "fixed_cost": 60000,
-            "variable_cost_per_km": 1000, "available_from": "08:00", "available_until": "17:00"},
-        {"id": "C", "capacity": 150, "units": 1, "fixed_cost": 70000,
-            "variable_cost_per_km": 1000, "available_from": "08:00", "available_until": "17:00"}
-    ],
-    "acs_parameters": {
-        "alpha": 0.5,
-        "beta": 2,
-        "rho": 0.2,
-        "q0": 0.85,
-        "num_ants": 2,
-        "max_iterations": 2
-    },
-    "objective_weights": {
-        "w1_distance": 1.0,
-        "w2_time": 1.0,
-        "w3_tw_violation": 1.0
-    }
-}
-
-# ============================================================
-# DEPRECATED: HARDCODED DATA FROM WORD DOCUMENT
-# These are kept for reference only - actual algorithms now use
-# DYNAMIC CALCULATION based on user input data.
-# ============================================================
-
-# CATATAN: Sudut polar sekarang diitung otomatis di academic_sweep()
-# WORD_POLAR_ANGLES = {...}  # DEPRECATED
-
-# NOTE: Customers are now sorted dynamically by polar angle
-# WORD_SORTED_CUSTOMERS = [...]  # DEPRECATED
-
-# CATATAN: Cluster dibentuk otomatis berdasarkan kapasitas armada yang diinput user
-# WORD_CLUSTERS = [...]  # DEPRECATED
-
-# NOTE: Random values for ACS are now generated dynamically
-# WORD_RANDOM_VALUES = {...}  # DEPRECATED
-
-# NOTE: Expected routes are calculated dynamically, not hardcoded
-# WORD_EXPECTED_ROUTES = {...}  # DEPRECATED
-
-# NOTE: RVND moves are now generated dynamically
-# WORD_RVND_MOVES = [...]  # DEPRECATED
+EPSILON = 1e-6 # Floating point tolerance
 
 # ============================================================
 # HELPER FUNCTIONS
@@ -476,9 +396,9 @@ def get_vehicle_type_for_demand(
                 continue
 
         # Vehicle is valid
-        reason = f"Demand {demand} fits in {vehicle['id']} (capacity ≤ {vehicle['capacity']})"
+        reason = f"Muatan {demand} kg sesuai dengan kapasitas {vehicle['id']} (maks. {vehicle['capacity']} kg)."
         if check_availability:
-            reason += f", available {vehicle['available_from']}–{vehicle['available_until']}"
+            reason += f" Armada tersedia antara pukul {vehicle['available_from']} – {vehicle['available_until']}."
         return (vehicle["id"], reason)
 
     # No vehicle fits - return largest available as fallback
@@ -526,7 +446,8 @@ def academic_sweep(dataset: Dict) -> Tuple[List[Dict], List[Dict]]:
             "step": "polar_angle",
             "customer_id": c["id"],
             "angle": round(angle, 2),
-            "formula": f"atan2({c['y'] - depot['y']}, {c['x'] - depot['x']}) × 180/π = {round(angle, 2)}°"
+            "formula": f"atan2(Δy, Δx) × 180/π = {round(angle, 2)}°",
+            "description": f"Menghitung sudut polar pelanggan {c['id']} terhadap depot: {round(angle, 2)}°."
         })
 
     # Step 2: Urutkan berdasarkan sudut polar (ascending)
@@ -537,7 +458,7 @@ def academic_sweep(dataset: Dict) -> Tuple[List[Dict], List[Dict]]:
         "phase": "SWEEP",
         "step": "sorted_order",
         "order": sorted_ids,
-        "description": "Customer diurutkan berdasarkan sudut polar (ascending)"
+        "description": "Pelanggan diurutkan berdasarkan besaran sudut polar (secara menaik) untuk menentukan urutan pengelompokan."
     })
 
     # Step 3: Bentuk cluster berdasarkan kapasitas kendaraan
@@ -592,12 +513,11 @@ def academic_sweep(dataset: Dict) -> Tuple[List[Dict], List[Dict]]:
                 iteration_logs.append({
                     "phase": "SWEEP",
                     "step": "customer_added",
-                    "cluster_id": cluster_id,
                     "customer_id": customer["id"],
                     "demand": customer["demand"],
                     "cluster_demand": current_cluster["total_demand"],
                     "remaining_capacity": remaining_capacity - current_cluster["total_demand"],
-                    "description": f"Customer {customer['id']} (demand={customer['demand']}) ditambahkan ke Cluster {cluster_id}"
+                    "description": f"Pelanggan {customer['id']} (muatan={customer['demand']}) dimasukkan ke Cluster {cluster_id}. Sisa kapasitas: {remaining_capacity - current_cluster['total_demand']}."
                 })
 
                 unassigned.pop(i)
@@ -615,8 +535,8 @@ def academic_sweep(dataset: Dict) -> Tuple[List[Dict], List[Dict]]:
                         "phase": "SWEEP",
                         "step": "forced_termination",
                         "cluster_id": cluster_id,
-                        "reason": f"Tidak ada customer tersisa yang muat (sisa kapasitas: {remaining_capacity - current_cluster['total_demand']})",
-                        "description": f"Cluster {cluster_id} dihentikan (forced termination)"
+                        "reason": f"Sisa kapasitas {remaining_capacity - current_cluster['total_demand']} tidak mencukupi untuk pelanggan berikutnya.",
+                        "description": f"Pengelompokan Cluster {cluster_id} dihentikan karena keterbatasan kapasitas."
                     })
                     break
             else:
@@ -787,9 +707,9 @@ def academic_nearest_neighbor(
                 "arrival_time": round(arrival_time, 2),
                 "tw_start": tw_start,
                 "tw_end": tw_end,
-                "action": "REJECTED",
-                "reason": f"Kedatangan {minutes_to_clock(arrival_time)} > Batas Waktu {minutes_to_clock(tw_end)}",
-                "description": f"Pelanggan {nearest} DITOLAK (kedatangan {minutes_to_clock(arrival_time)} > batas waktu {minutes_to_clock(tw_end)})"
+                "action": "DITOLAK",
+                "reason": f"Waktu tiba {minutes_to_clock(arrival_time)} melewati batas operasional pelanggan {minutes_to_clock(tw_end)}.",
+                "description": f"Pelanggan {nearest} tidak dapat dikunjungi pada langkah ini karena melampaui jendela waktu."
             })
             step += 1
             continue
@@ -806,8 +726,8 @@ def academic_nearest_neighbor(
             "arrival_time": round(arrival_time, 2),
             "tw_start": tw_start,
             "tw_end": tw_end,
-            "action": "ACCEPTED",
-            "description": f"Pilih pelanggan {nearest} (jarak = {round(nearest_dist, 2)})"
+            "action": "DITERIMA",
+            "description": f"Menambahkan pelanggan {nearest} ke dalam rute (jarak dari titik sebelumnya: {round(nearest_dist, 2)} km)."
         })
 
         # Update route
@@ -867,7 +787,7 @@ def academic_nearest_neighbor(
             "from_node": current,
             "to_node": 0,
             "distance": round(return_dist, 2),
-            "description": f"Kembali ke depot (jarak = {round(return_dist, 2)})"
+            "description": f"Rute selesai, armada kembali ke depot (jarak tempuh akhir: {round(return_dist, 2)} km)."
         })
     else:
         # No customers served, just depot
@@ -946,7 +866,6 @@ def academic_acs_cluster(
     max_iterations = acs_params["max_iterations"]
 
     customer_ids = cluster["customer_ids"]
-    customers = {c["id"]: c for c in dataset["customers"]}
 
     iteration_logs = []
 
@@ -1351,9 +1270,9 @@ def academic_rvnd(
     iteration_logs.extend(inter_logs)
 
     # INTRA-ROUTE RVND (per route, using predefined moves)
-    for route in current_routes:
+    for i in range(len(current_routes)):
         intra_logs = academic_rvnd_intra(
-            route, dataset, distance_matrix, max_intra_iterations
+            current_routes, i, dataset, distance_matrix, max_intra_iterations
         )
         iteration_logs.extend(intra_logs)
 
@@ -1392,8 +1311,6 @@ def academic_rvnd_inter(
         # Simpan dengan KEDUA format ID
         fleet[f["id"]] = f
         fleet[normalize_vehicle_id(f["id"])] = f
-        # fleet = {f["id"]: f for f in dataset["fleet"]}
-        customers = {c["id"]: c for c in dataset["customers"]}
 
     # Neighborhood list (exact order from Word)
     NL_FULL = ["swap_1_1", "shift_1_0", "swap_2_1", "swap_2_2", "cross"]
@@ -1426,27 +1343,31 @@ def academic_rvnd_inter(
         neighborhood_used = None
         move_details = None
 
-        # DYNAMIC NEIGHBORHOOD EXPLORATION
-        # Try each neighborhood in current NL
-        for neighborhood in NL[:]:
-            result = apply_inter_neighborhood(
-                neighborhood, routes, dataset, distance_matrix, fleet)
+        # DYNAMIC NEIGHBORHOOD EXPLORATION (RVND: Random Selection)
+        if not NL:
+            break
 
-            if result["accepted"]:
-                new_dist = result["distance_after"]
-                # STRICT IMPROVEMENT CHECK to prevent oscillation
-                if new_dist < current_distance - 1e-4:
-                    routes = result["new_routes"]
-                    improved_this_iteration = True
-                    neighborhood_used = neighborhood
-                    move_details = result.get("move_details")
-                    current_distance = new_dist  # Update distance immediately
-                    NL = NL_FULL[:]  # RESET NL on improvement
-                    break
-                else:
-                    # Move accepted but no significant improvement (delta ~ 0) -> Treat as failure to prevent loop
-                    NL.remove(neighborhood)
+        # Pick random neighborhood from current NL
+        neighborhood = random.choice(NL)
+        
+        result = apply_inter_neighborhood(
+            neighborhood, routes, dataset, distance_matrix, fleet)
+
+        if result["accepted"]:
+            new_dist = result["distance_after"]
+            # STRICT IMPROVEMENT CHECK to prevent oscillation
+            if new_dist < current_distance - 1e-4:
+                routes = result["new_routes"]
+                improved_this_iteration = True
+                neighborhood_used = neighborhood
+                move_details = result.get("move_details")
+                current_distance = new_dist  # Update distance immediately
+                NL = NL_FULL[:]  # RESET NL on improvement
             else:
+                # Move accepted but no significant improvement (delta ~ 0) -> Treat as failure to prevent loop
+                NL.remove(neighborhood)
+        else:
+            if neighborhood in NL:
                 NL.remove(neighborhood)
 
         # LOG EVERY ITERATION (mandatory per spec)
@@ -1459,7 +1380,7 @@ def academic_rvnd_inter(
             "iteration_id": iteration,
             "phase": "RVND-INTER",
             "mode": "ACADEMIC_REPLAY",
-            "neighborhood": neighborhood_used if improved_this_iteration else "none",
+            "neighborhood": neighborhood_used if improved_this_iteration else neighborhood,
             "improved": improved_this_iteration,
             "routes_snapshot": [r["sequence"] for r in routes],
             "total_distance": round(current_distance, 2),
@@ -1594,6 +1515,20 @@ def apply_inter_neighborhood(
                         new_vtype_b, cap_b = find_suitable_vehicle(
                             demand_b, route_b["vehicle_type"])
 
+                        # CAPTURE ROUTE LOADS FOR UI
+                        current_loads = []
+                        current_sequences = []
+                        for idx, r in enumerate(routes):
+                            if idx == i:
+                                current_loads.append(f"{demand_a} ({new_vtype_a if new_vtype_a else 'X'})")
+                                current_sequences.append("-".join(map(str, new_seq_a)))
+                            elif idx == j:
+                                current_loads.append(f"{demand_b} ({new_vtype_b if new_vtype_b else 'X'})")
+                                current_sequences.append("-".join(map(str, new_seq_b)))
+                            else:
+                                current_loads.append(f"{r['total_demand']} ({r['vehicle_type']})")
+                                current_sequences.append("-".join(map(str, r['sequence'])))
+
                         if new_vtype_a is None or new_vtype_b is None:
                             # Log kandidat Tidak Layak (no vehicle can handle demand)
                             if len(candidates) < MAX_CANDIDATES:
@@ -1604,11 +1539,13 @@ def apply_inter_neighborhood(
                                     violation_msg += f"R{j+1}({demand_b}>max)"
                                 candidates.append({
                                     "type": "swap_1_1",
-                                    "detail": f"C{ca} <-> C{cb}",
+                                    "detail": f"{ca},{cb}",
                                     "routes": (i+1, j+1),
                                     "feasible": False,
                                     "reason": violation_msg.strip(),
-                                    "delta": None
+                                    "delta": None,
+                                    "route_loads": current_loads,
+                                    "route_sequences": current_sequences
                                 })
                             continue  # REJECT: No vehicle fits
 
@@ -1631,17 +1568,23 @@ def apply_inter_neighborhood(
                             if len(candidates) < MAX_CANDIDATES:
                                 candidates.append({
                                     "type": "swap_1_1",
-                                    "detail": f"C{ca} <-> C{cb}{upgrade_info}",
+                                    "detail": f"{ca}, {cb}{upgrade_info}",
                                     "routes": (i+1, j+1),
                                     "feasible": True,
                                     "reason": "Layak" + (" (upgrade)" if upgrade_info else ""),
-                                    "delta": delta
+                                    "delta": delta,
+                                    "route_loads": current_loads,
+                                    "route_sequences": current_sequences,
+                                    "route_distances": [dist_a if idx == i else (dist_b if idx == j else r["total_distance"]) for idx, r in enumerate(routes)],
+                                    "total_distance": total_new
                                 })
                             best_distance = total_new
-                            best_move = {"type": "swap_1_1",
-                                         "swap": (ca, cb), "routes": (i, j),
-                                         "vehicle_upgrades": {i: new_vtype_a, j: new_vtype_b}}
-                            # BUILD THE NEW ROUTES WITH UPDATED VEHICLE TYPES
+                            best_move = {
+                                "type": "swap_1_1",
+                                "swap": (ca, cb),
+                                "routes": (i, j),
+                                "vehicle_upgrades": {i: new_vtype_a, j: new_vtype_b}
+                            }
                             best_routes = deepcopy(routes)
                             best_routes[i] = rebuild_route(
                                 route_a, new_seq_a, dist_a, demand_a)
@@ -1649,6 +1592,23 @@ def apply_inter_neighborhood(
                             best_routes[j] = rebuild_route(
                                 route_b, new_seq_b, dist_b, demand_b)
                             best_routes[j]["vehicle_type"] = new_vtype_b
+
+
+                        elif len(candidates) < MAX_CANDIDATES:
+                             # Log kandidat Layak (Non-Improved / Stagnan)
+                             delta = round(total_new - current_distance, 2)
+                             candidates.append({
+                                 "type": "swap_1_1",
+                                 "detail": f"{ca}, {cb}",
+                                 "routes": (i+1, j+1),
+                                 "feasible": True,
+                                 "reason": "Layak (Jarak bertambah)",
+                                 "delta": delta,
+                                 "route_loads": current_loads,
+                                 "route_sequences": current_sequences,
+                                 "route_distances": [dist_a if idx == i else (dist_b if idx == j else r["total_distance"]) for idx, r in enumerate(routes)],
+                                 "total_distance": total_new
+                             })
 
     elif neighborhood == "shift_1_0":
         # Move 1 customer from route A to route B
@@ -1685,16 +1645,32 @@ def apply_inter_neighborhood(
                         new_vtype_b, cap_b = find_suitable_vehicle(
                             demand_b, route_b["vehicle_type"])
 
+                        # CAPTURE ROUTE LOADS FOR UI
+                        current_loads = []
+                        current_sequences = []
+                        for idx, r in enumerate(routes):
+                            if idx == i:
+                                current_loads.append(f"{demand_a} ({new_vtype_a if new_vtype_a else 'X'})")
+                                current_sequences.append("-".join(map(str, new_seq_a)))
+                            elif idx == j:
+                                current_loads.append(f"{demand_b} ({new_vtype_b if new_vtype_b else 'X'})")
+                                current_sequences.append("-".join(map(str, new_seq_b)))
+                            else:
+                                current_loads.append(f"{r['total_demand']} ({r['vehicle_type']})")
+                                current_sequences.append("-".join(map(str, r['sequence'])))
+
                         if new_vtype_b is None:
                             # Log kandidat Tidak Layak
                             if len(candidates) < MAX_CANDIDATES:
                                 candidates.append({
                                     "type": "shift_1_0",
-                                    "detail": f"C{ca} -> R{j+1}",
+                                    "detail": f"{ca} -> R{j+1}",
                                     "routes": (i+1, j+1),
                                     "feasible": False,
                                     "reason": f"Kapasitas: R{j+1}({demand_b}>max)",
-                                    "delta": None
+                                    "delta": None,
+                                    "route_loads": current_loads,
+                                    "route_sequences": current_sequences
                                 })
                             continue  # REJECT: No vehicle fits for B
 
@@ -1714,23 +1690,48 @@ def apply_inter_neighborhood(
                             if len(candidates) < MAX_CANDIDATES:
                                 candidates.append({
                                     "type": "shift_1_0",
-                                    "detail": f"C{ca} -> R{j+1}{upgrade_info}",
+                                    "detail": f"{ca} -> R{j+1}{upgrade_info}",
                                     "routes": (i+1, j+1),
                                     "feasible": True,
                                     "reason": "Layak" + (" (upgrade)" if upgrade_info else ""),
-                                    "delta": delta
+                                    "delta": delta,
+                                    "route_loads": current_loads,
+                                    "route_sequences": current_sequences,
+                                    "route_distances": [dist_a if idx == i else (dist_b if idx == j else r["total_distance"]) for idx, r in enumerate(routes)],
+                                    "total_distance": total_new
                                 })
                             best_distance = total_new
-                            best_move = {"type": "shift_1_0", "customer": ca,
-                                         "from_route": i, "to_route": j, "insert_pos": insert_pos}
+                            best_move = {
+                                "type": "shift_1_0",
+                                "shift": (ca, j),
+                                "routes": (i, j),
+                                "vehicle_upgrades": {j: new_vtype_b}
+                            }
                             best_routes = deepcopy(routes)
+                            # Route A (Source)
                             best_routes[i] = rebuild_route(
                                 route_a, new_seq_a, dist_a, demand_a)
-                            if new_vtype_a:
-                                best_routes[i]["vehicle_type"] = new_vtype_a
+                            # Route B (Target)
                             best_routes[j] = rebuild_route(
                                 route_b, new_seq_b, dist_b, demand_b)
                             best_routes[j]["vehicle_type"] = new_vtype_b
+
+
+                        elif len(candidates) < MAX_CANDIDATES:
+                             # Log kandidat Layak (Non-Improved)
+                             delta = round(total_new - current_distance, 2)
+                             candidates.append({
+                                 "type": "shift_1_0",
+                                 "detail": f"{ca} -> R{j+1}",
+                                 "routes": (i+1, j+1),
+                                 "feasible": True,
+                                 "reason": "Layak (Jarak bertambah)",
+                                 "delta": delta,
+                                 "route_loads": current_loads,
+                                 "route_sequences": current_sequences,
+                                 "route_distances": [dist_a if idx == i else (dist_b if idx == j else r["total_distance"]) for idx, r in enumerate(routes)],
+                                 "total_distance": total_new
+                             })
 
     elif neighborhood == "swap_2_1":
         # Swap 2 customers from route A with 1 customer from route B
@@ -1769,7 +1770,37 @@ def apply_inter_neighborhood(
                             new_vtype_b, cap_b = find_suitable_vehicle(
                                 demand_b, route_b["vehicle_type"])
 
+                            # CAPTURE ROUTE LOADS FOR UI
+                            current_loads = []
+                            current_sequences = []
+                            for idx, r in enumerate(routes):
+                                if idx == i:
+                                    current_loads.append(f"{demand_a} ({new_vtype_a if new_vtype_a else 'X'})")
+                                    current_sequences.append("-".join(map(str, new_seq_a)))
+                                elif idx == j:
+                                    current_loads.append(f"{demand_b} ({new_vtype_b if new_vtype_b else 'X'})")
+                                    current_sequences.append("-".join(map(str, new_seq_b)))
+                                else:
+                                    current_loads.append(f"{r['total_demand']} ({r['vehicle_type']})")
+                                    current_sequences.append("-".join(map(str, r['sequence'])))
+
                             if new_vtype_a is None or new_vtype_b is None:
+                                if len(candidates) < MAX_CANDIDATES:
+                                    violation_msg = "Kapasitas: "
+                                    if new_vtype_a is None:
+                                        violation_msg += f"R{i+1}({demand_a}>max) "
+                                    if new_vtype_b is None:
+                                        violation_msg += f"R{j+1}({demand_b}>max)"
+                                    candidates.append({
+                                        "type": "swap_2_1",
+                                        "detail": f"({ca1},{ca2}), {cb}", 
+                                        "routes": (i+1, j+1),
+                                        "feasible": False,
+                                        "reason": violation_msg.strip(),
+                                        "delta": None,
+                                        "route_loads": current_loads,
+                                        "route_sequences": current_sequences
+                                    })
                                 continue  # No vehicle fits
 
                             dist_a = calc_route_distance(new_seq_a)
@@ -1779,6 +1810,26 @@ def apply_inter_neighborhood(
                             total_new = dist_a + dist_b + other_distance
 
                             if total_new < best_distance - EPSILON:
+                                delta = round(total_new - current_distance, 2)
+                                upgrade_info = ""
+                                if new_vtype_a != route_a["vehicle_type"]:
+                                    upgrade_info += f" R{i+1}:{route_a['vehicle_type']}->{new_vtype_a}"
+                                if new_vtype_b != route_b["vehicle_type"]:
+                                    upgrade_info += f" R{j+1}:{route_b['vehicle_type']}->{new_vtype_b}"
+
+                                if len(candidates) < MAX_CANDIDATES:
+                                    candidates.append({
+                                        "type": "swap_2_1",
+                                        "detail": f"({ca1},{ca2}), {cb}{upgrade_info}",
+                                        "routes": (i+1, j+1),
+                                        "feasible": True,
+                                        "reason": "Layak (Jarak bertambah)",
+                                        "delta": delta,
+                                        "route_loads": current_loads,
+                                        "route_sequences": current_sequences,
+                                        "route_distances": [dist_a if idx == i else (dist_b if idx == j else r["total_distance"]) for idx, r in enumerate(routes)],
+                                        "total_distance": total_new
+                                    })
                                 best_distance = total_new
                                 best_move = {"type": "swap_2_1", "from_a": (
                                     ca1, ca2), "from_b": cb, "routes": (i, j)}
@@ -1830,7 +1881,37 @@ def apply_inter_neighborhood(
                                 new_vtype_b, cap_b = find_suitable_vehicle(
                                     demand_b, route_b["vehicle_type"])
 
+                                # CAPTURE ROUTE LOADS FOR UI
+                                current_loads = []
+                                current_sequences = []
+                                for idx, r in enumerate(routes):
+                                    if idx == i:
+                                        current_loads.append(f"{demand_a} ({new_vtype_a if new_vtype_a else 'X'})")
+                                        current_sequences.append("-".join(map(str, new_seq_a)))
+                                    elif idx == j:
+                                        current_loads.append(f"{demand_b} ({new_vtype_b if new_vtype_b else 'X'})")
+                                        current_sequences.append("-".join(map(str, new_seq_b)))
+                                    else:
+                                        current_loads.append(f"{r['total_demand']} ({r['vehicle_type']})")
+                                        current_sequences.append("-".join(map(str, r['sequence'])))
+
                                 if new_vtype_a is None or new_vtype_b is None:
+                                    if len(candidates) < MAX_CANDIDATES:
+                                        violation_msg = "Kapasitas: "
+                                        if new_vtype_a is None:
+                                            violation_msg += f"R{i+1}({demand_a}>max) "
+                                        if new_vtype_b is None:
+                                            violation_msg += f"R{j+1}({demand_b}>max)"
+                                        candidates.append({
+                                            "type": "swap_2_2",
+                                            "detail": f"{ca1}-{ca2},{cb1}-{cb2}",
+                                            "routes": (i+1, j+1),
+                                            "feasible": False,
+                                            "reason": violation_msg.strip(),
+                                            "delta": None,
+                                            "route_loads": current_loads,
+                                            "route_sequences": current_sequences
+                                        })
                                     continue
 
                                 dist_a = calc_route_distance(new_seq_a)
@@ -1840,6 +1921,26 @@ def apply_inter_neighborhood(
                                 total_new = dist_a + dist_b + other_distance
 
                                 if total_new < best_distance - EPSILON:
+                                    delta = round(total_new - current_distance, 2)
+                                    upgrade_info = ""
+                                    if new_vtype_a != route_a["vehicle_type"]:
+                                        upgrade_info += f" R{i+1}:{route_a['vehicle_type']}->{new_vtype_a}"
+                                    if new_vtype_b != route_b["vehicle_type"]:
+                                        upgrade_info += f" R{j+1}:{route_b['vehicle_type']}->{new_vtype_b}"
+
+                                    if len(candidates) < MAX_CANDIDATES:
+                                        candidates.append({
+                                            "type": "swap_2_2",
+                                            "detail": f"({ca1},{ca2}), ({cb1},{cb2}){upgrade_info}",
+                                            "routes": (i+1, j+1),
+                                            "feasible": True,
+                                            "reason": "Layak (Jarak bertambah)",
+                                            "delta": delta,
+                                            "route_loads": current_loads,
+                                            "route_sequences": current_sequences,
+                                            "route_distances": [dist_a if idx == i else (dist_b if idx == j else r["total_distance"]) for idx, r in enumerate(routes)],
+                                            "total_distance": total_new
+                                        })
                                     best_distance = total_new
                                     best_move = {"type": "swap_2_2", "from_a": (
                                         ca1, ca2), "from_b": (cb1, cb2), "routes": (i, j)}
@@ -1850,6 +1951,23 @@ def apply_inter_neighborhood(
                                     best_routes[j] = rebuild_route(
                                         route_b, new_seq_b, dist_b, demand_b)
                                     best_routes[j]["vehicle_type"] = new_vtype_b
+
+                                elif len(candidates) < MAX_CANDIDATES:
+                                    delta = round(total_new - current_distance, 2)
+                                    candidates.append({
+                                        "type": "swap_2_2",
+                                        "detail": f"({ca1},{ca2}), ({cb1},{cb2})",
+                                        "routes": (i+1, j+1),
+                                        "feasible": True,
+                                        "reason": "Layak (Jarak bertambah)",
+                                        "delta": delta,
+                                        "route_loads": current_loads,
+                                        "route_sequences": current_sequences,
+                                        "route_distances": [dist_a if idx == i else (dist_b if idx == j else r["total_distance"]) for idx, r in enumerate(routes)],
+                                        "total_distance": total_new
+                                    })
+
+
 
     elif neighborhood == "cross":
         # Cross exchange: swap tail segments between two routes
@@ -1877,7 +1995,41 @@ def apply_inter_neighborhood(
                         new_vtype_b, cap_b = find_suitable_vehicle(
                             demand_b, route_b["vehicle_type"])
 
+                        # CAPTURE ROUTE LOADS FOR UI
+                        current_loads = []
+                        current_sequences = []
+                        for idx, r in enumerate(routes):
+                            if idx == i:
+                                current_loads.append(f"{demand_a} ({new_vtype_a if new_vtype_a else 'X'})")
+                                current_sequences.append("-".join(map(str, new_seq_a)))
+                            elif idx == j:
+                                current_loads.append(f"{demand_b} ({new_vtype_b if new_vtype_b else 'X'})")
+                                current_sequences.append("-".join(map(str, new_seq_b)))
+                            else:
+                                current_loads.append(f"{r['total_demand']} ({r['vehicle_type']})")
+                                current_sequences.append("-".join(map(str, r['sequence'])))
+
+                        # Identify nodes at cut points for clearer labeling
+                        node_a_cut = seq_a[cut_a-1] # Node before cut
+                        node_b_cut = seq_b[cut_b-1] # Node before cut
+
                         if new_vtype_a is None or new_vtype_b is None:
+                            if len(candidates) < MAX_CANDIDATES:
+                                violation_msg = "Kapasitas: "
+                                if new_vtype_a is None:
+                                    violation_msg += f"R{i+1}({demand_a}>max) "
+                                if new_vtype_b is None:
+                                    violation_msg += f"R{j+1}({demand_b}>max)"
+                                candidates.append({
+                                    "type": "cross",
+                                    "detail": f"Cross {node_a_cut}, {node_b_cut}",
+                                    "routes": (i+1, j+1),
+                                    "feasible": False,
+                                    "reason": violation_msg.strip(),
+                                    "delta": None,
+                                    "route_loads": current_loads,
+                                    "route_sequences": current_sequences
+                                })
                             continue
 
                         dist_a = calc_route_distance(new_seq_a)
@@ -1887,9 +2039,33 @@ def apply_inter_neighborhood(
                         total_new = dist_a + dist_b + other_distance
 
                         if total_new < best_distance - EPSILON:
+                            delta = round(total_new - current_distance, 2)
+                            upgrade_info = ""
+                            if new_vtype_a != route_a["vehicle_type"]:
+                                upgrade_info += f" R{i+1}:{route_a['vehicle_type']}->{new_vtype_a}"
+                            if new_vtype_b != route_b["vehicle_type"]:
+                                upgrade_info += f" R{j+1}:{route_b['vehicle_type']}->{new_vtype_b}"
+
+                            if len(candidates) < MAX_CANDIDATES:
+                                candidates.append({
+                                    "type": "cross",
+                                    "detail": f"Cross {node_a_cut}, {node_b_cut}{upgrade_info}",
+                                    "routes": (i+1, j+1),
+                                    "feasible": True,
+                                    "reason": "Layak" + (" (upgrade)" if upgrade_info else ""),
+                                    "delta": delta,
+                                    "route_loads": current_loads,
+                                    "route_sequences": current_sequences,
+                                    "route_distances": [dist_a if idx == i else (dist_b if idx == j else r["total_distance"]) for idx, r in enumerate(routes)],
+                                    "total_distance": total_new
+                                })
                             best_distance = total_new
-                            best_move = {"type": "cross", "cut_a": cut_a,
-                                         "cut_b": cut_b, "routes": (i, j)}
+                            best_move = {
+                                "type": "cross",
+                                "cross_cut": (cut_a, cut_b),
+                                "routes": (i, j),
+                                "vehicle_upgrades": {i: new_vtype_a, j: new_vtype_b}
+                            }
                             best_routes = deepcopy(routes)
                             best_routes[i] = rebuild_route(
                                 route_a, new_seq_a, dist_a, demand_a)
@@ -1897,6 +2073,22 @@ def apply_inter_neighborhood(
                             best_routes[j] = rebuild_route(
                                 route_b, new_seq_b, dist_b, demand_b)
                             best_routes[j]["vehicle_type"] = new_vtype_b
+
+                        elif len(candidates) < MAX_CANDIDATES:
+                            delta = round(total_new - current_distance, 2)
+                            candidates.append({
+                                "type": "cross",
+                                "detail": f"Cross {node_a_cut}, {node_b_cut}",
+                                "routes": (i+1, j+1),
+                                "feasible": True,
+                                "reason": "Layak (Jarak +)",
+                                "delta": delta,
+                                "route_loads": current_loads,
+                                "route_sequences": current_sequences,
+                                "route_distances": [dist_a if idx == i else (dist_b if idx == j else r["total_distance"]) for idx, r in enumerate(routes)],
+                                "total_distance": total_new
+                            })
+
 
     # Determine acceptance (dengan EPSILON tolerance)
     accepted = best_move is not None and best_distance < current_distance - EPSILON
@@ -1913,7 +2105,8 @@ def apply_inter_neighborhood(
 
 
 def academic_rvnd_intra(
-    route: Dict,
+    all_routes: List[Dict],
+    route_index: int,
     dataset: Dict,
     distance_matrix: List[List[float]],
     max_iterations: int = 100
@@ -1930,7 +2123,8 @@ def academic_rvnd_intra(
     """
     iteration_logs = []
 
-    NL_FULL = ["or_opt", "reinsertion", "exchange", "two_opt"]
+    route = all_routes[route_index]
+    NL_FULL = ["two_opt", "or_opt", "reinsertion", "exchange"]
     NL = NL_FULL[:]
 
     sequence = route["sequence"]
@@ -1948,77 +2142,80 @@ def academic_rvnd_intra(
         "mode": "ACADEMIC_REPLAY",
         "cluster_id": cluster_id,
         "neighborhood": "initial",
+        "nl_list": NL_FULL[:],
         "improved": False,
-        "routes_snapshot": [sequence[:]],
+        "routes_snapshot": [deepcopy(r["sequence"]) for r in all_routes],
         "total_distance": round(current_distance, 2),
         "total_service_time": current_service_time,
         "vehicle_usage": {route["vehicle_type"]: 1},
-        "acceptance_criterion": "DISTANCE_ONLY"
+        "acceptance_criterion": "BERDASARKAN_JARAK"
     })
 
     # Log every iteration up to max_iterations
-    while iteration < max_iterations:
+    while iteration < max_iterations and NL:
         iteration += 1
-        improved_this_iteration = False
-        neighborhood_used = None
-
-        # DYNAMIC NEIGHBORHOOD EXPLORATION
-        # Try each neighborhood in current NL
-        for neighborhood in NL[:]:
-            result = apply_intra_neighborhood(
-                neighborhood, sequence, distance_matrix)
-
-            # DISTANCE ONLY acceptance
-            if result["accepted"]:
-                sequence = result["new_sequence"]
-                current_distance = result["distance_after"]
-                improved_this_iteration = True
-                neighborhood_used = neighborhood
-                NL = NL_FULL[:]  # RESET NL on improvement
-                break
-            else:
-                NL.remove(neighborhood)
-
-        # Calculate service time (accumulated from customer service times)
-        current_service_time = compute_service_time_from_sequence(
-            sequence, dataset)
-
-        # LOG EVERY ITERATION (mandatory per spec)
-        iteration_logs.append({
+        
+        # SELECT RANDOM NEIGHBORHOOD (Greedy RVND)
+        neighborhood = random.choice(NL)
+        
+        result = apply_intra_neighborhood(
+            neighborhood, sequence, distance_matrix, all_routes, route_index
+        )
+        
+        improved = result["accepted"]
+        
+        # Prepare log entry for this TRIAL
+        log_entry = {
             "iteration_id": iteration,
             "phase": "RVND-INTRA",
             "mode": "ACADEMIC_REPLAY",
             "cluster_id": cluster_id,
-            "neighborhood": neighborhood_used if improved_this_iteration else "none",
-            "improved": improved_this_iteration,
-            "routes_snapshot": [sequence[:]],
+            "neighborhood": neighborhood,
+            "nl_list": NL[:],
+            "improved": improved,
+            "candidates": result["candidates"],
+            "routes_snapshot": [deepcopy(r["sequence"]) for r in all_routes],
             "total_distance": round(current_distance, 2),
-            "total_service_time": current_service_time,
+            "total_service_time": compute_service_time_from_sequence(sequence, dataset),
             "vehicle_usage": {route["vehicle_type"]: 1},
             "acceptance_criterion": "DISTANCE_ONLY"
-        })
+        }
 
-        # Early stopping if NL exhausted
-        if not NL:
-            # Fix for User Request: "Filling up to 50 iterations" for visualization
-            remaining_iters = 50 - iteration
-            if remaining_iters > 0:
-                for _ in range(remaining_iters):
-                    iteration += 1
-                    iteration_logs.append({
-                        "iteration_id": iteration,
-                        "phase": "RVND-INTRA",
-                        "mode": "ACADEMIC_REPLAY",
-                        "cluster_id": cluster_id,
-                        "neighborhood": "stagnan",
-                        "improved": False,
-                        "routes_snapshot": [sequence[:]],
-                        "total_distance": round(current_distance, 2),
-                        "total_service_time": current_service_time,
-                        "vehicle_usage": {route["vehicle_type"]: 1},
-                        "acceptance_criterion": "DISTANCE_ONLY"
-                    })
-            break
+        if improved:
+            # Found better! Update state and RESET NL
+            sequence = result["new_sequence"]
+            current_distance = result["distance_after"]
+            
+            # Update the global route object for cross-reference
+            all_routes[route_index]["sequence"] = sequence[:]
+            all_routes[route_index]["total_distance"] = current_distance
+            
+            NL = NL_FULL[:] # Reset to full neighborhood list
+            log_entry["action"] = "Perbaikan urutan ditemukan! Mengulangi pencarian dari awal strategi."
+            log_entry["total_distance"] = round(current_distance, 2)
+            log_entry["routes_snapshot"] = [deepcopy(r["sequence"]) for r in all_routes]
+        else:
+            # Failed attempt. Remove this neighborhood from NL
+            NL.remove(neighborhood)
+            log_entry["action"] = f"Strategi {neighborhood.replace('_','-').title()} tidak memberikan perbaikan dan akan dilewati pada tahap ini."
+
+        iteration_logs.append(log_entry)
+
+    # FINAL LOG (If stalled)
+    if not NL:
+        iteration += 1
+        iteration_logs.append({
+            "iteration_id": iteration,
+            "phase": "RVND-INTRA",
+            "cluster_id": cluster_id,
+            "neighborhood": "stagnan",
+            "nl_list": [],
+            "improved": False,
+            "routes_snapshot": [deepcopy(r["sequence"]) for r in all_routes],
+            "total_distance": round(current_distance, 2),
+            "total_service_time": compute_service_time_from_sequence(sequence, dataset),
+            "action": "Pencarian selesai. Rute sudah mencapai optimal lokal."
+        })
 
     # Update route with final sequence and recalculated metrics
     route["sequence"] = sequence
@@ -2032,7 +2229,9 @@ def academic_rvnd_intra(
 def apply_intra_neighborhood(
     neighborhood: str,
     sequence: List[int],
-    distance_matrix: List[List[float]]
+    distance_matrix: List[List[float]],
+    all_routes: List[Dict],
+    route_index: int
 ) -> Dict:
     """
     Apply intra-route neighborhood operator.
@@ -2040,8 +2239,9 @@ def apply_intra_neighborhood(
     """
     current_distance = sum(
         distance_matrix[sequence[i]][sequence[i+1]] for i in range(len(sequence)-1))
-    best_sequence = sequence
+    best_sequence = sequence[:]
     best_distance = current_distance
+    candidates = []
 
     customers = sequence[1:-1]  # Exclude depots
     n = len(customers)
@@ -2055,9 +2255,25 @@ def apply_intra_neighborhood(
                 new_dist = sum(
                     distance_matrix[new_seq[k]][new_seq[k+1]] for k in range(len(new_seq)-1))
 
-                if new_dist < best_distance:
+                if new_dist < best_distance - EPSILON:
                     best_distance = new_dist
                     best_sequence = new_seq
+                
+                delta = round(new_dist - current_distance, 2)
+                reason = "Lebih Kecil" if delta < -0.001 else ("Lebih Besar" if delta > 0.001 else "Sama")
+                
+                # Snapshot distances for matrix
+                route_dists = [r["total_distance"] for r in all_routes]
+                route_dists[route_index] = new_dist
+                
+                candidates.append({
+                    "detail": f"{customers[i]},{customers[i+1]}", 
+                    "feasible": True,
+                    "reason": reason,
+                    "delta": delta,
+                    "route_distances": route_dists,
+                    "total_distance": sum(route_dists)
+                })
 
     elif neighborhood == "or_opt":
         for length in [1, 2, 3]:
@@ -2071,9 +2287,24 @@ def apply_intra_neighborhood(
                     new_dist = sum(
                         distance_matrix[new_seq[k]][new_seq[k+1]] for k in range(len(new_seq)-1))
 
-                    if new_dist < best_distance:
+                    if new_dist < best_distance - EPSILON:
                         best_distance = new_dist
                         best_sequence = new_seq
+                    
+                    delta = round(new_dist - current_distance, 2)
+                    reason = "Lebih Kecil" if delta < -0.001 else ("Lebih Besar" if delta > 0.001 else "Sama")
+                    
+                    route_dists = [r["total_distance"] for r in all_routes]
+                    route_dists[route_index] = new_dist
+                    
+                    candidates.append({
+                        "detail": ",".join(map(str, segment)),
+                        "feasible": True,
+                        "reason": reason,
+                        "delta": delta,
+                        "route_distances": route_dists,
+                        "total_distance": sum(route_dists)
+                    })
 
     elif neighborhood == "reinsertion":
         for i in range(n):
@@ -2086,9 +2317,24 @@ def apply_intra_neighborhood(
                 new_dist = sum(
                     distance_matrix[new_seq[k]][new_seq[k+1]] for k in range(len(new_seq)-1))
 
-                if new_dist < best_distance:
+                if new_dist < best_distance - EPSILON:
                     best_distance = new_dist
                     best_sequence = new_seq
+                
+                delta = round(new_dist - current_distance, 2)
+                reason = "Lebih Kecil" if delta < -0.001 else ("Lebih Besar" if delta > 0.001 else "Sama")
+                
+                route_dists = [r["total_distance"] for r in all_routes]
+                route_dists[route_index] = new_dist
+                
+                candidates.append({
+                    "detail": str(customer),
+                    "feasible": True,
+                    "reason": reason,
+                    "delta": delta,
+                    "route_distances": route_dists,
+                    "total_distance": sum(route_dists)
+                })
 
     elif neighborhood == "exchange":
         for i in range(n - 1):
@@ -2099,17 +2345,33 @@ def apply_intra_neighborhood(
                 new_dist = sum(
                     distance_matrix[new_seq[k]][new_seq[k+1]] for k in range(len(new_seq)-1))
 
-                if new_dist < best_distance:
+                if new_dist < best_distance - EPSILON:
                     best_distance = new_dist
                     best_sequence = new_seq
+                
+                delta = round(new_dist - current_distance, 2)
+                reason = "Lebih Kecil" if delta < -0.001 else ("Lebih Besar" if delta > 0.001 else "Sama")
+                
+                route_dists = [r["total_distance"] for r in all_routes]
+                route_dists[route_index] = new_dist
+                
+                candidates.append({
+                    "detail": f"{customers[i]},{customers[j]}",
+                    "feasible": True,
+                    "reason": reason,
+                    "delta": delta,
+                    "route_distances": route_dists,
+                    "total_distance": sum(route_dists)
+                })
 
-    accepted = best_distance < current_distance
+    accepted = best_distance < current_distance - EPSILON
 
     return {
         "new_sequence": best_sequence,
         "distance_before": round(current_distance, 2),
         "distance_after": round(best_distance, 2),
-        "accepted": accepted
+        "accepted": accepted,
+        "candidates": candidates
     }
 
 
@@ -2467,22 +2729,18 @@ def run_academic_replay(
     print("MFVRPTW OPTIMIZATION - Dynamic Input Mode")
     print("=" * 60)
 
-    # ============================================================
-    # BUILD DATASET DYNAMICALLY (use defaults if not provided)
-    # ============================================================
-
-    # Start with default structure
+    # Build initial dataset
     dataset = {
-        "depot": user_depot if user_depot else ACADEMIC_DATASET["depot"],
+        "depot": user_depot if user_depot else {},
         "customers": [],
         "fleet": [],
-        "acs_parameters": user_acs_params if user_acs_params else ACADEMIC_DATASET.get("acs_parameters", {
+        "acs_parameters": user_acs_params if user_acs_params else {
             "alpha": 1.0, "beta": 2.0, "rho": 0.1, "q0": 0.9,
             "num_ants": 10, "max_iterations": 50
-        }),
-        "objective_weights": ACADEMIC_DATASET.get("objective_weights", {
+        },
+        "objective_weights": {
             "w1_distance": 1.0, "w2_time": 1.0, "w3_tw_violation": 1.0
-        })
+        }
     }
 
     # Apply customers (from user or fallback to default)
@@ -2506,10 +2764,17 @@ def run_academic_replay(
         print(
             f"[PRE] Using {len(dataset['customers'])} DYNAMIC customers from user input")
     else:
-        # Fallback to default dataset for demo/testing
-        dataset["customers"] = deepcopy(ACADEMIC_DATASET["customers"])
-        print(
-            f"[PRE] Using {len(dataset['customers'])} DEFAULT customers (Word document)")
+        # NO CUSTOMERS = CANNOT RUN!
+        print("\n[PRE] [X] CRITICAL: No customers defined by user!")
+        return {
+            "mode": "ACADEMIC_REPLAY",
+            "error": "Tidak ada data customer! Silakan input data di tab 'Input Data' atau 'Input Titik'.",
+            "dataset": dataset,
+            "clusters": [],
+            "routes": [],
+            "costs": {"total_cost": 0},
+            "iteration_logs": []
+        }
 
     # Log ACS params being used
     acs_p = dataset["acs_parameters"]
@@ -2727,11 +2992,19 @@ def run_academic_replay(
         print(
             f"   Cluster {cluster['cluster_id']}: {route['sequence']} (dist={route['total_distance']})")
 
-    # 4. RVND
-    print("\n[4/5] Running RVND...")
+    # 4. RVND (GLOBAL INTER-ROUTE OPTIMIZATION)
+    print("\n[4/5] Running RVND (Global Mode)...")
+    
+    # Collect ALL routes from ALL clusters for global optimization
+    all_acs_routes = []
+    for route in acs_routes:
+        all_acs_routes.append(route)
+        
+    # Optimasi antar rute secara global (lintas cluster)
     final_routes, rvnd_logs = academic_rvnd(
-        acs_routes, dataset, distance_matrix)
+        all_acs_routes, dataset, distance_matrix)
     all_logs.extend(rvnd_logs)
+
     # SUMMARY LOG for RVND
     for route in final_routes:
         all_logs.append({
@@ -2832,6 +3105,20 @@ def run_academic_replay(
             all_valid = False
             for issue in v.get("issues", []):
                 print(f"      ⚠️ {issue}")
+
+    # [NEW] Generate RVND_SUMMARY logs for hasil.py
+    for route in final_routes:
+        all_logs.append({
+            "phase": "RVND_SUMMARY",
+            "cluster_id": route["cluster_id"],
+            "iteration": "Final",
+            "vehicle_type": route.get("vehicle_type", "-"),
+            "route_sequence": "-".join(map(str, route["sequence"])),
+            "total_distance": route["total_distance"],
+            "total_travel_time": route.get("total_travel_time", 0),
+            "objective": route.get("total_distance", 0), # Simplified obj
+            "routes_snapshot": [route["sequence"]] # Fallback for display
+        })
 
     # Save results
     output = {
