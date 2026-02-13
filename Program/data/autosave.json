@@ -364,10 +364,10 @@
       "name": "Fleet A",
       "capacity": 60,
       "units": 2,
-      "available_from": "08:30",
-      "available_until": "17:00",
+      "available_from": "10:00",
+      "available_until": "14:00",
       "enabled": true,
-      "fixed_cost": 50000,
+      "fixed_cost": 40000,
       "variable_cost_per_km": 1000
     },
     {
@@ -375,11 +375,11 @@
       "name": "Fleet B",
       "capacity": 100,
       "units": 2,
-      "available_from": "08:30",
-      "available_until": "17:00",
+      "available_from": "10:00",
+      "available_until": "14:00",
       "enabled": true,
       "fixed_cost": 60000,
-      "variable_cost_per_km": 1000
+      "variable_cost_per_km": 1200
     },
     {
       "id": "Fleet C",

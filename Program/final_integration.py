@@ -89,9 +89,9 @@ def main() -> None:
     total_distance = 0.0
     total_time_component = 0.0
     total_violation = 0.0
+    total_wait = 0.0
     total_objective = 0.0
 
-    rvnd_map = {entry["cluster_id"]: entry for entry in rvnd_data["routes"]}
     acs_map = {entry["cluster_id"]: entry for entry in acs_data["clusters"]}
 
     # 2026-02-13 CHANGE: Iterate over RVND routes directly to handle SPLIT/NEW routes
@@ -133,6 +133,7 @@ def main() -> None:
             "total_service_time": improved.get("total_service_time", 0.0),
             "total_time_component": improved.get("total_time_component", 0.0),
             "total_tw_violation": improved["total_tw_violation"],
+            "total_wait_time": improved.get("total_wait_time", 0.0),
             "objective": improved["objective"],
             "initial_sequence": initial_seq,
             "acs_sequence": acs_seq,
@@ -142,6 +143,7 @@ def main() -> None:
         total_distance += improved["total_distance"]
         total_time_component += improved.get("total_time_component", 0.0)
         total_violation += improved["total_tw_violation"]
+        total_wait += improved.get("total_wait_time", 0.0)
         total_objective += improved["objective"]
         try:
             pct = 20 + int((idx + 1) / max(1, len(active_routes)) * 70)
@@ -161,6 +163,7 @@ def main() -> None:
             "total_distance": total_distance,
             "total_time_component": total_time_component,
             "total_tw_violation": total_violation,
+            "total_wait_time": total_wait,
             "total_objective": total_objective,
             "total_cost": total_cost,
             "fleet_usage": fleet_usage

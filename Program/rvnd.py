@@ -110,12 +110,11 @@ def can_assign_fleet(demands: List[float], fleet_data: List[Dict]) -> Tuple[bool
     return (unassigned_count == 0, unassigned_count, final_penalty)
 
 
-def generate_capacity_log_candidate(routes: List[Dict], demands: List[float], instance: Dict, fleet_data: List[Dict]) -> Dict:
+def generate_capacity_log_candidate(routes: List[Dict], demands: List[float], instance: Dict, fleet_data: List[Dict], delta: float = 0.0) -> Dict:
     """
     Generates a 'candidate' metadata object for logging.
     This matches the format expected by academic_replay_tab.py for the matrix view.
     """
-    node_map = {node["id"]: idx for idx, node in enumerate(instance["customers"])}
     
     route_sequences = []
     route_loads = []
@@ -158,7 +157,7 @@ def generate_capacity_log_candidate(routes: List[Dict], demands: List[float], in
         "route_loads": route_loads,
         "feasible": all(fid != "Ghost" for fid in assignments.values()),
         "reason": "Layak" if all(fid != "Ghost" for fid in assignments.values()) else "Kapasitas Terlampaui",
-        "delta": 0.0 # Will be overridden by caller if needed
+        "delta": round(delta, 2)
     }
 
 
@@ -201,6 +200,7 @@ def evaluate_route(sequence: List[int], instance: dict, distance_data: dict, fle
     travel_time_sum = 0.0
     service_time_sum = 0.0
     violation_sum = 0.0
+    wait_sum = 0.0
     total_demand = 0.0
 
     prev_node = sequence[0]
@@ -243,6 +243,7 @@ def evaluate_route(sequence: List[int], instance: dict, distance_data: dict, fle
         if next_node != 0:
             service_time_sum += service_time
             violation_sum += violation
+            wait_sum += wait
 
         stops.append({
             "node_id": next_node,
@@ -271,6 +272,7 @@ def evaluate_route(sequence: List[int], instance: dict, distance_data: dict, fle
         "total_service_time": service_time_sum,
         "total_time_component": time_component,
         "total_tw_violation": violation_sum,
+        "total_wait_time": wait_sum,
         "total_demand": total_demand,
         "capacity_violation": capacity_violation,
         "objective": objective,
@@ -729,6 +731,7 @@ def rvnd_inter(
                         accepted = True
             
         if accepted:
+            old_dist = current_distance
             routes = result["new_routes"]
             current_distance = result["distance_after"]
             best_unassigned = result["unassigned_after"]
@@ -737,7 +740,8 @@ def rvnd_inter(
             
             # Generate capacity validation details for logging
             logs_demands = [r["total_demand"] for r in routes]
-            current_candidate = generate_capacity_log_candidate(routes, logs_demands, instance, fleet_list)
+            delta_val = result["distance_after"] - old_dist
+            current_candidate = generate_capacity_log_candidate(routes, logs_demands, instance, fleet_list, delta=delta_val)
             
             iteration_logs.append({
                 "iteration_id": iteration,
@@ -755,21 +759,20 @@ def rvnd_inter(
         if neighborhood in NL:
             NL.remove(neighborhood)
             
-            # Even if stagnant, show the current state as a candidate for UI validation
-            logs_demands = [r["total_demand"] for r in routes]
-            current_candidate = generate_capacity_log_candidate(routes, logs_demands, instance, fleet_list)
-            current_candidate["detail"] = f"Stagnan ({neighborhood})"
-            
-            iteration_logs.append({
-                "iteration_id": iteration,
-                "phase": "RVND-INTER",
-                "neighborhood": neighborhood,
-                "improved": False,
-                "total_distance": round(current_distance, 2),
-                "unassigned": best_unassigned,
-                "penalty": round(best_penalty, 2),
-                "candidates": [current_candidate] 
-            })
+            # If ALL neighborhoods are exhausted, then we are truly stagnant (local optimum)
+            if not NL:
+                logs_demands = [r["total_demand"] for r in routes]
+                current_candidate = generate_capacity_log_candidate(routes, logs_demands, instance, fleet_list, delta=0.0)
+                current_candidate["detail"] = "Local Optimum Reached"
+                
+                iteration_logs.append({
+                    "iteration_id": iteration,
+                    "phase": "RVND-INTER",
+                    "type": "stagnant",
+                    "neighborhood": "All",
+                    "message": f"Iterasi Berakhir (Konvergen). Pada iterasi {iteration}, algoritma telah mencapai titik optimal lokal (tidak ditemukan rute yang lebih baik lagi).",
+                    "candidates": [current_candidate]
+                })
 
             # --- EMERGENCY REBALANCE CHECK ---
             if best_unassigned > 0:

@@ -644,7 +644,8 @@ def render_input_data() -> None:
             # Build state
             state = {
                 "points": st.session_state.get("points", {}),
-                "inputData": st.session_state.get("inputData", {})
+                "inputData": st.session_state.get("inputData", {}),
+                "user_vehicles": st.session_state.get("user_vehicles", [])
             }
 
             # Validate

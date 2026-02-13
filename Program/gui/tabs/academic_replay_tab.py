@@ -1377,6 +1377,12 @@ def _display_time_window_analysis(result: Dict[str, Any], reassignment_map: Dict
 
     st.dataframe(pd.DataFrame(detail_data),
                  use_container_width=True, hide_index=True)
+    
+    st.info("""
+    ℹ️ **Keterangan Kolom:**
+    - **Total Pelanggaran (Mnt):** Akumulasi menit keterlambatan (tiba setelah batas waktu toko).
+    - **Total Tunggu (Mnt):** Akumulasi menit driver menunggu toko buka. Jika bernilai **0.0**, artinya sistem otomatis menunda jam berangkat agar driver sampai tepat saat toko buka (lebih efisien).
+    """)
 
 
 def _display_final_results(result: Dict[str, Any]) -> None:

@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Dict, Any, List, Tuple
 
-import math
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data" / "processed"
@@ -86,20 +86,30 @@ def validate_state(state: Dict[str, Any]) -> Tuple[bool, List[str]]:
                     except (ValueError, TypeError):
                         pass  # Already reported above
 
-    # total demand vs fleet capacity (load fleet from parsed_instance.json if present)
-    try:
-        with PARSED_INSTANCE.open("r", encoding="utf-8") as fh:
-            template = json.load(fh)
-        fleets = template.get("fleet", [])
-        total_capacity = sum((f.get("capacity", 0) * f.get("units", 0)) for f in fleets)
+    # total demand vs fleet capacity
+    fleets = state.get("user_vehicles", [])
+    
+    # Fallback to PARSED_INSTANCE if state is not provided
+    if not fleets:
+        try:
+            if PARSED_INSTANCE.exists():
+                with PARSED_INSTANCE.open("r", encoding="utf-8") as fh:
+                    template = json.load(fh)
+                fleets = template.get("fleet", [])
+        except Exception:
+            pass
+
+    if fleets:
+        active_fleets = [f for f in fleets if f.get("enabled", True)]
+        total_capacity = sum((float(f.get("capacity", 0)) * int(f.get("units", 0))) for f in active_fleets)
         total_demand = sum(float(x) for x in demands) if demands else 0
-        if total_demand > total_capacity + 1e-9:
-            errors.append("Total demand melebihi total kapasitas armada yang tersedia")
-    except FileNotFoundError:
-        # cannot check fleet capacities, warn but do not fail
-        errors.append("File parsed_instance.json tidak ditemukan — tidak dapat memeriksa kapasitas armada")
-    except Exception as e:
-        errors.append(f"Gagal memeriksa kapasitas armada: {e}")
+        
+        if not active_fleets:
+            errors.append("Tidak ada armada aktif yang dipilih")
+        elif total_demand > total_capacity + 1e-9:
+            errors.append(f"Total demand ({total_demand:,.0f}) melebihi total kapasitas armada ({total_capacity:,.0f})")
+    else:
+        errors.append("Data armada tidak ditemukan untuk validasi kapasitas")
 
     return (len(errors) == 0), errors
 
@@ -250,7 +260,7 @@ def run_pipeline(state: Dict[str, Any], progress_callback=None) -> Dict[str, Any
         if dist_bak.exists():
             shutil.move(dist_bak, PARSED_DISTANCE)
         raise RuntimeError(f"Pipeline failed: {e}")
-    except Exception as e:
+    except Exception:
         if inst_bak.exists():
             shutil.move(inst_bak, PARSED_INSTANCE)
         if dist_bak.exists():
