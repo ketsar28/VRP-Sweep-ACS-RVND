@@ -141,7 +141,7 @@ def generate_capacity_log_candidate(routes: List[Dict], demands: List[float], in
     assignments = {} # Index -> Fleet ID
     
     for idx, d in indexed_demands:
-        assigned_fid = "Ghost"
+        assigned_fid = "X"
         for unit in available_units:
             if not unit["used"] and unit["capacity"] >= d:
                 unit["used"] = True
@@ -152,10 +152,10 @@ def generate_capacity_log_candidate(routes: List[Dict], demands: List[float], in
         
     for i in range(len(routes)):
         route_sequences.append("→".join(map(str, routes[i]["sequence"])))
-        fid = assignments.get(i, "Ghost")
+        fid = assignments.get(i, "X")
         route_loads.append(f"{demands[i]:.1f} kg ({fid})")
         
-    is_feasible = all(fid != "Ghost" for fid in assignments.values())
+    is_feasible = all(fid != "X" for fid in assignments.values())
     
     # Create detailed reason: "Layak (A:1/2, B:2/2, C:1/1)"
     stock_parts = [f"{fid}:{used_stock[fid]}/{total_stock[fid]}" for fid in unique_ids]
@@ -164,8 +164,8 @@ def generate_capacity_log_candidate(routes: List[Dict], demands: List[float], in
     if is_feasible:
         reason = f"Layak ({stock_str})"
     else:
-        ghost_count = list(assignments.values()).count("Ghost")
-        reason = f"Kapasitas Terlampaui: {ghost_count} rute tak terangkut ({stock_str})"
+        x_count = list(assignments.values()).count("X")
+        reason = f"Kapasitas Terlampaui: {x_count} rute tak terangkut ({stock_str})"
 
     return {
         "detail": "Accepted" if routes else "Stagnan",
@@ -533,7 +533,7 @@ def apply_inter_neighborhood(
         new_demands[j] = demand_b
         
         # Evaluate with evaluate_route to check TW
-        # Fallback for vehicle_type if Ghost
+        # Fallback for vehicle_type if X
         vt_a = routes[i]["vehicle_type"] if routes[i]["vehicle_type"] in fleet_data else next(iter(fleet_data))
         vt_b = routes[j]["vehicle_type"] if routes[j]["vehicle_type"] in fleet_data else next(iter(fleet_data))
         
@@ -785,6 +785,7 @@ def rvnd_inter(
         )
         
         if result["accepted"]:
+            # ... (as before)
             current_routes = result["new_routes"]
             current_distance = result["distance_after"]
             best_unassigned = result["unassigned_after"]
@@ -804,6 +805,21 @@ def rvnd_inter(
                 "candidates": result.get("candidates", []) if academic_mode else []
             })
             continue
+
+        # If academic_mode, log even failed iterations
+        if academic_mode:
+            iteration_logs.append({
+                "iteration_id": iteration,
+                "phase": "RVND-INTER",
+                "neighborhood": neighborhood,
+                "improved": False,
+                "routes_snapshot": [deepcopy(r["sequence"]) for r in current_routes],
+                "total_distance": round(current_distance, 2),
+                "unassigned": best_unassigned,
+                "penalty": round(best_penalty, 2),
+                "message": f"Neighborhood {neighborhood} gagal menemukan perbaikan.",
+                "candidates": result.get("candidates", [])
+            })
 
         NL.remove(neighborhood)
         if not NL:
@@ -847,7 +863,7 @@ def attempt_load_rebalance(
     rng: random.Random
 ) -> Tuple[List[Dict], bool, dict]:
     """
-    Forcefully attempt to move nodes from overloaded/ghost routes to any available capacity.
+    Forcefully attempt to move nodes from overloaded/X routes to any available capacity.
     """
     distance_matrix = distance_data["distance_matrix"]
     fleet_data = {f["id"]: f for f in fleet_list}
@@ -1078,9 +1094,8 @@ def main() -> None:
             else:
                 # No vehicles left at all!
                 # This is a critical infeasibility (more routes than vehicles).
-                # We keep the original vehicle type but it's effectively "Ghost".
-                # RVND will likely fail to solve this unless it merges routes.
-                route["vehicle_assignment_note"] = "Ghost (No Vehicles Left)"
+                # We keep the original vehicle type but it's effectively "X".
+                route["vehicle_assignment_note"] = "X (No Vehicles Left)"
                 # We don't change vehicle_type here, preserving original intent 
                 # but valid solutions are impossible without merging.
         

@@ -770,6 +770,11 @@ def _display_rvnd_inter_iterations(logs: List[Dict], dataset: Dict[str, Any] = N
             - **A, B**: Menukar posisi pelanggan A dengan pelanggan B (Swap).
             - **(A,B), C**: Menukar sepasang pelanggan (A,B) dengan pelanggan C.
             - **Cross A, B**: Memotong jalur di titik A dan B, lalu menyambung silang.
+
+            **Notasi Kapasitas:**
+            - **Simbol (X)**: Menandakan rute tersebut **tidak dapat terangkut** oleh sisa armada yang tersedia. 
+            - **Alasan (Fleet A:1/2, ...)**: Format ini dibaca **(Unit Digunakan / Total Stok)**. 
+            - **Kenapa Fleet C:0/1 tapi Status X?**: Jika muatan rute (kg) lebih besar dari kapasitas kendaraan terbesar yang tersisa (Fleet C), maka rute tersebut tetap dianggap **X (Tidak Layak)** meskipun unit C masih ada 1.
             """)
 
         # --- DISTANCE CHECK MATRIX (Hitung Jarak) ---
