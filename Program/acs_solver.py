@@ -121,10 +121,16 @@ def evaluate_route(sequence: List[int], instance: dict, distance_data: dict, wei
 
     total_time_component = total_travel_time + total_service_time
     
+    # Calculate total demand
+    total_demand = 0.0
+    for node_id in sequence:
+        if node_id != 0:
+            total_demand += customers[node_id].get("demand", 0.0)
+
     if weights:
-        w1 = weights.get("w1_distance", 1.0)
-        w2 = weights.get("w2_time", 1.0)
-        w3 = weights.get("w3_tw_violation", 1.0)
+        w1 = weights.get("w1_distance", weights.get("distance", 1.0))
+        w2 = weights.get("w2_time", weights.get("time", 1.0))
+        w3 = weights.get("w3_tw_violation", weights.get("time_window_violation", 1.0))
         objective_value = w1 * total_distance + w2 * total_time_component + w3 * total_violation
     else:
         objective_value = total_distance + total_time_component + total_violation
@@ -139,6 +145,7 @@ def evaluate_route(sequence: List[int], instance: dict, distance_data: dict, wei
         "total_time_component": round(total_time_component, 3),
         "total_tw_violation": round(total_violation, 3),
         "total_wait_time": round(total_wait_time, 3),
+        "total_demand": total_demand,
         "objective": round(objective_value, 3)
     }
 
@@ -303,23 +310,27 @@ def acs_cluster(cluster: dict, instance: dict, distance_data: dict, initial_rout
                         "description": f"Terdeteksi pelanggaran TW (soft): {metrics['total_tw_violation']} menit."
                     })
                 
-                iteration_logs.append({
-                    "phase": "ACS",
-                    "cluster_id": cluster["cluster_id"],
-                    "iteration": iteration,
-                    "ant": ant,
-                    "step": "route_evaluation",
-                    "route": route,
-                    "distance": metrics["total_distance"],
-                    "travel_time": metrics["total_travel_time"],
-                    "service_time": metrics["total_service_time"],
-                    "total_time": metrics["total_time_component"],
-                    "tw_violation": metrics["total_tw_violation"],
-                    "wait_time": metrics.get("total_wait_time", 0),
-                    "objective_formula": f"Z = {weights['w1_distance']}×D + {weights['w2_time']}×T + {weights['w3_tw_violation']}×V",
-                    "objective": round(metrics["objective"], 2),
-                    "description": f"Evaluasi fungsi tujuan: Z = {round(metrics['objective'], 2)}"
-                })
+            w1 = weights.get("w1_distance", weights.get("distance", 1.0))
+            w2 = weights.get("w2_time", weights.get("time", 1.0))
+            w3 = weights.get("w3_tw_violation", weights.get("time_window_violation", 1.0))
+
+            iteration_logs.append({
+                "phase": "ACS",
+                "cluster_id": cluster["cluster_id"],
+                "iteration": iteration,
+                "ant": ant,
+                "step": "route_evaluation",
+                "route": route,
+                "distance": metrics["total_distance"],
+                "travel_time": metrics["total_travel_time"],
+                "service_time": metrics["total_service_time"],
+                "total_time": metrics["total_time_component"],
+                "tw_violation": metrics["total_tw_violation"],
+                "wait_time": metrics.get("total_wait_time", 0),
+                "objective_formula": f"Z = {w1}*D + {w2}*T + {w3}*V",
+                "objective": round(metrics["objective"], 2),
+                "description": f"Evaluasi fungsi tujuan: Z = {round(metrics['objective'], 2)}"
+            })
 
             if iteration_best_metrics is None or metrics["objective"] < iteration_best_metrics["objective"]:
                 iteration_best_metrics = metrics

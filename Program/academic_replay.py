@@ -10,6 +10,7 @@ from typing import Dict, List
 
 # Import core modules
 import sweep_nn
+import acs_solver
 import rvnd
 
 # Config
@@ -90,10 +91,34 @@ def run_academic_replay(
         })
         nn_logs.extend(logs)
 
-    # --- PHASE 3: RVND (GLOBAL INTER) ---
+    # --- PHASE 3: ANT COLONY SYSTEM ---
+    print("[Academic Replay] Running Ant Colony System...")
+    acs_routes = []
+    acs_logs = []
+    
+    # Default params if not provided
+    acs_params = user_acs_params if user_acs_params else {
+        "alpha": 1.0,
+        "beta": 2.0,
+        "rho": 0.1,
+        "q0": 0.9,
+        "num_ants": 10,
+        "max_iterations": 20
+    }
+    
+    for idx, initial_route in enumerate(initial_routes):
+        cluster = clusters[idx]
+        metrics = acs_solver.acs_cluster(
+            cluster, instance, distance_data, initial_route, acs_params, rng, academic_mode=True
+        )
+        acs_routes.append(metrics)
+        if "iteration_logs" in metrics:
+            acs_logs.extend(metrics["iteration_logs"])
+
+    # --- PHASE 4: RVND (GLOBAL INTER) ---
     print("[Academic Replay] Running RVND Inter-route...")
     optimized_routes, rvnd_logs = rvnd.rvnd_inter(
-        initial_routes,
+        acs_routes, # Use ACS results as input for RVND
         instance,
         distance_data,
         instance["fleet"],
@@ -102,9 +127,9 @@ def run_academic_replay(
         academic_mode=True
     )
     
-    # --- PHASE 4: RVND (LOCAL INTRA) ---
+    # --- PHASE 5: RVND (LOCAL INTRA) ---
     intra_results = []
-    all_logs = sweep_logs + nn_logs + rvnd_logs
+    all_logs = sweep_logs + nn_logs + acs_logs + rvnd_logs
     
     fleet_data = {f["id"]: f for f in instance["fleet"]}
     for route in optimized_routes:
