@@ -57,11 +57,27 @@ def validate_solution(instance: dict, distance_data: dict, clusters_data: dict, 
 
     capacity_ok = True
     fleet_capacities = {fleet["id"]: fleet["capacity"] for fleet in instance["fleet"]}
+    fleet_units = {fleet["id"]: fleet["units"] for fleet in instance["fleet"]}
     customer_demand = {customer["id"]: customer["demand"] for customer in instance["customers"]}
-    for cluster in clusters_data["clusters"]:
-        total = sum(customer_demand[cid] for cid in cluster["customer_ids"])
-        if total > fleet_capacities[cluster["vehicle_type"]] + 1e-9:
+    
+    # Check individual route capacities
+    for route in final_routes:
+        total = sum(customer_demand.get(cid, 0) for cid in route["sequence"] if cid != 0)
+        v_type = route["vehicle_type"]
+        if total > fleet_capacities.get(v_type, 0) + 1e-9:
             capacity_ok = False
+            break
+            
+    # Check total units count
+    usage_counts = {}
+    for route in final_routes:
+        v_type = route["vehicle_type"]
+        usage_counts[v_type] = usage_counts.get(v_type, 0) + 1
+        
+    stock_ok = True
+    for v_type, count in usage_counts.items():
+        if count > fleet_units.get(v_type, 0):
+            stock_ok = False
             break
 
     tw_consistent = all(abs(route["total_tw_violation"]) < 1e-9 for route in final_routes)
@@ -71,6 +87,7 @@ def validate_solution(instance: dict, distance_data: dict, clusters_data: dict, 
         "distance_symmetric": symmetric,
         "distance_zero_diagonal": zero_diagonal,
         "capacity_respected": capacity_ok,
+        "fleet_stock_respected": stock_ok,
         "tw_no_violation": tw_consistent
     }
 
@@ -109,14 +126,14 @@ def main() -> None:
         
         # Determine origin sequences (handle new routes gracefully)
         if cid in initial_routes_data["routes"] and cid <= len(initial_routes_data["routes"]):
-             # Note: list index is 0-based, cid is 1-based usually
-             # But if cid > len, it's a new route.
-             try:
-                 initial_seq = initial_routes_data["routes"][cid - 1]["sequence"]
-             except IndexError:
-                 initial_seq = [0, 0]
+            # Note: list index is 0-based, cid is 1-based usually
+            # But if cid > len, it's a new route.
+            try:
+                initial_seq = initial_routes_data["routes"][cid - 1]["sequence"]
+            except IndexError:
+                initial_seq = [0, 0]
         else:
-             initial_seq = [0, 0]
+            initial_seq = [0, 0]
              
         if cid in acs_map:
             acs_seq = acs_map[cid]["sequence"]

@@ -31,7 +31,7 @@ def minutes_to_clock(value: float) -> str:
     return f"{hours:02d}:{minutes:02d}+{seconds:02d}s"
 
 
-def evaluate_route(sequence: List[int], instance: dict, distance_data: dict) -> dict:
+def evaluate_route(sequence: List[int], instance: dict, distance_data: dict, weights: dict = None) -> dict:
     node_index = {node["id"]: idx for idx, node in enumerate(distance_data["nodes"])}
     distance_matrix = distance_data["distance_matrix"]
     travel_matrix = distance_data["travel_time_matrix"]
@@ -46,10 +46,12 @@ def evaluate_route(sequence: List[int], instance: dict, distance_data: dict) -> 
     customers = {customer["id"]: customer for customer in instance["customers"]}
 
     stops = []
+    tw_violations_detail = []
     total_distance = 0.0
     total_travel_time = 0.0
     total_service_time = 0.0
     total_violation = 0.0
+    total_wait_time = 0.0
 
     prev_node = sequence[0]
     current_time = depot_tw["start"] + depot_service
@@ -61,7 +63,9 @@ def evaluate_route(sequence: List[int], instance: dict, distance_data: dict) -> 
         "departure": current_time,
         "departure_str": minutes_to_clock(current_time),
         "wait": 0.0,
-        "violation": 0.0
+        "violation": 0.0,
+        "tw_start": depot_tw["start"],
+        "tw_end": depot_tw["end"]
     })
 
     for next_node in sequence[1:]:
@@ -84,38 +88,58 @@ def evaluate_route(sequence: List[int], instance: dict, distance_data: dict) -> 
 
         arrival = max(tw_start, arrival_no_wait)
         wait_time = max(0.0, tw_start - arrival_no_wait)
-        violation = max(0.0, arrival - tw_end)
+        violation = max(0.0, arrival_no_wait - tw_end)
         departure = arrival + service_time
 
         if next_node != 0:
             total_service_time += service_time
             total_violation += violation
+            total_wait_time += wait_time
+            if violation > 0.001:
+                tw_violations_detail.append({
+                    "customer_id": next_node,
+                    "arrival": arrival_no_wait,
+                    "tw_end": tw_end,
+                    "violation_minutes": violation
+                })
 
         stops.append({
             "node_id": next_node,
+            "raw_arrival": arrival_no_wait,
             "arrival": arrival,
             "arrival_str": minutes_to_clock(arrival),
             "departure": departure,
             "departure_str": minutes_to_clock(departure),
             "wait": wait_time,
-            "violation": violation
+            "violation": violation,
+            "tw_start": tw_start,
+            "tw_end": tw_end
         })
 
         prev_node = next_node
         current_time = departure
 
     total_time_component = total_travel_time + total_service_time
-    objective_value = total_distance + total_time_component + total_violation
+    
+    if weights:
+        w1 = weights.get("w1_distance", 1.0)
+        w2 = weights.get("w2_time", 1.0)
+        w3 = weights.get("w3_tw_violation", 1.0)
+        objective_value = w1 * total_distance + w2 * total_time_component + w3 * total_violation
+    else:
+        objective_value = total_distance + total_time_component + total_violation
 
     return {
         "sequence": sequence,
         "stops": stops,
-        "total_distance": total_distance,
-        "total_travel_time": total_travel_time,
+        "tw_violations_detail": tw_violations_detail,
+        "total_distance": round(total_distance, 3),
+        "total_travel_time": round(total_travel_time, 3),
         "total_service_time": total_service_time,
-        "total_time_component": total_time_component,
-        "total_tw_violation": total_violation,
-        "objective": objective_value
+        "total_time_component": round(total_time_component, 3),
+        "total_tw_violation": round(total_violation, 3),
+        "total_wait_time": round(total_wait_time, 3),
+        "objective": round(objective_value, 3)
     }
 
 
@@ -185,10 +209,12 @@ def global_update(pheromone: Dict[Tuple[int, int], float], best_sequence: List[i
 
 
 def acs_cluster(cluster: dict, instance: dict, distance_data: dict, initial_route: dict,
-                acs_params: dict, rng: random.Random) -> dict:
+                acs_params: dict, rng: random.Random, academic_mode: bool = False) -> dict:
     customers = cluster["customer_ids"]
     node_index = {node["id"]: idx for idx, node in enumerate(distance_data["nodes"])}
     distance_matrix = distance_data["distance_matrix"]
+    
+    weights = instance.get("objective_weights", {"w1_distance": 1.0, "w2_time": 1.0, "w3_tw_violation": 1.0})
 
     initial_length = initial_route["total_distance"]
     pheromone, tau0 = initialize_pheromone(customers, initial_length)
@@ -200,17 +226,44 @@ def acs_cluster(cluster: dict, instance: dict, distance_data: dict, initial_rout
     num_ants = acs_params["num_ants"]
     max_iterations = acs_params["max_iterations"]
 
-    best_metrics = evaluate_route(initial_route["sequence"], instance, distance_data)
-    best_sequence = best_metrics["sequence"]
-
     # Iteration logging for academic output
     iteration_logs = []
+
+    if academic_mode:
+        n = len(customers)
+        iteration_logs.append({
+            "phase": "ACS",
+            "cluster_id": cluster["cluster_id"],
+            "step": "init_pheromone",
+            "mode": "ACADEMIC_REPLAY",
+            "tau0": round(tau0, 6),
+            "nn_length": initial_length,
+            "formula": f"tau0 = 1 / ({n} × {initial_length}) = {round(tau0, 6)}",
+            "description": "Inisialisasi kadar pheromone awal (tau0) berdasarkan rute NN."
+        })
+
+    best_metrics = evaluate_route(initial_route["sequence"], instance, distance_data, weights)
+    best_sequence = best_metrics["sequence"]
+    best_objective = best_metrics["objective"]
+
+    if academic_mode:
+        iteration_logs.append({
+            "phase": "ACS",
+            "cluster_id": cluster["cluster_id"],
+            "step": "init_objective",
+            "initial_distance": best_metrics["total_distance"],
+            "initial_time": best_metrics["total_time_component"],
+            "initial_tw_violation": best_metrics["total_tw_violation"],
+            "initial_objective": round(best_objective, 2),
+            "formula": "Z = α×D + β×T + γ×TW_violation",
+            "description": f"Objective awal Z = {round(best_objective, 2)}"
+        })
 
     for iteration in range(1, max_iterations + 1):
         iteration_best_sequence = None
         iteration_best_metrics = None
 
-        for _ in range(num_ants):
+        for ant in range(1, num_ants + 1):
             route = [0]
             allowed = set(customers)
             prev = 0
@@ -225,28 +278,95 @@ def acs_cluster(cluster: dict, instance: dict, distance_data: dict, initial_rout
             route.append(0)
             local_update(pheromone, (prev, 0), rho, tau0)
 
-            metrics = evaluate_route(route, instance, distance_data)
+            metrics = evaluate_route(route, instance, distance_data, weights)
+            
+            if academic_mode:
+                iteration_logs.append({
+                    "phase": "ACS",
+                    "cluster_id": cluster["cluster_id"],
+                    "iteration": iteration,
+                    "ant": ant,
+                    "step": "route_constructed",
+                    "route": route,
+                    "description": f"Semut {ant} membangun rute dinamis."
+                })
+                
+                if metrics["total_tw_violation"] > 0:
+                    iteration_logs.append({
+                        "phase": "ACS",
+                        "cluster_id": cluster["cluster_id"],
+                        "iteration": iteration,
+                        "ant": ant,
+                        "step": "tw_soft_constraint",
+                        "total_tw_violation": metrics["total_tw_violation"],
+                        "violations": metrics["tw_violations_detail"],
+                        "description": f"Terdeteksi pelanggaran TW (soft): {metrics['total_tw_violation']} menit."
+                    })
+                
+                iteration_logs.append({
+                    "phase": "ACS",
+                    "cluster_id": cluster["cluster_id"],
+                    "iteration": iteration,
+                    "ant": ant,
+                    "step": "route_evaluation",
+                    "route": route,
+                    "distance": metrics["total_distance"],
+                    "travel_time": metrics["total_travel_time"],
+                    "service_time": metrics["total_service_time"],
+                    "total_time": metrics["total_time_component"],
+                    "tw_violation": metrics["total_tw_violation"],
+                    "wait_time": metrics.get("total_wait_time", 0),
+                    "objective_formula": f"Z = {weights['w1_distance']}×D + {weights['w2_time']}×T + {weights['w3_tw_violation']}×V",
+                    "objective": round(metrics["objective"], 2),
+                    "description": f"Evaluasi fungsi tujuan: Z = {round(metrics['objective'], 2)}"
+                })
+
             if iteration_best_metrics is None or metrics["objective"] < iteration_best_metrics["objective"]:
                 iteration_best_metrics = metrics
                 iteration_best_sequence = route
 
         global_update(pheromone, iteration_best_sequence, rho, iteration_best_metrics["total_distance"])
 
-        # Log this iteration
-        iteration_logs.append({
-            "iteration_id": iteration,
-            "phase": "ACS",
-            "routes_snapshot": [iteration_best_sequence],
-            "total_distance": iteration_best_metrics["total_distance"],
-            "total_service_time": iteration_best_metrics["total_service_time"],
-            "total_travel_time": iteration_best_metrics["total_travel_time"],
-            "vehicle_type": cluster["vehicle_type"],
-            "objective": iteration_best_metrics["objective"]
-        })
+        if not academic_mode:
+            # Only minimal log in standard mode to save memory
+            iteration_logs.append({
+                "iteration_id": iteration,
+                "phase": "ACS",
+                "routes_snapshot": [iteration_best_sequence],
+                "total_distance": iteration_best_metrics["total_distance"],
+                "total_service_time": iteration_best_metrics["total_service_time"],
+                "total_travel_time": iteration_best_metrics["total_travel_time"],
+                "vehicle_type": cluster["vehicle_type"],
+                "objective": iteration_best_metrics["objective"]
+            })
+        else:
+            # Summary log for iteration in academic mode
+            iteration_logs.append({
+                "phase": "ACS",
+                "cluster_id": cluster["cluster_id"],
+                "iteration": iteration,
+                "step": "iteration_summary",
+                "best_route": iteration_best_sequence,
+                "best_objective": iteration_best_metrics["objective"],
+                "best_distance": iteration_best_metrics["total_distance"],
+                "best_tw_violation": iteration_best_metrics["total_tw_violation"]
+            })
 
         if iteration_best_metrics["objective"] < best_metrics["objective"]:
             best_metrics = iteration_best_metrics
             best_sequence = iteration_best_sequence
+            best_objective = iteration_best_metrics["objective"]
+            
+            if academic_mode:
+                iteration_logs.append({
+                    "phase": "ACS",
+                    "cluster_id": cluster["cluster_id"],
+                    "iteration": iteration,
+                    "step": "new_best_found",
+                    "new_best_objective": round(best_objective, 2),
+                    "new_best_distance": best_metrics["total_distance"],
+                    "description": f"Rute terbaik baru ditemukan dengan Z = {round(best_objective, 2)}"
+                })
 
     best_metrics["cluster_id"] = cluster["cluster_id"]
     best_metrics["vehicle_type"] = cluster["vehicle_type"]

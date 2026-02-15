@@ -1,10 +1,9 @@
 import json
-import math
 import random
 import time
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Any
 
 DATA_DIR = Path(__file__).resolve().parent / "data" / "processed"
 INSTANCE_PATH = DATA_DIR / "parsed_instance.json"
@@ -13,12 +12,13 @@ ACS_PATH = DATA_DIR / "acs_routes.json"
 RVND_PATH = DATA_DIR / "rvnd_routes.json"
 
 # RVND Configuration
-MAX_INTER_ITERATIONS = 150
-MAX_INTRA_ITERATIONS = 200
+MAX_INTER_ITERATIONS = 300
+MAX_INTRA_ITERATIONS = 400
 
 # Neighborhood definitions
 INTER_ROUTE_NEIGHBORHOODS = ["shift_1_0", "shift_2_0", "swap_1_1", "swap_2_1", "swap_2_2", "cross"]
 INTRA_ROUTE_NEIGHBORHOODS = ["two_opt", "or_opt", "reinsertion", "exchange"]
+MAX_LOG_CANDIDATES = 40
 
 
 def assign_vehicle_by_demand(total_demand: float, fleet_data: List[Dict], used_vehicles: Dict[str, int]) -> Optional[str]:
@@ -115,24 +115,29 @@ def generate_capacity_log_candidate(routes: List[Dict], demands: List[float], in
     Generates a 'candidate' metadata object for logging.
     This matches the format expected by academic_replay_tab.py for the matrix view.
     """
-    
     route_sequences = []
     route_loads = []
     
-    # 1. Expand fleet for greedy check (matches can_assign_fleet logic)
+    # 1. Expand fleet for greedy check
     available_units = []
-    for f in fleet_data:
+    fleet_catalog = {f["id"]: f for f in fleet_data}
+    unique_ids = sorted(list(fleet_catalog.keys()))
+    
+    # Count total available for reason string
+    total_stock = {fid: fleet_catalog[fid]["units"] for fid in unique_ids}
+    used_stock = {fid: 0 for fid in unique_ids}
+
+    for fid in unique_ids:
+        f = fleet_catalog[fid]
         for _ in range(f["units"]):
             available_units.append({
-                "id": f["id"],
+                "id": fid,
                 "capacity": f["capacity"],
                 "used": False
             })
     available_units.sort(key=lambda x: x["capacity"]) # Best Fit
     
-    # Sort demands for assignment logic
     indexed_demands = sorted(enumerate(demands), key=lambda x: x[1], reverse=True)
-    
     assignments = {} # Index -> Fleet ID
     
     for idx, d in indexed_demands:
@@ -141,23 +146,37 @@ def generate_capacity_log_candidate(routes: List[Dict], demands: List[float], in
             if not unit["used"] and unit["capacity"] >= d:
                 unit["used"] = True
                 assigned_fid = unit["id"]
+                used_stock[assigned_fid] += 1
                 break
         assignments[idx] = assigned_fid
         
     for i in range(len(routes)):
         route_sequences.append("→".join(map(str, routes[i]["sequence"])))
-        
-        # Load string: "Demand kg (Vehicle ID)"
         fid = assignments.get(i, "Ghost")
         route_loads.append(f"{demands[i]:.1f} kg ({fid})")
         
+    is_feasible = all(fid != "Ghost" for fid in assignments.values())
+    
+    # Create detailed reason: "Layak (A:1/2, B:2/2, C:1/1)"
+    stock_parts = [f"{fid}:{used_stock[fid]}/{total_stock[fid]}" for fid in unique_ids]
+    stock_str = ", ".join(stock_parts)
+    
+    if is_feasible:
+        reason = f"Layak ({stock_str})"
+    else:
+        ghost_count = list(assignments.values()).count("Ghost")
+        reason = f"Kapasitas Terlampaui: {ghost_count} rute tak terangkut ({stock_str})"
+
     return {
-        "detail": "Accepted Move" if routes else "Stagnan",
+        "detail": "Accepted" if routes else "Stagnan",
         "route_sequences": route_sequences,
         "route_loads": route_loads,
-        "feasible": all(fid != "Ghost" for fid in assignments.values()),
-        "reason": "Layak" if all(fid != "Ghost" for fid in assignments.values()) else "Kapasitas Terlampaui",
-        "delta": round(delta, 2)
+        "feasible": is_feasible,
+        "reason": reason,
+        "delta": round(delta, 2),
+        "total_distance": round(sum(r.get("total_distance", 0) for r in routes), 2) if routes else 0.0,
+        "route_distances": [r.get("total_distance", 0) for r in routes] if routes else [],
+        "tw_status": "Calculating..." # To be filled by caller
     }
 
 
@@ -172,16 +191,18 @@ def parse_time_to_minutes(value: str) -> float:
 
 
 def minutes_to_clock(value: float) -> str:
-    hours = int(value // 60)
-    minutes = int(value % 60)
-    seconds = round((value - math.floor(value)) * 60)
-    if seconds == 0:
-        return f"{hours:02d}:{minutes:02d}"
-    return f"{hours:02d}:{minutes:02d}+{seconds:02d}s"
+    """Format minutes to clock string HH:MM:SS."""
+    h = int(value // 60)
+    m = int(value % 60)
+    s = int((value * 60) % 60)
+    return f"{h:02d}:{m:02d}:{s:02d}"
 
 
-def evaluate_route(sequence: List[int], instance: dict, distance_data: dict, fleet_info: dict) -> Dict[str, float]:
-    """Evaluate a single route with capacity and time window constraints."""
+def evaluate_route(sequence: List[int], instance: dict, distance_data: dict, fleet_info: dict = None, academic_mode: bool = False) -> Dict[str, Any]:
+    """
+    Evaluate a single route with capacity and time window constraints.
+    In AR mode, TW is SOFT - violations are logged but don't disqualify.
+    """
     node_index = {node["id"]: idx for idx, node in enumerate(distance_data["nodes"])}
     distance_matrix = distance_data["distance_matrix"]
     travel_matrix = distance_data["travel_time_matrix"]
@@ -197,108 +218,144 @@ def evaluate_route(sequence: List[int], instance: dict, distance_data: dict, fle
 
     stops = []
     total_distance = 0.0
-    travel_time_sum = 0.0
-    service_time_sum = 0.0
-    violation_sum = 0.0
-    wait_sum = 0.0
+    total_travel_time = 0.0
+    total_service_time = 0.0
+    total_violation = 0.0
+    total_wait_time = 0.0
     total_demand = 0.0
 
-    prev_node = sequence[0]
-    current_time = depot_tw["start"] + depot_service
-
+    current_node = sequence[0]
+    current_time = depot_tw["start"]
+    
+    # Depot start
     stops.append({
         "node_id": 0,
-        "arrival": depot_tw["start"],
-        "arrival_str": minutes_to_clock(depot_tw["start"]),
-        "departure": current_time,
-        "departure_str": minutes_to_clock(current_time),
+        "arrival": current_time,
+        "arrival_str": minutes_to_clock(current_time),
+        "departure": current_time + depot_service,
+        "departure_str": minutes_to_clock(current_time + depot_service),
         "wait": 0.0,
-        "violation": 0.0
+        "violation": 0.0,
+        "tw_start": depot_tw["start"],
+        "tw_end": depot_tw["end"]
     })
+    current_time += depot_service
 
     for next_node in sequence[1:]:
-        travel = travel_matrix[node_index[prev_node]][node_index[next_node]]
-        distance = distance_matrix[node_index[prev_node]][node_index[next_node]]
-        total_distance += distance
-        travel_time_sum += travel
-
+        dist = distance_matrix[node_index[current_node]][node_index[next_node]]
+        travel = travel_matrix[node_index[current_node]][node_index[next_node]]
+        total_distance += dist
+        total_travel_time += travel
+        
         arrival_no_wait = current_time + travel
-
+        
         if next_node == 0:
-            tw_start = depot_tw["start"]
-            tw_end = depot_tw["end"]
-            service_time = depot_service
+            tw_start, tw_end = depot_tw["start"], depot_tw["end"]
+            service = 0
+            demand = 0
         else:
-            customer = customers[next_node]
-            tw_start = parse_time_to_minutes(customer["time_window"]["start"])
-            tw_end = parse_time_to_minutes(customer["time_window"]["end"])
-            service_time = customer["service_time"]
-            total_demand += customer["demand"]
+            cust = customers[next_node]
+            tw_start = parse_time_to_minutes(cust["time_window"]["start"])
+            tw_end = parse_time_to_minutes(cust["time_window"]["end"])
+            service = cust["service_time"]
+            demand = cust["demand"]
+            total_demand += demand
 
-        arrival = max(tw_start, arrival_no_wait)
         wait = max(0.0, tw_start - arrival_no_wait)
-        violation = max(0.0, arrival - tw_end)
-        departure = arrival + service_time
-
+        service_start = max(arrival_no_wait, tw_start)
+        violation = max(0.0, arrival_no_wait - tw_end)
+        departure = service_start + service
+        
         if next_node != 0:
-            service_time_sum += service_time
-            violation_sum += violation
-            wait_sum += wait
+            total_violation += violation
+            total_service_time += service
+            total_wait_time += wait
 
         stops.append({
             "node_id": next_node,
-            "arrival": arrival,
-            "arrival_str": minutes_to_clock(arrival),
+            "raw_arrival": arrival_no_wait,
+            "arrival": service_start,
+            "arrival_str": minutes_to_clock(service_start),
             "departure": departure,
             "departure_str": minutes_to_clock(departure),
             "wait": wait,
-            "violation": violation
+            "violation": violation,
+            "tw_start": tw_start,
+            "tw_end": tw_end
         })
-
-        prev_node = next_node
+        current_node = next_node
         current_time = departure
 
-    time_component = travel_time_sum + service_time_sum
-    objective = total_distance + time_component + violation_sum
-
-    # Check capacity constraint
-    capacity_violation = max(0.0, total_demand - fleet_info["capacity"])
+    capacity = 100
+    vtype = "Unknown"
+    if fleet_info:
+        vtype = fleet_info["id"]
+        capacity = fleet_info["capacity"]
+    elif "vehicle_type" in instance:
+        vtype = instance["vehicle_type"]
+        
+    capacity_violation = max(0.0, total_demand - capacity)
+    is_feasible = capacity_violation < 0.001
+    
+    if not academic_mode:
+        if total_violation > 0.001:
+            is_feasible = False
+            
+    time_component = total_travel_time + total_service_time
+    objective = total_distance + time_component + total_violation
 
     return {
         "sequence": sequence,
         "stops": stops,
-        "total_distance": total_distance,
-        "total_travel_time": travel_time_sum,
-        "total_service_time": service_time_sum,
-        "total_time_component": time_component,
-        "total_tw_violation": violation_sum,
-        "total_wait_time": wait_sum,
+        "total_distance": round(total_distance, 3),
+        "total_travel_time": round(total_travel_time, 3),
+        "total_service_time": total_service_time,
+        "total_time_component": round(time_component, 3),
+        "total_tw_violation": round(total_violation, 3),
+        "total_wait_time": round(total_wait_time, 3),
         "total_demand": total_demand,
         "capacity_violation": capacity_violation,
-        "objective": objective,
-        "feasible": violation_sum == 0 and capacity_violation == 0
+        "objective": round(objective, 3),
+        "is_feasible": is_feasible,
+        "vehicle_type": vtype,
+        "capacity": capacity
     }
 
 
 def is_solution_better(new_metrics: Dict, current_metrics: Dict) -> bool:
     """
     Check if new solution is better.
-    
-    REVISION NOTE: Per specification, acceptance is based ONLY on distance improvement.
-    Time window violations are reported but do NOT invalidate solutions.
-    Capacity violations DO invalidate solutions (vehicle assignment constraint).
+    STRICT VERSION:
+    1. Reject if capacity exceeded or TW violated.
+    2. If both are feasible, pick based on distance.
+    3. If current is infeasible but new is better (less violation), accept.
     """
-    # Reject if capacity violated (vehicle cannot physically handle demand)
-    if new_metrics["capacity_violation"] > 0:
+    # Calculate global feasibility score
+    # We want to minimize (unassigned_count * 1000000 + tw_violation * 1000 + distance)
+    # But current_metrics already has these.
+    
+    new_viol = new_metrics.get("total_tw_violation", 0.0)
+    curr_viol = current_metrics.get("total_tw_violation", 0.0)
+    new_cap = new_metrics.get("capacity_violation", 0.0)
+    curr_cap = current_metrics.get("capacity_violation", 0.0)
+    
+    # Absolute rejection: If new is worse in ANY constraint, reject
+    if new_cap > curr_cap + 1e-4:
+        return False
+    # STRICT TW: Reject if new violation increases OR if it introduces new violation where none existed
+    if new_viol > curr_viol + 1e-4:
+        return False
+    if new_viol > 0.001 and curr_viol < 0.001:
         return False
     
-    # Accept if current is capacity-infeasible but new is feasible
-    if current_metrics["capacity_violation"] > 0 and new_metrics["capacity_violation"] == 0:
+    # If new is BETTER in ANY constraint, accept
+    if new_cap < curr_cap - 1e-4:
+        return True
+    if new_viol < curr_viol - 1e-4:
         return True
     
-    # Both capacity-feasible: compare total distance only
-    # Time window violations are soft constraints - reported but not used for rejection
-    return new_metrics["total_distance"] < current_metrics["total_distance"]
+    # Constraints are equal: compare distance
+    return new_metrics["total_distance"] < current_metrics["total_distance"] - 1e-4
 
 
 # ========== INTRA-ROUTE NEIGHBORHOODS ==========
@@ -340,48 +397,84 @@ def intra_exchange(sequence: List[int], i: int, j: int) -> List[int]:
     return new_seq
 
 
-def apply_intra_neighborhood(neighborhood: str, sequence: List[int], rng: random.Random) -> Optional[List[int]]:
-    """Apply a single intra-route neighborhood move."""
+def apply_intra_neighborhood(
+    neighborhood: str,
+    sequence: List[int],
+    instance: dict,
+    distance_data: dict,
+    fleet_info: dict,
+    academic_mode: bool = False
+) -> Tuple[bool, List[int], float, List[dict]]:
+    """
+    Apply intra-route neighborhood move. 
+    In Academic Mode: logs ALL trial moves.
+    """
+    best_seq = sequence[:]
+    curr_metrics = evaluate_route(sequence, instance, distance_data, fleet_info, academic_mode)
+    best_dist = curr_metrics["total_distance"]
+    improved = False
+    candidates = []
+
+    def log_trial(new_seq, move_name, detail):
+        metrics = evaluate_route(new_seq, instance, distance_data, fleet_info, academic_mode)
+        delta = round(metrics["total_distance"] - best_dist, 2)
+        if len(candidates) < MAX_LOG_CANDIDATES:
+            candidates.append({
+                "type": move_name,
+                "detail": detail,
+                "feasible": metrics["is_feasible"],
+                "delta": delta,
+                "reason": "Layak" if metrics["is_feasible"] else "Melanggar Kapasitas/TW",
+                "route_sequences": ["-".join(map(str, new_seq))]
+            })
+        return metrics
+
     n = len(sequence)
-    if n <= 2:
-        return None
-    
     if neighborhood == "two_opt":
-        candidates = [(i, j) for i in range(1, n - 2) for j in range(i + 1, n - 1)]
-        if not candidates:
-            return None
-        i, j = rng.choice(candidates)
-        return intra_two_opt(sequence, i, j)
-    
+        for i in range(1, n - 2):
+            for j in range(i + 1, n - 1):
+                new_seq = intra_two_opt(sequence, i, j)
+                metrics = log_trial(new_seq, "two_opt", f"reverse({i},{j})")
+                if metrics["is_feasible"] and metrics["total_distance"] < best_dist - 1e-6:
+                    best_dist = metrics["total_distance"]
+                    best_seq = new_seq
+                    improved = True
+
     elif neighborhood == "or_opt":
-        candidates = []
         for length in [1, 2, 3]:
-            for i in range(1, n - 1):
-                if i + length > n - 1:
-                    continue
-                for j in range(1, n - length + 1):
-                    if j < i or j > i + length:
-                        candidates.append((i, length, j))
-        if not candidates:
-            return None
-        i, length, j = rng.choice(candidates)
-        return intra_or_opt(sequence, i, length, j)
-    
+            for i in range(1, n - length):
+                for j in range(1, n - length):
+                    if i == j:
+                        continue
+                    new_seq = intra_or_opt(sequence, i, length, j)
+                    metrics = log_trial(new_seq, "or_opt", f"move({i}:{i+length}->{j})")
+                    if metrics["is_feasible"] and metrics["total_distance"] < best_dist - 1e-6:
+                        best_dist = metrics["total_distance"]
+                        best_seq = new_seq
+                        improved = True
+
     elif neighborhood == "reinsertion":
-        candidates = [(i, j) for i in range(1, n - 1) for j in range(1, n) if j != i and j != i + 1]
-        if not candidates:
-            return None
-        i, j = rng.choice(candidates)
-        return intra_reinsertion(sequence, i, j)
-    
+        for i in range(1, n - 1):
+            for j in range(1, n - 1):
+                if i == j: continue
+                new_seq = intra_reinsertion(sequence, i, j)
+                metrics = log_trial(new_seq, "reinsertion", f"move({i}->{j})")
+                if metrics["is_feasible"] and metrics["total_distance"] < best_dist - 1e-6:
+                    best_dist = metrics["total_distance"]
+                    best_seq = new_seq
+                    improved = True
+
     elif neighborhood == "exchange":
-        candidates = [(i, j) for i in range(1, n - 1) for j in range(i + 1, n - 1)]
-        if not candidates:
-            return None
-        i, j = rng.choice(candidates)
-        return intra_exchange(sequence, i, j)
-    
-    return None
+        for i in range(1, n - 2):
+            for j in range(i + 1, n - 1):
+                new_seq = intra_exchange(sequence, i, j)
+                metrics = log_trial(new_seq, "exchange", f"swap({i},{j})")
+                if metrics["is_feasible"] and metrics["total_distance"] < best_dist - 1e-6:
+                    best_dist = metrics["total_distance"]
+                    best_seq = new_seq
+                    improved = True
+
+    return improved, best_seq, best_dist, candidates
 
 
 # ========== INTER-ROUTE NEIGHBORHOODS ==========
@@ -389,43 +482,44 @@ def apply_intra_neighborhood(neighborhood: str, sequence: List[int], rng: random
 # These are placeholders for multi-route scenarios
 
 def apply_inter_neighborhood(
-    neighborhood: str, 
-    routes: List[Dict], 
-    instance: Dict, 
-    distance_matrix: List[List[float]], 
+    neighborhood: str,
+    routes: List[Dict],
+    instance: Dict,
+    distance_data: Dict,
     fleet_list: List[Dict],
-    rng: random.Random
+    rng: random.Random,
+    academic_mode: bool = False
 ) -> Dict:
     """
     Apply inter-route neighborhood operator (Global RVND).
     STOCK-AWARE: Moves must lead to a valid fleet assignment.
     """
-    current_distance = sum(r["total_distance"] for r in routes)
+    fleet_data = {f["id"]: f for f in fleet_list}
     customers = {c["id"]: c for c in instance["customers"]}
-    best_move = None
-    best_routes = None
+    current_distance = sum(r["total_distance"] for r in routes)
+    
     best_distance = current_distance
+    best_routes = routes
+    best_move = None
     
     current_demands = [r["total_demand"] for r in routes]
     _, current_unassigned, current_penalty = can_assign_fleet(current_demands, fleet_list)
     best_unassigned = current_unassigned
     best_penalty = current_penalty
 
+    distance_matrix = distance_data["distance_matrix"]
+
     def calc_route_distance(seq):
-        return sum(distance_matrix[seq[k]][seq[k+1]] for k in range(len(seq)-1))
+        node_index = {node["id"]: idx for idx, node in enumerate(distance_data["nodes"])}
+        return sum(distance_matrix[node_index[seq[k]]][node_index[seq[k+1]]] for k in range(len(seq)-1))
 
     def calc_route_demand(seq, customers_dict):
-        return sum(customers_dict[c]["demand"] for c in seq[1:-1])
+        return sum(customers_dict[c]["demand"] for c in seq if c != 0)
 
-    def rebuild_route_internal(route, new_seq, new_dist, new_demand):
-        updated = deepcopy(route)
-        updated["sequence"] = new_seq
-        updated["total_distance"] = round(new_dist, 2)
-        updated["total_demand"] = new_demand
-        return updated
+    log_candidates = []
 
-    def evaluate_move(i, j, new_seq_a, new_seq_b):
-        nonlocal best_distance, best_routes, best_move, best_unassigned, best_penalty
+    def evaluate_move(i, j, new_seq_a, new_seq_b, move_name, detail):
+        nonlocal best_distance, best_routes, best_move, best_unassigned, best_penalty, log_candidates
         
         dist_a = calc_route_distance(new_seq_a)
         dist_b = calc_route_distance(new_seq_b)
@@ -434,159 +528,165 @@ def apply_inter_neighborhood(
         
         total_new_dist = current_distance - routes[i]["total_distance"] - routes[j]["total_distance"] + dist_a + dist_b
         
-        # Check global fleet feasibility
         new_demands = current_demands[:]
         new_demands[i] = demand_a
         new_demands[j] = demand_b
-        _, unassigned, penalty = can_assign_fleet(new_demands, fleet_list)
         
+        # Evaluate with evaluate_route to check TW
+        # Fallback for vehicle_type if Ghost
+        vt_a = routes[i]["vehicle_type"] if routes[i]["vehicle_type"] in fleet_data else next(iter(fleet_data))
+        vt_b = routes[j]["vehicle_type"] if routes[j]["vehicle_type"] in fleet_data else next(iter(fleet_data))
+        
+        metrics_a = evaluate_route(new_seq_a, instance, distance_data, fleet_data[vt_a], academic_mode)
+        metrics_b = evaluate_route(new_seq_b, instance, distance_data, fleet_data[vt_b], academic_mode)
+        
+        tw_viol_new = metrics_a["total_tw_violation"] + metrics_b["total_tw_violation"]
+        tw_viol_old = routes[i]["total_tw_violation"] + routes[j]["total_tw_violation"]
+        
+        # Check global fleet feasibility
+        feasible_fleet, unassigned, penalty = can_assign_fleet(new_demands, fleet_list)
+        
+        # Log this candidate
+        if len(log_candidates) < MAX_LOG_CANDIDATES:
+            cand_routes = deepcopy(routes)
+            cand_routes[i] = metrics_a
+            cand_routes[j] = metrics_b
+            log_cand = generate_capacity_log_candidate(cand_routes, new_demands, instance, fleet_list, delta=total_new_dist - current_distance)
+            log_cand["detail"] = detail
+            log_cand["tw_status"] = "Layak" if tw_viol_new < 0.001 else f"Terlambat {tw_viol_new:.1f}m"
+            log_candidates.append(log_cand)
+
         accepted = False
-        
-        # Acceptance Logic: Priority to Feasibility Gradient, then Distance
         if unassigned < best_unassigned:
-            # Case 1: Reduced number of unassigned clusters
             accepted = True
         elif unassigned == best_unassigned:
-            if unassigned > 0:
-                # Still failing, check if we reduced the magnitude of overload
-                if penalty < best_penalty - 1e-4:
-                    accepted = True
-                elif abs(penalty - best_penalty) < 1e-4 and total_new_dist < best_distance - 1e-4:
-                    # Same magnitude, check distance
-                    accepted = True
-            else:
-                # Fully feasible: standard distance comparison
-                if total_new_dist < best_distance - 1e-4:
-                    accepted = True
+            # Common improvement rules for consistency
+            if tw_viol_new < tw_viol_old - 0.001:
+                accepted = True
+            elif tw_viol_new < tw_viol_old + 0.001: # Check distance if TW same or better
+                if unassigned > 0:
+                    if penalty < best_penalty - 1e-4:
+                        accepted = True
+                    elif abs(penalty - best_penalty) < 1e-4 and total_new_dist < best_distance - 1e-4:
+                        accepted = True
+                else:
+                    if total_new_dist < best_distance - 1e-4:
+                        accepted = True
         
         if accepted:
             best_unassigned = unassigned
             best_penalty = penalty
             best_distance = total_new_dist
             best_routes = deepcopy(routes)
-            best_routes[i] = rebuild_route_internal(routes[i], new_seq_a, dist_a, demand_a)
-            best_routes[j] = rebuild_route_internal(routes[j], new_seq_b, dist_b, demand_b)
+            
+            # Preserve cluster_id and other metadata
+            metrics_a["cluster_id"] = routes[i].get("cluster_id")
+            metrics_b["cluster_id"] = routes[j].get("cluster_id")
+            
+            best_routes[i] = metrics_a
+            best_routes[j] = metrics_b
+            best_move = {"type": move_name, "detail": detail}
             return True
         return False
 
+    n_routes = len(routes)
     if neighborhood == "swap_1_1":
-        for i, route_a in enumerate(routes):
-            for j, route_b in enumerate(routes):
-                if i >= j:
-                    continue
-                seq_a = route_a["sequence"][1:-1]
-                seq_b = route_b["sequence"][1:-1]
-                for ca in seq_a:
-                    for cb in seq_b:
-                        new_seq_a = [0] + [cb if c == ca else c for c in seq_a] + [0]
-                        new_seq_b = [0] + [ca if c == cb else c for c in seq_b] + [0]
-                        if evaluate_move(i, j, new_seq_a, new_seq_b):
-                            best_move = {"type": "swap_1_1", "detail": f"{ca}, {cb}"}
+        for i in range(n_routes):
+            for j in range(i + 1, n_routes):
+                seq_i = routes[i]["sequence"][1:-1]
+                seq_j = routes[j]["sequence"][1:-1]
+                for ca in seq_i:
+                    for cb in seq_j:
+                        new_a = [0] + [cb if c == ca else c for c in seq_i] + [0]
+                        new_b = [0] + [ca if c == cb else c for c in seq_j] + [0]
+                        evaluate_move(i, j, new_a, new_b, "swap_1_1", f"{ca}, {cb}")
 
     elif neighborhood == "shift_1_0":
-        for i, route_a in enumerate(routes):
-            # 2026-02-13 FIX: Allow moving the LAST customer out (emptying the route)
-            # Route with 1 customer has length 3: [0, C, 0].
-            # So len <= 2 is empty. We allow len >= 3.
-            if len(route_a["sequence"]) < 3:
+        for i in range(n_routes):
+            if len(routes[i]["sequence"]) < 3:
                 continue
-            for j, route_b in enumerate(routes):
+            for j in range(n_routes):
                 if i == j:
                     continue
-                seq_a = route_a["sequence"][1:-1]
-                seq_b = route_b["sequence"][1:-1]
-                for ca in seq_a:
-                    new_seq_a_inner = [c for c in seq_a if c != ca]
-                    # If empty, new_seq_a is [0, 0]
-                    new_seq_a = [0] + new_seq_a_inner + [0]
-                    for pos in range(len(seq_b) + 1):
-                        new_seq_b = [0] + seq_b[:pos] + [ca] + seq_b[pos:] + [0]
-                        if evaluate_move(i, j, new_seq_a, new_seq_b):
-                            best_move = {"type": "shift_1_0", "detail": f"{ca} -> R{j+1}"}
+                seq_i = routes[i]["sequence"][1:-1]
+                seq_j = routes[j]["sequence"][1:-1]
+                for ca in seq_i:
+                    new_a = [0] + [c for c in seq_i if c != ca] + [0]
+                    for pos in range(len(seq_j) + 1):
+                        new_b = [0] + seq_j[:pos] + [ca] + seq_j[pos:] + [0]
+                        evaluate_move(i, j, new_a, new_b, "shift_1_0", f"{ca} -> R{j+1}")
 
     elif neighborhood == "shift_2_0":
-        for i, route_a in enumerate(routes):
-            # Allow emptying route with 2 customers (len 4: [0, C1, C2, 0])
-            if len(route_a["sequence"]) < 4:
+        for i in range(n_routes):
+            if len(routes[i]["sequence"]) < 4:
                 continue
-            for j, route_b in enumerate(routes):
+            for j in range(n_routes):
                 if i == j:
                     continue
-                seq_a = route_a["sequence"][1:-1]
-                seq_b = route_b["sequence"][1:-1]
-                for idx_a in range(len(seq_a) - 1):
-                    ca1, ca2 = seq_a[idx_a], seq_a[idx_a+1]
-                    new_seq_a_inner = seq_a[:idx_a] + seq_a[idx_a+2:]
-                    new_seq_a = [0] + new_seq_a_inner + [0]
-                    for pos in range(len(seq_b) + 1):
-                        new_seq_b = [0] + seq_b[:pos] + [ca1, ca2] + seq_b[pos:] + [0]
-                        if evaluate_move(i, j, new_seq_a, new_seq_b):
-                            best_move = {"type": "shift_2_0", "detail": f"({ca1},{ca2}) -> R{j+1}"}
+                seq_i = routes[i]["sequence"][1:-1]
+                seq_j = routes[j]["sequence"][1:-1]
+                for idx in range(len(seq_i) - 1):
+                    ca1, ca2 = seq_i[idx], seq_i[idx+1]
+                    new_a = [0] + seq_i[:idx] + seq_i[idx+2:] + [0]
+                    for pos in range(len(seq_j) + 1):
+                        new_b = [0] + seq_j[:pos] + [ca1, ca2] + seq_j[pos:] + [0]
+                        evaluate_move(i, j, new_a, new_b, "shift_2_0", f"({ca1},{ca2}) -> R{j+1}")
 
     elif neighborhood == "swap_2_1":
-        for i, route_a in enumerate(routes):
-            if len(route_a["sequence"]) < 4:
+        for i in range(n_routes):
+            if len(routes[i]["sequence"]) < 4:
                 continue
-            for j, route_b in enumerate(routes):
+            for j in range(n_routes):
                 if i == j:
                     continue
-                seq_a = route_a["sequence"][1:-1]
-                seq_b = route_b["sequence"][1:-1]
+                seq_a = routes[i]["sequence"][1:-1]
+                seq_b = routes[j]["sequence"][1:-1]
                 for idx_a in range(len(seq_a) - 1):
                     ca1, ca2 = seq_a[idx_a], seq_a[idx_a+1]
                     for cb in seq_b:
-                        new_seq_a = [0] + seq_a[:idx_a] + [cb] + seq_a[idx_a+2:] + [0]
+                        new_a = [0] + seq_a[:idx_a] + [cb] + seq_a[idx_a+2:] + [0]
                         idx_b = seq_b.index(cb)
-                        new_seq_b = [0] + seq_b[:idx_b] + [ca1, ca2] + seq_b[idx_b+1:] + [0]
-                        if evaluate_move(i, j, new_seq_a, new_seq_b):
-                            best_move = {"type": "swap_2_1", "detail": f"({ca1},{ca2}), {cb}"}
+                        new_b = [0] + seq_b[:idx_b] + [ca1, ca2] + seq_b[idx_b+1:] + [0]
+                        evaluate_move(i, j, new_a, new_b, "swap_2_1", f"({ca1},{ca2}), {cb}")
 
     elif neighborhood == "swap_2_2":
-        for i, route_a in enumerate(routes):
-            if len(route_a["sequence"]) < 4:
+        for i in range(n_routes):
+            if len(routes[i]["sequence"]) < 4:
                 continue
-            for j, route_b in enumerate(routes):
-                if i >= j:
+            for j in range(i + 1, n_routes):
+                if len(routes[j]["sequence"]) < 4:
                     continue
-                if len(route_b["sequence"]) < 4:
-                    continue
-                seq_a = route_a["sequence"][1:-1]
-                seq_b = route_b["sequence"][1:-1]
+                seq_a = routes[i]["sequence"][1:-1]
+                seq_b = routes[j]["sequence"][1:-1]
                 for idx_a in range(len(seq_a) - 1):
                     ca1, ca2 = seq_a[idx_a], seq_a[idx_a+1]
                     for idx_b in range(len(seq_b) - 1):
                         cb1, cb2 = seq_b[idx_b], seq_b[idx_b+1]
-                        new_seq_a = [0] + seq_a[:idx_a] + [cb1, cb2] + seq_a[idx_a+2:] + [0]
-                        new_seq_b = [0] + seq_b[:idx_b] + [ca1, ca2] + seq_b[idx_b+2:] + [0]
-                        if evaluate_move(i, j, new_seq_a, new_seq_b):
-                            best_move = {"type": "swap_2_2", "detail": f"({ca1},{ca2}), ({cb1},{cb2})"}
+                        new_a = [0] + seq_a[:idx_a] + [cb1, cb2] + seq_a[idx_a+2:] + [0]
+                        new_b = [0] + seq_b[:idx_b] + [ca1, ca2] + seq_b[idx_b+2:] + [0]
+                        evaluate_move(i, j, new_a, new_b, "swap_2_2", f"({ca1},{ca2}), ({cb1},{cb2})")
 
     elif neighborhood == "cross":
-        for i, route_a in enumerate(routes):
-            for j, route_b in enumerate(routes):
-                if i >= j:
-                    continue
-                seq_a = route_a["sequence"]
-                seq_b = route_b["sequence"]
-                for p_a in range(1, len(seq_a) - 1):
-                    for p_b in range(1, len(seq_b) - 1):
-                        new_seq_a = seq_a[:p_a] + seq_b[p_b:]
-                        new_seq_b = seq_b[:p_b] + seq_a[p_a:]
-                        if len(new_seq_a) <= 2 or len(new_seq_b) <= 2:
-                            continue
-                        if evaluate_move(i, j, new_seq_a, new_seq_b):
-                            best_move = {"type": "cross", "detail": f"Split at A:{p_a}, B:{p_b}"}
-    
-    if best_routes:
-        return {
-            "accepted": True, 
-            "new_routes": best_routes, 
-            "distance_after": best_distance, 
-            "move_details": best_move,
-            "unassigned_after": best_unassigned,
-            "penalty_magnitude": best_penalty
-        }
-    return {"accepted": False}
+        for i in range(n_routes):
+            for j in range(i + 1, n_routes):
+                seq_a = routes[i]["sequence"]
+                seq_b = routes[j]["sequence"]
+                for cut_a in range(1, len(seq_a) - 1):
+                    for cut_b in range(1, len(seq_b) - 1):
+                        new_a = seq_a[:cut_a] + seq_b[cut_b:]
+                        new_b = seq_b[:cut_b] + seq_a[cut_a:]
+                        evaluate_move(i, j, new_a, new_b, "cross", f"cross at({cut_a},{cut_b})")
+
+    return {
+        "accepted": best_move is not None,
+        "new_routes": best_routes if best_routes else routes,
+        "distance_before": current_distance,
+        "distance_after": best_distance,
+        "best_move": best_move,
+        "candidates": log_candidates,
+        "unassigned_after": best_unassigned,
+        "penalty_magnitude": best_penalty
+    }
 
 
 # ========== INTRA-ROUTE RVND ==========
@@ -597,62 +697,40 @@ def rvnd_intra(
     distance_data: dict,
     fleet_info: dict,
     rng: random.Random,
-    max_iterations: int
+    max_iterations: int,
+    academic_mode: bool = False
 ) -> Dict:
     """
     Intra-route RVND with strict neighborhood list management.
-    
-    Rules:
-    - NL_intra starts full at beginning
-    - When neighborhood improves: reset NL_intra
-    - When neighborhood fails: remove from NL_intra
-    - Stop when NL_intra empty OR max_iterations reached
     """
     current_solution = sequence[:]
-    current_metrics = evaluate_route(current_solution, instance, distance_data, fleet_info)
+    current_metrics = evaluate_route(current_solution, instance, distance_data, fleet_info, academic_mode)
     
     iter_count = 0
     iteration_logs = []
     
     while iter_count < max_iterations:
         NL_intra = INTRA_ROUTE_NEIGHBORHOODS[:]
-        
-        # Track if improvement was made this iteration
         improved_this_iteration = False
         neighborhood_used = None
         
         while NL_intra:
-            # Select random neighborhood
             neighborhood = rng.choice(NL_intra)
+            improved, new_seq, new_dist, candidates = apply_intra_neighborhood(
+                neighborhood, current_solution, instance, distance_data, fleet_info, academic_mode
+            )
             
-            # Apply neighborhood
-            new_solution = apply_intra_neighborhood(neighborhood, current_solution, rng)
-            
-            if new_solution is None:
-                # No valid move
+            if not improved:
                 NL_intra.remove(neighborhood)
                 continue
             
-            # Evaluate new solution
-            new_metrics = evaluate_route(new_solution, instance, distance_data, fleet_info)
-            
-            # Check if better and feasible
-            if is_solution_better(new_metrics, current_metrics):
-                # Accept improvement
-                current_solution = new_solution
-                current_metrics = new_metrics
-                improved_this_iteration = True
-                neighborhood_used = neighborhood
-                
-                # Reset NL_intra (restart with full neighborhood list)
-                break
-            else:
-                # No improvement, remove neighborhood
-                NL_intra.remove(neighborhood)
+            current_solution = new_seq
+            current_metrics = evaluate_route(current_solution, instance, distance_data, fleet_info, academic_mode)
+            improved_this_iteration = True
+            neighborhood_used = neighborhood
+            break
         
         iter_count += 1
-        
-        # LOG EVERY ITERATION (not just improvements)
         iteration_logs.append({
             "iteration_id": iter_count,
             "phase": "RVND-INTRA",
@@ -662,16 +740,14 @@ def rvnd_intra(
             "total_distance": current_metrics["total_distance"],
             "total_service_time": current_metrics["total_service_time"],
             "total_travel_time": current_metrics["total_travel_time"],
-            "objective": current_metrics["objective"]
+            "objective": current_metrics["objective"],
+            "candidates": candidates if academic_mode else []
         })
         
-        # If NL_intra was exhausted without improvement, we're done
         if not NL_intra:
             break
     
-    # Add iteration logs to metrics
     current_metrics["iteration_logs"] = iteration_logs
-    
     return current_metrics
 
 
@@ -683,24 +759,21 @@ def rvnd_inter(
     distance_data: dict,
     fleet_list: List[Dict],
     rng: random.Random,
-    max_iterations: int
+    max_iterations: int,
+    academic_mode: bool = False
 ) -> Tuple[List[Dict], List[Dict]]:
-    """
-    Global Inter-route RVND.
-    Returns: (optimized_routes, iteration_logs)
-    """
+    """RVND Controller for Inter-Route neighborhoods."""
     iteration_logs = []
-    current_distance = sum(r["total_distance"] for r in routes)
-    distance_matrix = distance_data["distance_matrix"]
+    current_routes = deepcopy(routes)
+    current_distance = sum(r["total_distance"] for r in current_routes)
     
-    current_demands = [r["total_demand"] for r in routes]
+    current_demands = [r["total_demand"] for r in current_routes]
     _, best_unassigned, best_penalty = can_assign_fleet(current_demands, fleet_list)
     
     NL_FULL = INTER_ROUTE_NEIGHBORHOODS[:]
     NL = NL_FULL[:]
     
     iteration = 0
-    
     while iteration < max_iterations:
         iteration += 1
         if not NL:
@@ -708,114 +781,76 @@ def rvnd_inter(
         
         neighborhood = rng.choice(NL)
         result = apply_inter_neighborhood(
-            neighborhood, routes, instance, distance_matrix, fleet_list, rng
+            neighborhood, current_routes, instance, distance_data, fleet_list, rng, academic_mode
         )
         
-        accepted = False
-        if result.get("accepted"):
-            new_unassigned = result["unassigned_after"]
-            new_penalty = result["penalty_magnitude"]
-            new_dist = result["distance_after"]
-            
-            # Acceptance logic: same as in evaluate_move
-            if new_unassigned < best_unassigned:
-                accepted = True
-            elif new_unassigned == best_unassigned:
-                if new_unassigned > 0:
-                    if new_penalty < best_penalty - 1e-4:
-                        accepted = True
-                    elif abs(new_penalty - best_penalty) < 1e-4 and new_dist < current_distance - 1e-4:
-                        accepted = True
-                else:
-                    if new_dist < current_distance - 1e-4:
-                        accepted = True
-            
-        if accepted:
-            old_dist = current_distance
-            routes = result["new_routes"]
+        if result["accepted"]:
+            current_routes = result["new_routes"]
             current_distance = result["distance_after"]
             best_unassigned = result["unassigned_after"]
             best_penalty = result["penalty_magnitude"]
-            NL = NL_FULL[:] # Reset NL
-            
-            # Generate capacity validation details for logging
-            logs_demands = [r["total_demand"] for r in routes]
-            delta_val = result["distance_after"] - old_dist
-            current_candidate = generate_capacity_log_candidate(routes, logs_demands, instance, fleet_list, delta=delta_val)
+            NL = NL_FULL[:]
             
             iteration_logs.append({
                 "iteration_id": iteration,
                 "phase": "RVND-INTER",
                 "neighborhood": neighborhood,
                 "improved": True,
+                "routes_snapshot": [deepcopy(r["sequence"]) for r in current_routes],
                 "total_distance": round(current_distance, 2),
                 "unassigned": best_unassigned,
                 "penalty": round(best_penalty, 2),
-                "move": result.get("move_details"),
-                "candidates": [current_candidate] # Show the accepted move as the candidate
+                "move": result.get("best_move"),
+                "candidates": result.get("candidates", []) if academic_mode else []
             })
             continue
 
-        if neighborhood in NL:
-            NL.remove(neighborhood)
+        NL.remove(neighborhood)
+        if not NL:
+            iteration_logs.append({
+                "iteration_id": iteration,
+                "phase": "RVND-INTER",
+                "type": "stagnant",
+                "neighborhood": "All",
+                "message": "Iterasi Berakhir (Konvergen).",
+                "routes_snapshot": [deepcopy(r["sequence"]) for r in current_routes],
+                "candidates": result.get("candidates", []) if academic_mode else []
+            })
             
-            # If ALL neighborhoods are exhausted, then we are truly stagnant (local optimum)
-            if not NL:
-                logs_demands = [r["total_demand"] for r in routes]
-                current_candidate = generate_capacity_log_candidate(routes, logs_demands, instance, fleet_list, delta=0.0)
-                current_candidate["detail"] = "Local Optimum Reached"
-                
-                iteration_logs.append({
-                    "iteration_id": iteration,
-                    "phase": "RVND-INTER",
-                    "type": "stagnant",
-                    "neighborhood": "All",
-                    "message": f"Iterasi Berakhir (Konvergen). Pada iterasi {iteration}, algoritma telah mencapai titik optimal lokal (tidak ditemukan rute yang lebih baik lagi).",
-                    "candidates": [current_candidate]
-                })
-
-            # --- EMERGENCY REBALANCE CHECK ---
             if best_unassigned > 0:
                 rebal_routes, rebal_success, rebal_info = attempt_load_rebalance(
-                    routes, instance, distance_matrix, fleet_list, rng
+                    current_routes, instance, distance_data, fleet_list, rng
                 )
                 if rebal_success:
-                    routes = rebal_routes
-                    # Recalculate metrics
-                    current_distance = sum(r["total_distance"] for r in routes)
-                    current_demands = [r["total_demand"] for r in routes]
+                    current_routes = rebal_routes
+                    current_distance = sum(r["total_distance"] for r in current_routes)
+                    current_demands = [r["total_demand"] for r in current_routes]
                     _, best_unassigned, best_penalty = can_assign_fleet(current_demands, fleet_list)
-                    
-                    # Log rebalance as a candidate
-                    current_candidate = generate_capacity_log_candidate(routes, current_demands, instance, fleet_list)
-                    current_candidate["detail"] = rebal_info.get("detail", "Force Shift")
-                    
+                    NL = NL_FULL[:]
                     iteration_logs.append({
-                        "iteration_id": iteration,
-                        "phase": "RVND-INTER-REBALANCE",
-                        "neighborhood": "force_shift",
-                        "improved": True,
+                        "iteration_id": iteration, "phase": "RVND-INTER-REBALANCE",
+                        "improved": True, 
+                        "routes_snapshot": [deepcopy(r["sequence"]) for r in current_routes],
                         "total_distance": round(current_distance, 2),
-                        "unassigned": best_unassigned,
-                        "penalty": round(best_penalty, 2),
-                        "move": rebal_info.get("detail"),
-                        "candidates": [current_candidate]
+                        "unassigned": best_unassigned, "penalty": round(best_penalty, 2),
+                        "move": rebal_info.get("detail"), "candidates": []
                     })
-                    NL = NL_FULL[:] # Reset NL
 
-    return routes, iteration_logs
+    return current_routes, iteration_logs
 
 
 def attempt_load_rebalance(
     routes: List[Dict],
     instance: dict,
-    distance_matrix: List[List[float]],
+    distance_data: dict,
     fleet_list: List[Dict],
     rng: random.Random
-) -> Tuple[List[Dict], bool, Dict]:
+) -> Tuple[List[Dict], bool, dict]:
     """
-    Emergency rebalancing: Force moves from overloaded clusters to underloaded ones.
+    Forcefully attempt to move nodes from overloaded/ghost routes to any available capacity.
     """
+    distance_matrix = distance_data["distance_matrix"]
+    fleet_data = {f["id"]: f for f in fleet_list}
     current_demands = [r["total_demand"] for r in routes]
     _, unassigned, penalty = can_assign_fleet(current_demands, fleet_list)
     
@@ -828,8 +863,6 @@ def attempt_load_rebalance(
     best_routes = None
     best_unassigned = unassigned
     best_penalty = penalty
-    success = False
-    move_detail = ""
 
     customers = {c["id"]: c for c in instance["customers"]}
 
@@ -844,7 +877,8 @@ def attempt_load_rebalance(
         route_source = routes[i]
         seq_source = route_source["sequence"][1:-1]
         
-        if not seq_source: continue
+        if not seq_source:
+            continue
 
         for j in range(len(routes)):
             if i == j: continue
@@ -879,21 +913,12 @@ def attempt_load_rebalance(
                     best_routes = deepcopy(routes)
                     
                     # Update source/target in best_routes
-                    dist_a = calc_route_distance(new_seq_a)
-                    dist_b = calc_route_distance(new_seq_b)
+                    metrics_a = evaluate_route(new_seq_a, instance, distance_data, fleet_data[best_routes[i]["vehicle_type"]])
+                    metrics_b = evaluate_route(new_seq_b, instance, distance_data, fleet_data[best_routes[j]["vehicle_type"]])
                     
-                    best_routes[i]["sequence"] = new_seq_a
-                    best_routes[i]["total_distance"] = dist_a
-                    best_routes[i]["total_demand"] = dem_a
+                    best_routes[i] = metrics_a
+                    best_routes[j] = metrics_b
                     
-                    best_routes[j]["sequence"] = new_seq_b
-                    best_routes[j]["total_distance"] = dist_b
-                    best_routes[j]["total_demand"] = dem_b
-                    
-                    success = True
-                    move_detail = f"Force Shift {node} from R{i+1} to R{j+1}"
-                    return best_routes, True, {"detail": move_detail, "unassigned": u_new, "penalty": p_new}
-
     return routes, False, {}
 
 
@@ -931,21 +956,38 @@ def main() -> None:
     
     fleet_data = {fleet["id"]: fleet for fleet in instance["fleet"]}
 
-    # --- 1. PREPARE INITIAL ROUTES ---
+    # --- 1. PREPARE INITIAL ROUTES (Including Failed Clusters & Unserved Customers) ---
+    all_acs_clusters = acs_data.get("clusters", []) + acs_data.get("failed_clusters", [])
+    
+    # Track served customers
+    served_customers = set()
+    for route_data in all_acs_clusters:
+        for cid in route_data["sequence"]:
+            if cid != 0:
+                served_customers.add(cid)
+    
+    # Identify unserved customers
+    all_customers = [c["id"] for c in instance["customers"]]
+    unserved_customers = [cid for cid in all_customers if cid not in served_customers]
+    
     initial_routes = []
     summary = {
         "distance_before": 0.0,
-        "distance_after": 0.0,
         "objective_before": 0.0,
-        "objective_after": 0.0,
         "tw_before": 0.0,
-        "tw_after": 0.0,
-        "capacity_violations_before": 0,
-        "capacity_violations_after": 0
+        "capacity_violations_before": 0
     }
 
-    for route_data in acs_data["clusters"]:
-        fleet_info = fleet_data[route_data["vehicle_type"]]
+    # Process ACS Routes
+    for route_data in all_acs_clusters:
+        # For failed clusters, vehicle_type might be "N/A"
+        vt = route_data.get("vehicle_type", "N/A")
+        if vt not in fleet_data:
+            # Pick largest available fleet as baseline for evaluation
+            largest_fleet_id = max(instance["fleet"], key=lambda x: x["capacity"])["id"]
+            vt = largest_fleet_id
+            
+        fleet_info = fleet_data[vt]
         metrics = evaluate_route(route_data["sequence"], instance, distance_data, fleet_info)
         
         summary["distance_before"] += metrics["total_distance"]
@@ -954,12 +996,37 @@ def main() -> None:
         summary["capacity_violations_before"] += (1 if metrics["capacity_violation"] > 0 else 0)
         
         initial_routes.append({
-            "cluster_id": route_data["cluster_id"],
-            "vehicle_type": route_data["vehicle_type"],
+            "cluster_id": route_data.get("cluster_id", 999),
+            "vehicle_type": vt,
             "sequence": route_data["sequence"],
             "total_distance": metrics["total_distance"],
-            "total_demand": metrics["total_demand"]
+            "total_demand": metrics["total_demand"],
+            "total_tw_violation": metrics["total_tw_violation"]
         })
+
+    # PROVIGEROUS: Handle unserved customers by adding them to new routes or existing ones
+    if unserved_customers:
+        print(f"DEBUG: Found {len(unserved_customers)} unserved customers. Creating recovery routes.")
+        # Greedily create new routes for unserved ones
+        # Use largest vehicle as baseline
+        largest_fleet_id = max(instance["fleet"], key=lambda x: x["capacity"])["id"]
+        
+        # Simply create one route per unserved customer as recovery starting point
+        for cid in unserved_customers:
+            recov_seq = [0, cid, 0]
+            metrics = evaluate_route(recov_seq, instance, distance_data, fleet_data[largest_fleet_id])
+            initial_routes.append({
+                "cluster_id": 888, # Recovery marker
+                "vehicle_type": largest_fleet_id,
+                "sequence": recov_seq,
+                "total_distance": metrics["total_distance"],
+                "total_demand": metrics["total_demand"],
+                "total_tw_violation": metrics["total_tw_violation"]
+            })
+            summary["distance_before"] += metrics["total_distance"]
+            summary["objective_before"] += metrics["objective"]
+            summary["tw_before"] += metrics["total_tw_violation"]
+            summary["capacity_violations_before"] += (1 if metrics["capacity_violation"] > 0 else 0)
 
     # --- 1.5 STRICT INITIAL FLEET ALLOCATION ---
     # Goal: Start with a valid set of vehicles from the global fleet.

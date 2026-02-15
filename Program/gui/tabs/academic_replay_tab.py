@@ -793,6 +793,9 @@ def _display_rvnd_inter_iterations(logs: List[Dict], dataset: Dict[str, Any] = N
                 d_val = dists[i] if i < len(dists) else 0
                 row_data[f"Jarak R{r_idx}"] = f"{d_val:.2f}"
             
+            # Add TW Status
+            row_data["TW Status"] = c.get("tw_status", "N/A")
+            
             # Add Logic Column (User Request: "lebih besar dan lebih kecil")
             current_total = c.get("total_distance", 0)
             delta = c.get("delta", 0)
@@ -817,7 +820,7 @@ def _display_rvnd_inter_iterations(logs: List[Dict], dataset: Dict[str, Any] = N
             cols_dist = ["Detail Move"]
             for i in range(max_routes):
                 cols_dist.append(f"Jarak R{i+1}")
-            cols_dist.extend(["Total Jarak", "Selisih (Delta)", "Keterangan", "Status"])
+            cols_dist.extend(["Total Jarak", "Selisih (Delta)", "Keterangan", "TW Status", "Status"])
             
             final_cols_dist = [col for col in cols_dist if col in df_dist.columns]
             df_dist = df_dist[final_cols_dist]
@@ -1418,14 +1421,23 @@ def _display_final_results(result: Dict[str, Any]) -> None:
                 """)
 
     data = []
+    # --- 1. PRE-MATCHING LOOKUPS ---
     dataset = result.get("dataset", {})
-    fleet_dict = {f["id"]: f for f in dataset.get("fleet", [])}
+    # Build fleet dict with normalized keys (ID and "Vehicle ID")
+    fleet_dict = {}
+    for f in dataset.get("fleet", []):
+        fid = str(f["id"])
+        fleet_dict[fid] = f
+        fleet_dict[f"Vehicle {fid}"] = f
+        fleet_dict[f"Fleet {fid}"] = f  # Extra robust
+
     costs = result.get("costs", {})
-    cost_breakdown = {c["cluster_id"]: c for c in costs.get("breakdown", [])}
+    # Build cost breakdown with string keys for robust lookup from dataframe/JSON
+    cost_breakdown = {str(c["cluster_id"]): c for c in costs.get("breakdown", [])}
 
     # Tracking Valid Totals
-    valid_total_dist = 0
-    valid_total_cost = 0
+    valid_total_dist = 0.0
+    valid_total_cost = 0.0
     
     for r in routes:
         cluster_id = r["cluster_id"]
@@ -1448,31 +1460,34 @@ def _display_final_results(result: Dict[str, Any]) -> None:
                 display_vehicle = re_info["new_vehicle"]
 
         # Calculate Duration
-        travel_time = r.get('total_travel_time', 0)
-        service_time = r['total_service_time']
-        wait_time = r.get('total_wait_time', 0)
+        travel_time = r.get('total_travel_time', 0.0)
+        service_time = r.get('total_service_time', 0.0)
+        wait_time = r.get('total_wait_time', 0.0)
         total_duration = travel_time + service_time + wait_time
 
         # Calculate Utilization
         capacity = 0
         if not is_failed:
-             if display_vehicle in fleet_dict:
-                 capacity = fleet_dict[display_vehicle]["capacity"]
-             elif f"Vehicle {display_vehicle}" in fleet_dict:
-                 capacity = fleet_dict[f"Vehicle {display_vehicle}"]["capacity"]
+             v_key = str(display_vehicle)
+             if v_key in fleet_dict:
+                 capacity = fleet_dict[v_key]["capacity"]
              elif original_vehicle in fleet_dict:
                  capacity = fleet_dict[original_vehicle]["capacity"]
 
-        utilization = 0
+        # Safe Demand Access
+        route_demand = r.get("total_demand", 0.0)
+        
+        utilization = 0.0
         if capacity > 0:
-            utilization = (r["total_demand"] / capacity) * 100
+            utilization = (route_demand / capacity) * 100
 
         # Cost Logic (Show 0 if failed)
-        row_cost = 0
-        if cluster_id in cost_breakdown and not is_failed:
-            row_cost = cost_breakdown[cluster_id]["total_cost"]
+        row_cost = 0.0
+        c_id_str = str(cluster_id)
+        if c_id_str in cost_breakdown and not is_failed:
+            row_cost = cost_breakdown[c_id_str].get("total_cost", 0.0)
             valid_total_cost += row_cost
-            valid_total_dist += r['total_distance']
+            valid_total_dist += r.get('total_distance', 0.0)
         
         utilization_str = f"{utilization:.1f}%"
         if utilization > 100:
@@ -1483,8 +1498,8 @@ def _display_final_results(result: Dict[str, Any]) -> None:
         data.append({
             "Cluster": cluster_id,
             "Armada Final": display_vehicle,
-            "Rute": str(r["sequence"]),
-            "Jarak (km)": f"{r['total_distance']:.2f}" if not is_failed else "(0)",
+            "Rute": str(r.get("sequence", [])),
+            "Jarak (km)": f"{r.get('total_distance', 0.0):.2f}" if not is_failed else "(0)",
             "Durasi (menit)": f"{total_duration:.0f}" if not is_failed else "(0)",
             "Utilisasi (%)": utilization_str,
             "Est. Biaya": f"Rp {row_cost:,.0f}" if not is_failed else "Rp 0 (Gagal)",
@@ -1516,10 +1531,10 @@ def _display_final_results(result: Dict[str, Any]) -> None:
             
             clean_breakdown.append({
                 "Cluster": c_id,
-                "Armada": c["vehicle_type"],
-                "Biaya Tetap": f"Rp {c['fixed_cost']:,.0f}",
-                "Biaya Variabel": f"Rp {c['variable_cost']:,.0f}",
-                "Total Biaya": f"Rp {c['total_cost']:,.0f}"
+                "Armada": c.get("vehicle_type", "N/A"),
+                "Biaya Tetap": f"Rp {c.get('fixed_cost', 0.0):,.0f}",
+                "Biaya Variabel": f"Rp {c.get('variable_cost', 0.0):,.0f}",
+                "Total Biaya": f"Rp {c.get('total_cost', 0.0):,.0f}"
             })
             
         if clean_breakdown:
