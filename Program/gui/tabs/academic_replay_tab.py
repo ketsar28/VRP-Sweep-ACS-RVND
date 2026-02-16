@@ -665,9 +665,9 @@ def _display_rvnd_inter_iterations(logs: List[Dict], dataset: Dict[str, Any] = N
         # Status yang lebih informatif - BERDASARKAN DELTA SEBENARNYA (FLOAT)
         if prev_distance is not None:
             delta_val = total_dist - prev_distance
-            if delta_val < -0.001:  # Ada penghematan nyata (toleransi 0.001)
+            if delta_val < -1e-6:  # Ada penghematan nyata (toleransi sangat kecil)
                 status_str = "✅ Hemat"
-            elif abs(delta_val) <= 0.001:  # Delta mendekati 0
+            elif abs(delta_val) <= 1e-6:  # Delta mendekati 0
                 status_str = "⏸️ Stagnan"
             else:  # Delta positif (lebih buruk)
                 status_str = "⏭️ Tidak Ada Perbaikan"
@@ -722,8 +722,12 @@ def _display_rvnd_inter_iterations(logs: List[Dict], dataset: Dict[str, Any] = N
                     max_routes = len(loads)
         
         cand_rows = []
-        for c in candidates:
+        # Filter candidates to show at most 40 as requested by user
+        disp_cands = candidates[:40]
+        
+        for idx, c in enumerate(disp_cands):
             row_data = {
+                "No.": idx + 1,
                 "Detail Move": c.get("detail", "?"),
             }
             
@@ -752,13 +756,13 @@ def _display_rvnd_inter_iterations(logs: List[Dict], dataset: Dict[str, Any] = N
         if cand_rows:
             df_cand = pd.DataFrame(cand_rows)
             
-            # Reorder columns: Detail -> Rute 1..N -> Kap 1..N -> Status -> Alasan -> Delta
-            cols_order = ["Detail Move"]
+            # Reorder columns: No -> Detail -> Rute 1..N -> Kap 1..N -> Status -> Alasan -> Delta
+            cols_order = ["No.", "Detail Move"]
             for i in range(max_routes):
                 cols_order.append(f"Rute {i+1}")
             for i in range(max_routes):
                 cols_order.append(f"Kap {i+1}")
-            cols_order.extend(["Status", "Alasan", "Delta Jarak"])
+            cols_order.extend(["Status", "Info Detail", "Delta Jarak"])
             
             # Ensure only existing columns are selected
             final_cols = [col for col in cols_order if col in df_cand.columns]
@@ -785,13 +789,17 @@ def _display_rvnd_inter_iterations(logs: List[Dict], dataset: Dict[str, Any] = N
         st.caption("Tabel detail jarak tempuh per rute. Selisih negatif (-) berarti penghematan jarak.")
 
         dist_rows = []
-        for c in candidates:
+        # Filter candidates for distance table too
+        disp_cands_dist = candidates[:40]
+        
+        for idx, c in enumerate(disp_cands_dist):
             # Only show if route_distances data is available
             dists = c.get("route_distances", [])
             if not dists:
                 continue
 
             row_data = {
+                "No.": idx + 1,
                 "Detail Move": c.get("detail", "?"),
             }
             
@@ -825,7 +833,7 @@ def _display_rvnd_inter_iterations(logs: List[Dict], dataset: Dict[str, Any] = N
             df_dist = pd.DataFrame(dist_rows)
             
             # Reorder columns
-            cols_dist = ["Detail Move"]
+            cols_dist = ["No.", "Detail Move"]
             for i in range(max_routes):
                 cols_dist.append(f"Jarak R{i+1}")
             cols_dist.extend(["Total Jarak", "Selisih (Delta)", "Keterangan", "TW Status", "Status"])
@@ -859,9 +867,19 @@ def _display_rvnd_inter_iterations(logs: List[Dict], dataset: Dict[str, Any] = N
         st.markdown("**Kesimpulan Iterasi:**")
         
         if best_cand:
-            # Combine details from both old blocks for a richer summary
             num_cands = len(candidates)
-            st.success(f"✅ **Ditemukan Solusi Lebih Baik!** Dari {num_cands} kandidat gerakan, ditemukan rute terbaik: **{best_cand.get('detail')}** yang valid dan menghemat jarak sebesar **{abs(best_cand.get('delta',0)):.2f} km**.")
+            delta_val = abs(best_cand.get('delta', 0))
+            
+            # Calculate before dist
+            dist_curr = best_cand.get('total_distance', 0)
+            dist_prev = dist_curr + delta_val # delta is negative for improvement
+            
+            # Precision logic
+            fmt_p, fmt_c = f"{dist_prev:.2f}", f"{dist_curr:.2f}"
+            if fmt_p == fmt_c:
+                fmt_p, fmt_c = f"{dist_prev:.4f}", f"{dist_curr:.4f}"
+
+            st.success(f"✅ **Ditemukan Solusi Lebih Baik!** Dari {num_cands} kandidat gerakan, rute terbaik adalah: **{best_cand.get('detail')}** (Valid & Hemat dari **{fmt_p}** jadi **{fmt_c} km**).")
             
             # Show Detailed Verification for this move
             _generate_verification_log(selected_log["routes_snapshot"], dataset)
@@ -926,15 +944,27 @@ def _display_rvnd_intra_iterations(logs: List[Dict], dataset: Dict[str, Any] = N
             first_d, last_d = dists[0], dists[-1]
             saving = first_d - last_d
             
+            # Format values with higher precision if they look identical at 2 decimals
+            fmt_first = f"{first_d:.2f}"
+            fmt_last = f"{last_d:.2f}"
+            if fmt_first == fmt_last and abs(saving) > 1e-7:
+                 fmt_first = f"{first_d:.4f}"
+                 fmt_last = f"{last_d:.4f}"
+
             sc1, sc2, sc3 = st.columns(3)
             with sc1:
-                st.metric("Jarak Sebelum", f"{first_d:.2f} km")
+                st.metric("Jarak Sebelum", f"{fmt_first} km")
             with sc2:
-                st.metric("Jarak Sesudah", f"{last_d:.2f} km", f"{-saving:.2f} km" if saving > 0.001 else None, delta_color="inverse")
+                # Show delta if there is any saving at all
+                delta_val = -saving
+                delta_fmt = f"{delta_val:.4f}" if 0 < abs(delta_val) < 0.01 else f"{delta_val:.2f}"
+                st.metric("Jarak Sesudah", f"{fmt_last} km", f"{delta_fmt} km" if saving > 1e-6 else None, delta_color="inverse")
             with sc3:
-                st.metric("Hasil Pencarian", "Ditemukan Perbaikan" if saving > 0.001 else "Rute Sudah Optimal")
+                st.metric("Hasil Pencarian", "Ditemukan Perbaikan" if saving > 1e-6 else "Rute Sudah Optimal")
 
             # Iteration-by-Iteration Details
+            # Track distance from previous iteration to show improvements clearly
+            prev_dist = first_d 
             for log in cluster_logs:
                 iter_id = log.get("iteration_id", 0)
                 neighborhood = log.get("neighborhood", "N/A")
@@ -965,34 +995,56 @@ def _display_rvnd_intra_iterations(logs: List[Dict], dataset: Dict[str, Any] = N
                 if candidates:
                     st.markdown("**Evaluasi Kemungkinan Urutan Baru:**")
                     matrix_data = []
-                    # Filter candidates to show at most 50 to avoid lag if it's too huge
-                    disp_cands = candidates[:50]
+                    # Filter candidates to show at most 40 as requested by user
+                    disp_cands = candidates[:40]
                     
-                    for c in disp_cands:
-                        row = {"Pilihan": c.get("detail", "?")}
-                        
+                    for idx, c in enumerate(disp_cands):
                         total_dist = c.get("total_distance", 0)
                         delta = c.get("delta", 0)
                         
-                        row["Jarak Total"] = f"{total_dist:.2f}"
-                        row["Selisih (km)"] = f"{delta:.2f}"
-                        row["Status Perubahan"] = c.get("reason", "-")
+                        # Use 4 decimals if delta is very small but not zero
+                        prec = 4 if (0 < abs(delta) < 0.01) else 2
+                        
+                        row = {
+                            "No.": idx + 1,
+                            "Pilihan": c.get("detail", "?"),
+                            "Jarak Total": f"{total_dist:.{prec}f}",
+                            "Selisih (km)": f"{delta:.{prec}f}",
+                            "Status Perubahan": c.get("reason", "-")
+                        }
                         matrix_data.append(row)
                     
                     df_matrix = pd.DataFrame(matrix_data)
                     st.dataframe(df_matrix, use_container_width=True, hide_index=True)
-                    if len(candidates) > 50:
-                        st.caption(f"*Menampilkan 50 dari {len(candidates)} kemungkinan urutan.*")
+                    if len(candidates) > 40:
+                        st.caption(f"*Menampilkan 40 dari {len(candidates)} kemungkinan urutan.*")
+                    else:
+                        st.caption(f"*Menampilkan semua ({len(candidates)}) kemungkinan urutan untuk strategi ini.*")
+                    
+                    st.info("💡 **Tips**: Jumlah kemungkinan urutan berbeda-beda setiap iterasi karena bergantung pada jumlah rute dan jumlah pelanggan yang bisa dipindahkan/ditukar.")
 
                 # Improvement Found?
                 improved = log.get("improved", False)
+                current_dist = log.get("total_distance", 0)
+                
+                # Dynamic formatting for transparency: show more decimals if they look identical
+                fmt_prev = f"{prev_dist:.2f}"
+                fmt_curr = f"{current_dist:.2f}"
+                if fmt_prev == fmt_curr and improved:
+                     fmt_prev = f"{prev_dist:.4f}"
+                     fmt_curr = f"{current_dist:.4f}"
+
                 if improved:
-                    st.success(f"✅ **Sukses!** Strategi **{nh_display}** berhasil menghemat jarak menjadi **{log.get('total_distance'):.2f} km**.")
+                    st.success(f"✅ **Berhasil Diperbaiki!** Strategi **{nh_display}** berhasil menghemat jarak dari **{fmt_prev} km** menjadi **{fmt_curr} km**.")
                     if dataset:
                         _generate_verification_log(log["routes_snapshot"], dataset)
-                    st.markdown("**Action**: Reset pencarian menggunakan semua strategi.")
+                    st.markdown("**Action**: Pencarian diulang (reset) menggunakan semua strategi aktif karena ditemukan rute yang lebih baik.")
                 else:
-                    st.info(f"➖ **Belum Berubah.** Strategi {nh_display} tidak menemukan urutan yang lebih hemat. {log.get('action', '')}")
+                    st.info(f"➖ **Belum Berubah.** Strategi **{nh_display}** tidak menemukan urutan yang lebih baik. {log.get('action', '')}")
+                    st.markdown(f"**Action**: Strategi **{nh_display}** dinonaktifkan sementara untuk iterasi ini karena tidak menghasilkan perbaikan.")
+
+                # Update prev_dist for next iteration log display
+                prev_dist = current_dist
 
                 st.divider()
 

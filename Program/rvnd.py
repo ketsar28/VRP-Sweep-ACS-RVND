@@ -18,7 +18,7 @@ MAX_INTRA_ITERATIONS = 400
 # Neighborhood definitions
 INTER_ROUTE_NEIGHBORHOODS = ["shift_1_0", "shift_2_0", "swap_1_1", "swap_2_1", "swap_2_2", "cross"]
 INTRA_ROUTE_NEIGHBORHOODS = ["two_opt", "or_opt", "reinsertion", "exchange"]
-MAX_LOG_CANDIDATES = 20
+MAX_LOG_CANDIDATES = 40
 
 
 def assign_vehicle_by_demand(total_demand: float, fleet_data: List[Dict], used_vehicles: Dict[str, int]) -> Optional[str]:
@@ -175,8 +175,8 @@ def generate_capacity_log_candidate(routes: List[Dict], demands: List[float], in
         "feasible": is_feasible,
         "reason": reason,
         "reason_detail": reason_detail,
-        "delta": round(delta, 2),
-        "total_distance": round(sum(r.get("total_distance", 0) for r in routes), 2) if routes else 0.0,
+        "delta": round(delta, 4),
+        "total_distance": round(sum(r.get("total_distance", 0) for r in routes), 4) if routes else 0.0,
         "route_distances": [r.get("total_distance", 0) for r in routes] if routes else [],
         "tw_status": "Calculating..." # To be filled by caller
     }
@@ -309,15 +309,15 @@ def evaluate_route(sequence: List[int], instance: dict, distance_data: dict, fle
     return {
         "sequence": sequence,
         "stops": stops,
-        "total_distance": round(total_distance, 3),
-        "total_travel_time": round(total_travel_time, 3),
+        "total_distance": round(total_distance, 4),
+        "total_travel_time": round(total_travel_time, 4),
         "total_service_time": total_service_time,
-        "total_time_component": round(time_component, 3),
-        "total_tw_violation": round(total_violation, 3),
-        "total_wait_time": round(total_wait_time, 3),
+        "total_time_component": round(time_component, 4),
+        "total_tw_violation": round(total_violation, 4),
+        "total_wait_time": round(total_wait_time, 4),
         "total_demand": total_demand,
         "capacity_violation": capacity_violation,
-        "objective": round(objective, 3),
+        "objective": round(objective, 4),
         "is_feasible": is_feasible,
         "vehicle_type": vtype,
         "capacity": capacity
@@ -419,7 +419,7 @@ def apply_intra_neighborhood(
 
     def log_trial(new_seq, move_name, detail):
         metrics = evaluate_route(new_seq, instance, distance_data, fleet_info, academic_mode)
-        delta = round(metrics["total_distance"] - best_dist, 2)
+        delta = round(metrics["total_distance"] - best_dist, 4)
         if len(candidates) < MAX_LOG_CANDIDATES:
             candidates.append({
                 "type": move_name,
@@ -623,6 +623,10 @@ def apply_inter_neighborhood(
         for i in range(n_routes):
             if len(routes[i]["sequence"]) < 4:
                 continue
+            seq_i = routes[i]["sequence"][1:-1]
+            for j in range(n_routes):
+                if i == j:
+                    continue
                 seq_j = routes[j]["sequence"][1:-1]
                 for idx in range(len(seq_i) - 1):
                     ca1, ca2 = seq_i[idx], seq_i[idx+1]
@@ -707,6 +711,21 @@ def rvnd_intra(
     
     iter_count = 0
     iteration_logs = []
+
+    # Log Initial State for Academic Mode
+    if academic_mode:
+        iteration_logs.append({
+            "iteration_id": 0,
+            "phase": "RVND-INTRA",
+            "neighborhood": "initial",
+            "improved": False,
+            "routes_snapshot": [current_solution[:]],
+            "total_distance": current_metrics["total_distance"],
+            "total_service_time": current_metrics["total_service_time"],
+            "total_travel_time": current_metrics["total_travel_time"],
+            "objective": current_metrics["objective"],
+            "candidates": []
+        })
     
     while iter_count < max_iterations:
         NL_intra = INTRA_ROUTE_NEIGHBORHOODS[:]
@@ -771,6 +790,21 @@ def rvnd_inter(
     
     NL_FULL = INTER_ROUTE_NEIGHBORHOODS[:]
     NL = NL_FULL[:]
+    
+    # Log Initial State for Academic Mode
+    if academic_mode:
+        iteration_logs.append({
+            "iteration_id": 0,
+            "phase": "RVND-INTER",
+            "neighborhood": "initial",
+            "improved": False,
+            "routes_snapshot": [r["sequence"] for r in current_routes],
+            "total_distance": current_distance,
+            "feasible": best_unassigned == 0,
+            "unassigned_count": best_unassigned,
+            "penalty": best_penalty,
+            "candidates": []
+        })
     
     iteration = 0
     while iteration < max_iterations:
