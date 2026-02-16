@@ -233,6 +233,24 @@ def run_academic_replay(
         "total_cost": total_cost
     }
 
+    # --- PHASE 7: ADD VEHICLE AVAILABILITY FOR UI ---
+    vehicle_availability = []
+    available_vehicles = []
+    for f in instance["fleet"]:
+        units = f.get("units", 1)
+        used = used_vehicles.get(f["id"], 0)
+        vehicle_availability.append({
+            "id": f["id"],
+            "name": f.get("name", f["id"]),
+            "capacity": f.get("capacity", 0),
+            "units": units,
+            "used": used,
+            "available_units": max(0, units - used),
+            "available": (units - used) > 0
+        })
+        if units > 0:
+            available_vehicles.append(f["id"])
+
     return {
         "routes": final_routes,
         "summary": summary,
@@ -246,5 +264,8 @@ def run_academic_replay(
             "depot": instance["depot"],
             "customers": instance["customers"]
         },
+        "vehicle_availability": vehicle_availability,
+        "available_vehicles": available_vehicles,
+        "mode": "ACADEMIC_REPLAY",
         "status": "success"
     }

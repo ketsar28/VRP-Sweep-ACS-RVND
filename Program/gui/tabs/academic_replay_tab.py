@@ -40,8 +40,8 @@ def _display_sweep_iterations(logs: List[Dict]) -> None:
     st.markdown("### 📐 Algoritma SWEEP - Perhitungan & Pengelompokan")
 
     # Polar angles
-    angle_logs = [l for l in logs if l.get(
-        "phase") == "SWEEP" and l.get("step") == "polar_angle"]
+    angle_logs = [log_entry for log_entry in logs if log_entry.get(
+        "phase") == "SWEEP" and log_entry.get("step") == "polar_angle"]
     if angle_logs:
         st.markdown("**Langkah 1: Perhitungan Sudut Polar**")
         st.info("Sudut polar saya gunakan untuk menentukan posisi relatif pelanggan terhadap depot.")
@@ -49,30 +49,30 @@ def _display_sweep_iterations(logs: List[Dict]) -> None:
             r"\theta = \arctan\left(\frac{y_i - y_{\text{depot}}}{x_i - x_{\text{depot}}}\right) \cdot \frac{180}{\pi}")
 
         df_angles = pd.DataFrame([{
-            "Pelanggan": l["customer_id"],
-            "Sudut (°)": l["angle"],
-            "Rumus": l["formula"]
-        } for l in angle_logs])
+            "Pelanggan": log_entry["customer_id"],
+            "Sudut (°)": log_entry["angle"],
+            "Rumus": log_entry["formula"]
+        } for log_entry in angle_logs])
         st.dataframe(df_angles, use_container_width=True, hide_index=True)
 
     # Sorted order
-    sorted_logs = [l for l in logs if l.get(
-        "phase") == "SWEEP" and l.get("step") == "sorted_order"]
+    sorted_logs = [log_entry for log_entry in logs if log_entry.get(
+        "phase") == "SWEEP" and log_entry.get("step") == "sorted_order"]
     if sorted_logs:
         st.markdown("**Langkah 2: Pengurutan Pelanggan**")
         st.success(f"Urutan pelanggan berdasarkan sudut (polar): {sorted_logs[0]['order']}")
 
     # Clusters formed
-    cluster_logs = [l for l in logs if l.get(
-        "phase") == "SWEEP" and l.get("step") == "cluster_formed"]
+    cluster_logs = [log_entry for log_entry in logs if log_entry.get(
+        "phase") == "SWEEP" and log_entry.get("step") == "cluster_formed"]
     if cluster_logs:
         st.markdown("**Langkah 3: Pembentukan Cluster**")
         df_clusters = pd.DataFrame([{
-            "Cluster": l["cluster_id"],
-            "Daftar Pelanggan": str(l["customer_ids"]),
-            "Total Muatan (kg)": l["total_demand"],
-            "Armada": l["vehicle_type"]
-        } for l in cluster_logs])
+            "Cluster": log_entry["cluster_id"],
+            "Daftar Pelanggan": str(log_entry["customer_ids"]),
+            "Total Muatan (kg)": log_entry["total_demand"],
+            "Armada": log_entry["vehicle_type"]
+        } for log_entry in cluster_logs])
         st.dataframe(df_clusters, use_container_width=True, hide_index=True)
 
 
@@ -96,11 +96,11 @@ def _display_nn_iterations(logs: List[Dict]) -> None:
     </div>
     """, unsafe_allow_html=True)
 
-    nn_logs = [l for l in logs if l.get("phase") == "NN"]
+    nn_logs = [log_entry for log_entry in logs if log_entry.get("phase") == "NN"]
 
     if nn_logs:
         # Group by cluster
-        clusters = set(l["cluster_id"] for l in nn_logs)
+        clusters = set(log_entry["cluster_id"] for log_entry in nn_logs)
 
         for cluster_id in sorted(clusters):
             with st.expander(f"Cluster {cluster_id}", expanded=True):
@@ -119,12 +119,12 @@ def _display_nn_iterations(logs: List[Dict]) -> None:
 
                 # Build table with TIME WINDOW data
                 rows = []
-                for l in cluster_logs:
-                    to_node = l.get("to_node", 0)
-                    arrival = l.get("arrival_time", "-")
-                    tw_start = l.get("tw_start", "-")
-                    tw_end = l.get("tw_end", "-")
-                    action = l.get("action", "")
+                for log_entry in cluster_logs:
+                    to_node = log_entry.get("to_node", 0)
+                    arrival = log_entry.get("arrival_time", "-")
+                    tw_start = log_entry.get("tw_start", "-")
+                    tw_end = log_entry.get("tw_end", "-")
+                    action = log_entry.get("action", "")
 
                     # Format time windows
                     if to_node == 0:
@@ -145,20 +145,20 @@ def _display_nn_iterations(logs: List[Dict]) -> None:
                         status = "-"
 
                     rows.append({
-                        "Langkah": l["step"],
-                        "Dari → Ke": f"{l.get('from_node', 0)} → {to_node}",
-                        "Jarak (km)": l.get("distance", 0),
+                        "Langkah": log_entry["step"],
+                        "Dari → Ke": f"{log_entry.get('from_node', 0)} → {to_node}",
+                        "Jarak (km)": log_entry.get("distance", 0),
                         "Waktu Tiba": _minutes_to_time(arrival) if arrival != "-" else "-",
                         "Jam Operasional": tw_display,
                         "Status": status,
-                        "Keterangan": l.get("description", "")[:80]
+                        "Keterangan": log_entry.get("description", "")[:80]
                     })
 
                 df = pd.DataFrame(rows)
                 st.dataframe(df, use_container_width=True, hide_index=True)
 
                 # Show rejected customers if any
-                rejected = [l for l in cluster_logs if l.get(
+                rejected = [log_entry for log_entry in cluster_logs if log_entry.get(
                     "action") == "REJECTED"]
                 if rejected:
                     st.error(
@@ -430,7 +430,8 @@ def _generate_verification_log(routes_snapshot: List[List[int]], dataset: Dict[s
     
     # 1. PER RUTE DETAIL
     for i, seq in enumerate(routes_snapshot):
-        if not seq: continue
+        if not seq:
+            continue
         
         # Determine Vehicle Type (This is tricky since snapshot only has sequences)
         # We'll try to infer or get from dataset if available, but for now we assume implicit logic
@@ -479,7 +480,8 @@ def _generate_verification_log(routes_snapshot: List[List[int]], dataset: Dict[s
         # We handle the full sequence logic
         
         for j, node_id in enumerate(seq):
-            if j == 0: continue # Skip first 0 (Start)
+            if j == 0:
+                continue # Skip first 0 (Start)
             
             node = nodes[node_id]
             dist = calc_dist(nodes[prev_node_id], node)
@@ -548,7 +550,7 @@ def _display_rvnd_inter_iterations(logs: List[Dict], dataset: Dict[str, Any] = N
     """Display RVND inter-route iterations with improved formatting."""
     st.markdown("### RVND Inter-Route - Pertukaran Pelanggan Antar Rute")
 
-    inter_logs = [l for l in logs if l.get("phase") == "RVND-INTER"]
+    inter_logs = [log_entry for log_entry in logs if log_entry.get("phase") == "RVND-INTER"]
 
     if not inter_logs:
         st.info("Nggak ada iterasi inter-route (mungkin cuma 1 rute atau emang nggak ada move yang lebih baik).")
@@ -556,10 +558,10 @@ def _display_rvnd_inter_iterations(logs: List[Dict], dataset: Dict[str, Any] = N
 
     # === SUMMARY CARDS ===
     total_iters = len(inter_logs)
-    improved_count = sum(1 for l in inter_logs if l.get("improved", False))
+    improved_count = sum(1 for log_entry in inter_logs if log_entry.get("improved", False))
 
     # Get distance progression
-    distances = [l.get("total_distance", 0) for l in inter_logs]
+    distances = [log_entry.get("total_distance", 0) for log_entry in inter_logs]
     first_distance = distances[0] if distances else 0
     last_distance = distances[-1] if distances else 0
     delta_pct = ((last_distance - first_distance) /
@@ -567,8 +569,8 @@ def _display_rvnd_inter_iterations(logs: List[Dict], dataset: Dict[str, Any] = N
 
     # Count neighborhood usage
     neighborhood_counts = {}
-    for l in inter_logs:
-        nh = l.get("neighborhood", "unknown")
+    for log_entry in inter_logs:
+        nh = log_entry.get("neighborhood", "unknown")
         neighborhood_counts[nh] = neighborhood_counts.get(nh, 0) + 1
 
     # Display summary
@@ -630,12 +632,12 @@ def _display_rvnd_inter_iterations(logs: List[Dict], dataset: Dict[str, Any] = N
     table_data = []
     prev_distance = None
 
-    for i, l in enumerate(inter_logs, 1):
+    for i, log_entry in enumerate(inter_logs, 1):
         iter_id = i # Force sequential ID starting from 1
-        neighborhood = l.get("neighborhood", "-")
-        improved = l.get("improved", False)
-        total_dist = l.get("total_distance", 0)
-        routes_snapshot = l.get("routes_snapshot", [])
+        neighborhood = log_entry.get("neighborhood", "-")
+        # local variable `improved` removed (unused)
+        total_dist = log_entry.get("total_distance", 0)
+        routes_snapshot = log_entry.get("routes_snapshot", [])
 
         # Itung delta dari iterasi sebelumnya (Pastikan tanda - muncul untuk penghematan)
         if prev_distance is not None:
@@ -679,7 +681,7 @@ def _display_rvnd_inter_iterations(logs: List[Dict], dataset: Dict[str, Any] = N
             "Total Jarak": f"{total_dist:.2f} km",
             "Δ Jarak": delta_str,
             "Status": status_str,
-            "_candidates": l.get("candidates", []) # Store hidden column for detail view
+            "_candidates": log_entry.get("candidates", []) # Store hidden column for detail view
         })
 
         prev_distance = total_dist
@@ -968,13 +970,12 @@ def _display_rvnd_intra_iterations(logs: List[Dict], dataset: Dict[str, Any] = N
                     
                     for c in disp_cands:
                         row = {"Pilihan": c.get("detail", "?")}
-                        # Individual route distances (we only care about current cluster rute usually, 
-                        # but keeping matrix for consistency with inter-route)
-                        rdists = c.get("route_distances", [])
-                        for i, d in enumerate(rdists):
-                            row[f"R{i+1}"] = f"{d:.2f}"
                         
-                        row["Total Div."] = f"{c.get('total_distance', 0):.2f}"
+                        total_dist = c.get("total_distance", 0)
+                        delta = c.get("delta", 0)
+                        
+                        row["Jarak Total"] = f"{total_dist:.2f}"
+                        row["Selisih (km)"] = f"{delta:.2f}"
                         row["Status Perubahan"] = c.get("reason", "-")
                         matrix_data.append(row)
                     
@@ -1141,7 +1142,7 @@ def _display_user_vehicle_selection(result: Dict[str, Any]) -> None:
     if not user_selection:
         # Try to get from logs
         logs = result.get("iteration_logs", [])
-        user_selection = [l for l in logs if l.get(
+        user_selection = [log_entry for log_entry in logs if log_entry.get(
             "phase") == "USER_VEHICLE_SELECTION"]
 
     if not user_selection:
@@ -1211,7 +1212,7 @@ def _display_vehicle_availability(result: Dict[str, Any]) -> None:
     if not availability:
         # Fallback: extract from logs
         logs = result.get("iteration_logs", [])
-        availability = [l for l in logs if l.get(
+        availability = [log_entry for log_entry in logs if log_entry.get(
             "phase") == "VEHICLE_AVAILABILITY"]
 
     if not availability:
@@ -1249,7 +1250,7 @@ def _display_vehicle_availability(result: Dict[str, Any]) -> None:
 def _get_reassignment_map(result: Dict[str, Any]) -> Dict[int, Dict[str, Any]]:
     """Helper to parse reassignment logs into a cluster_id -> info map."""
     reassignment_map = {}
-    explicit_logs = [l for l in result.get("iteration_logs", []) if l.get("phase") == "VEHICLE_REASSIGN"]
+    explicit_logs = [log_entry for log_entry in result.get("iteration_logs", []) if log_entry.get("phase") == "VEHICLE_REASSIGN"]
     
     for log in explicit_logs:
         c_id = log.get("cluster_id")
@@ -1747,11 +1748,11 @@ def render_academic_replay() -> None:
         Dalam sistem ini, rute yang tidak dapat terangkut ditandai dengan **'X'** (Unassigned).
         
         **Kenapa muncul 'X'?**
-        1. **Melebihi Kapasitas Terbesar**: Muatan satu rute (misal 175kg) lebih besar dari kapasitas kendaraan terbesar yang tersedia (misal Fleet B=200kg, Unit habis; atau Fleet C=150kg).
+        1. **Melebihi Kapasitas Terbesar**: Muatan satu rute (misal 175kg) lebih besar dari kapasitas kendaraan terbesar yang tersedia.
         2. **Stok Unit Habis**: Rute mungkin layak untuk kendaraan tertentu, tapi semua kendaraan tipe tersebut sudah terpakai oleh rute lain yang lebih efisien.
         3. **Pelanggaran Time Window**: (Jika mode strict aktif) Rute tidak bisa diselesaikan tepat waktu bahkan oleh kendaraan tercepat.
         
-        *Contoh: Jika Anda punya Fleet C (150kg) dan muatan rute 175kg, rute tersebut akan ditandai **'X'** karena tidak ada unit yang cukup besar.*
+        *Contoh: Jika punya Fleet C (150kg) dan muatan rute 175kg, rute tersebut akan ditandai **'X'** karena tidak ada unit yang cukup besar.*
         """)
     
     # Ensure global state is synced if we have a result

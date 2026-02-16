@@ -236,10 +236,8 @@ def nearest_neighbor_route(cluster: dict, instance: dict, distance_data: dict, a
         tw_start = parse_time_to_minutes(cust["time_window"]["start"])
         tw_end = parse_time_to_minutes(cust["time_window"]["end"])
         
+        # Soft TW check in NN to avoid dropping customers
         if academic_mode and arrival_time > tw_end:
-            # REJECT
-            unassigned.append(nearest)
-            unvisited.remove(nearest)
             iteration_logs.append({
                 "phase": "NN",
                 "cluster_id": cluster["cluster_id"],
@@ -250,15 +248,11 @@ def nearest_neighbor_route(cluster: dict, instance: dict, distance_data: dict, a
                 "arrival_time": round(arrival_time, 2),
                 "tw_start": tw_start,
                 "tw_end": tw_end,
-                "action": "DITOLAK",
-                "reason": f"Waktu tiba {minutes_to_clock(arrival_time)} melewati batas operasional {minutes_to_clock(tw_end)}.",
-                "description": f"Pelanggan {nearest} tidak dapat dikunjungi pada langkah ini karena melampaui jendela waktu."
+                "action": "DITERIMA (TW Terlambat)",
+                "reason": f"Waktu tiba {minutes_to_clock(arrival_time)} melewati batas {minutes_to_clock(tw_end)}, namun tetap dimasukkan agar dapat dioptimasi.",
+                "description": f"Pelanggan {nearest} tetap dimasukkan ke rute meskipun melanggar jendela waktu (terlambat)."
             })
-            step += 1
-            continue
-            
-        # ACCEPT
-        if academic_mode:
+        elif academic_mode:
             iteration_logs.append({
                 "phase": "NN",
                 "cluster_id": cluster["cluster_id"],

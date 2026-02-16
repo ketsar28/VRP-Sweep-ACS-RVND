@@ -426,6 +426,7 @@ def apply_intra_neighborhood(
                 "detail": detail,
                 "feasible": metrics["is_feasible"],
                 "delta": delta,
+                "total_distance": metrics["total_distance"],
                 "reason": "Layak" if metrics["is_feasible"] else "Melanggar Kapasitas/TW",
                 "route_sequences": ["-".join(map(str, new_seq))]
             })
@@ -437,7 +438,7 @@ def apply_intra_neighborhood(
             for j in range(i + 1, n - 1):
                 new_seq = intra_two_opt(sequence, i, j)
                 metrics = log_trial(new_seq, "two_opt", f"reverse({i},{j})")
-                if metrics["is_feasible"] and metrics["total_distance"] < best_dist - 1e-6:
+                if metrics["is_feasible"] and round(metrics["total_distance"], 2) < round(best_dist, 2):
                     best_dist = metrics["total_distance"]
                     best_seq = new_seq
                     improved = True
@@ -450,7 +451,7 @@ def apply_intra_neighborhood(
                         continue
                     new_seq = intra_or_opt(sequence, i, length, j)
                     metrics = log_trial(new_seq, "or_opt", f"move({i}:{i+length}->{j})")
-                    if metrics["is_feasible"] and metrics["total_distance"] < best_dist - 1e-6:
+                    if metrics["is_feasible"] and round(metrics["total_distance"], 2) < round(best_dist, 2):
                         best_dist = metrics["total_distance"]
                         best_seq = new_seq
                         improved = True
@@ -461,7 +462,7 @@ def apply_intra_neighborhood(
                 if i == j: continue
                 new_seq = intra_reinsertion(sequence, i, j)
                 metrics = log_trial(new_seq, "reinsertion", f"move({i}->{j})")
-                if metrics["is_feasible"] and metrics["total_distance"] < best_dist - 1e-6:
+                if metrics["is_feasible"] and round(metrics["total_distance"], 2) < round(best_dist, 2):
                     best_dist = metrics["total_distance"]
                     best_seq = new_seq
                     improved = True
@@ -471,7 +472,7 @@ def apply_intra_neighborhood(
             for j in range(i + 1, n - 1):
                 new_seq = intra_exchange(sequence, i, j)
                 metrics = log_trial(new_seq, "exchange", f"swap({i},{j})")
-                if metrics["is_feasible"] and metrics["total_distance"] < best_dist - 1e-6:
+                if metrics["is_feasible"] and round(metrics["total_distance"], 2) < round(best_dist, 2):
                     best_dist = metrics["total_distance"]
                     best_seq = new_seq
                     improved = True
@@ -569,10 +570,10 @@ def apply_inter_neighborhood(
                 if unassigned > 0:
                     if penalty < best_penalty - 1e-4:
                         accepted = True
-                    elif abs(penalty - best_penalty) < 1e-4 and total_new_dist < best_distance - 1e-4:
+                    elif abs(penalty - best_penalty) < 1e-4 and total_new_dist < best_distance - 0.01:
                         accepted = True
                 else:
-                    if total_new_dist < best_distance - 1e-4:
+                    if total_new_dist < best_distance - 0.01:
                         accepted = True
         
         if accepted:
@@ -827,6 +828,8 @@ def rvnd_inter(
                 "type": "stagnant",
                 "neighborhood": "All",
                 "message": "Iterasi Berakhir (Konvergen).",
+                "total_distance": round(current_distance, 2),
+                "total_demand": sum(current_demands),
                 "routes_snapshot": [deepcopy(r["sequence"]) for r in current_routes],
                 "candidates": result.get("candidates", []) if academic_mode else []
             })
@@ -895,7 +898,8 @@ def attempt_load_rebalance(
             continue
 
         for j in range(len(routes)):
-            if i == j: continue
+            if i == j: 
+                continue
             
             # Try moving EACH node from source to target
             for node in seq_source:
@@ -933,6 +937,9 @@ def attempt_load_rebalance(
                     best_routes[i] = metrics_a
                     best_routes[j] = metrics_b
                     
+    if best_routes:
+        return best_routes, True, {"type": "REBALANCE", "detail": "Berhasil memindahkan node untuk mengurangi overload/unassigned."}
+    
     return routes, False, {}
 
 

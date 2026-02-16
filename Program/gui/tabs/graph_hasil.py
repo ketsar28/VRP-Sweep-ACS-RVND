@@ -280,35 +280,29 @@ def render_graph_hasil(show_labels: bool = True, show_grid: bool = True) -> None
 
     st.divider()
 
-    # --- SUMMARY SECTION (REQUESTED BY USER) ---
-    st.markdown("### 📊 Ringkasan Pelayanan & Kapasitas")
-    
-    # Calculate Total Capacity of ACTIVE fleets
-
-    # We need to access fleet data. Assuming it's passed or available. 
-    # Since 'points' doesn't have fleet info, we rely on 'result.get("dataset")' or 'user_vehicle_selection' logic
-    # Try to extract from result if available, else standard fallback
+    # Calculate Total Capacity of fleets (Both Total and Remaining)
     dataset = result.get("dataset", {})
     available_vehicles = result.get("available_vehicles", [])
     fleet_info = dataset.get("fleet", [])
     
-    active_capacity = 0
+    total_fleet_capacity = 0
     
     # Try using explicit vehicle logs first
     vehicle_logs = result.get("vehicle_availability", [])
     if vehicle_logs:
         for vlog in vehicle_logs:
-            if vlog.get("available", False):
-                active_capacity += vlog.get("capacity", 0) * vlog.get("units", 1)
+            total_fleet_capacity += vlog.get("capacity", 0) * vlog.get("units", 1)
     else:
-        # Fallback: Sum capacity of all available fleet types * their units (if known) or just basic sum
+        # Fallback: Sum capacity of all available fleet types
         for v in fleet_info:
             if v["id"] in available_vehicles:
-                # Assuming 1 unit if not specified, or use v.get("units", 1) which might be in dataset
-                active_capacity += v.get("capacity", 0) * v.get("units", 1)
+                total_fleet_capacity += v.get("capacity", 0) * v.get("units", 1)
+    
+    # Sisa = Total Capacity - Served Demand
+    remaining_capacity = total_fleet_capacity - served_demand
 
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Total Kapasitas Armada", f"{active_capacity} kg")
+    c1.metric("Total Kapasitas Armada", f"{total_fleet_capacity} kg", f"Sisa {remaining_capacity:.1f} kg")
     c2.metric("Total Permintaan (Demand)", f"{total_demand} kg")
     c3.metric("Terlayani", f"{served_demand} kg", f"{len(served_customer_ids)} cust")
     c4.metric("Tidak Terlayani", f"{unserved_demand} kg", f"{len(unserved_customer_ids)} cust", delta_color="inverse")
