@@ -43,15 +43,16 @@ def assign_vehicle_by_demand(total_demand: float, fleet_data: List[Dict], used_v
 def can_assign_fleet(demands: List[float], fleet_data: List[Dict]) -> Tuple[bool, int, float]:
     """
     Checks if demands can be assigned to fleets. Efficiently.
+    Returns: (feasible, unassigned_count, penalty_magnitude)
     """
-    # 1. Expand fleet (Pre-sorted available units)
+    # 1. Expand fleet (Pre-sorted available units - just the capacities)
     available_units = []
     for f in fleet_data:
         cap = f["capacity"]
         for _ in range(f["units"]):
             available_units.append(cap)
     
-    # Sort ASC
+    # Sort ASC for best-fit logic
     available_units.sort()
     
     # Sort demands DESC (hardest to fit first)
@@ -60,11 +61,12 @@ def can_assign_fleet(demands: List[float], fleet_data: List[Dict]) -> Tuple[bool
     unassigned_count = 0
     total_excess = 0.0
     
-    # Track used unit indices manually to avoid object creation
+    # Track used unit indices manually to avoid object copying
     used_indices = set()
     
     for d in sorted_demands:
         assigned = False
+        # Try best fit
         for idx, cap in enumerate(available_units):
             if idx not in used_indices and cap >= d:
                 used_indices.add(idx)
@@ -87,47 +89,9 @@ def can_assign_fleet(demands: List[float], fleet_data: List[Dict]) -> Tuple[bool
                 used_indices.add(best_idx)
             else:
                 total_excess += d
-    
-    # Sort demands DESC (hardest to fit first)
-    sorted_demands = sorted(demands, reverse=True)
-    
-    unassigned_count = 0
-    total_excess = 0.0
-    
-    for d in sorted_demands:
-        assigned = False
-        # Try to fit in best available
-        for unit in available_units:
-            if not unit["used"] and unit["capacity"] >= d:
-                unit["used"] = True
-                assigned = True
-                break
-        
-        if not assigned:
-            unassigned_count += 1
-            # Calculate Excess: Distance to the LARGEST unused vehicle
-            # This provides a better gradient for moves.
-            best_unused_capacity = 0.0
-            best_unit_idx = -1
-            
-            # Find Largest Unused (available_units is sorted ASC, so search from end)
-            for i in range(len(available_units)-1, -1, -1):
-                unit = available_units[i]
-                if not unit["used"]:
-                    best_unused_capacity = unit["capacity"]
-                    best_unit_idx = i
-                    break
-            
-            if best_unused_capacity > 0:
-                total_excess += max(0.0, d - best_unused_capacity)
-                available_units[best_unit_idx]["used"] = True
-            else:
-                total_excess += d
 
     # Add Load Balancing Score (Sum of Squares) scaled down
-    # This ensures that [148, 131] (SqSum=39065) is worse than [138, 131] (SqSum=36205)
-    # even if Excess is constant.
-    # Scale factor: 0.0001 (so 100kg reduction ~ 1.0 penalty point)
+    # This ensures that wider spreads (less balanced) are penalized slightly
     load_balance_score = sum(d**2 for d in demands) * 0.0001
     
     final_penalty = total_excess + load_balance_score
