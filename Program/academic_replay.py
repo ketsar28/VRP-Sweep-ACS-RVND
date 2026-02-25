@@ -13,8 +13,9 @@ import sweep_nn
 import acs_solver
 import rvnd
 
-# Config
-DATA_DIR = Path(__file__).resolve().parent / "data" / "processed"
+# Config - using centralized path resolution
+from path_helper import DATA_DIR
+
 INSTANCE_PATH = DATA_DIR / "parsed_instance.json"
 DISTANCE_PATH = DATA_DIR / "parsed_distance.json"
 OUTPUT_PATH = DATA_DIR / "academic_replay_results.json"

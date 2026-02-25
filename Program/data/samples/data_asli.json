@@ -356,7 +356,7 @@
         0.0
       ]
     ],
-    "distance_multiplier": 1.5
+    "distance_multiplier": 1.0
   },
   "user_vehicles": [
     {
@@ -402,6 +402,5 @@
     "max_iterations": 2
   },
   "kapasitas_kendaraan": 100,
-  "iterasi": 2,
-  "distanceMatrix_size": 11
+  "iterasi": 2
 }

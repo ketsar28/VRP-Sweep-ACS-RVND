@@ -41,3 +41,8 @@ _archives/
 # --- Large Files ---
 *.mp4
 MEETING 04020206.mp4
+
+# --- PyInstaller Build Folders ---
+build/
+dist/
+*.spec

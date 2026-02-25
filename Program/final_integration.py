@@ -2,7 +2,8 @@ import json
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-DATA_DIR = Path(__file__).resolve().parent / "data" / "processed"
+from path_helper import DATA_DIR, DOCS_DIR
+
 INSTANCE_PATH = DATA_DIR / "parsed_instance.json"
 DISTANCE_PATH = DATA_DIR / "parsed_distance.json"
 CLUSTERS_PATH = DATA_DIR / "clusters.json"
@@ -11,7 +12,7 @@ ACS_PATH = DATA_DIR / "acs_routes.json"
 RVND_PATH = DATA_DIR / "rvnd_routes.json"
 FINAL_SOLUTION_PATH = DATA_DIR / "final_solution.json"
 
-SUMMARY_PATH = Path(__file__).resolve().parent / "docs" / "final_summary.md"
+SUMMARY_PATH = DOCS_DIR / "final_summary.md"
 
 
 def load_json(path: Path) -> dict:

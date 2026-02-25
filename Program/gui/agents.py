@@ -2,15 +2,14 @@ from __future__ import annotations
 
 import json
 import shutil
-import subprocess
 import sys
+import io
+from contextlib import redirect_stdout
 from pathlib import Path
 from typing import Dict, Any, List, Tuple
 
+from path_helper import DATA_DIR, PROGRAM_DIR
 
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-DATA_DIR = BASE_DIR / "data" / "processed"
 PARSED_INSTANCE = DATA_DIR / "parsed_instance.json"
 PARSED_DISTANCE = DATA_DIR / "parsed_distance.json"
 FINAL_SOLUTION = DATA_DIR / "final_solution.json"
@@ -184,11 +183,42 @@ def _write_parsed_distance(state: Dict[str, Any]) -> None:
         json.dump(payload, fh, indent=2)
 
 
+def _run_module_main(module_name: str, progress_callback=None) -> None:
+    """Import and run a pipeline module's main() function directly.
+
+    Ini adalah pengganti subprocess.Popen — modul dijalankan langsung
+    dalam proses yang sama, sehingga kompatibel dengan PyInstaller.
+    """
+    # Ensure Program/ dir is in sys.path for imports
+    program_str = str(PROGRAM_DIR)
+    if program_str not in sys.path:
+        sys.path.insert(0, program_str)
+
+    # Import the module dynamically
+    import importlib
+    module = importlib.import_module(module_name)
+
+    # Capture stdout to feed progress_callback
+    if progress_callback:
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            module.main()
+        # Feed captured output to progress callback
+        for line in buf.getvalue().splitlines():
+            try:
+                progress_callback(line.rstrip())
+            except Exception:
+                pass
+    else:
+        module.main()
+
+
 def run_pipeline(state: Dict[str, Any], progress_callback=None) -> Dict[str, Any]:
     """Run the deterministic pipeline (sweep -> nn -> acs -> rvnd -> final_integration).
 
     This function overwrites `parsed_instance.json` and `parsed_distance.json` with
-    user-provided inputs, runs the scripts sequentially, and returns the final_solution.json payload.
+    user-provided inputs, runs the module functions directly (no subprocess!),
+    and returns the final_solution.json payload.
     Backups of original parsed files are kept and restored on error.
     """
     # Backup
@@ -204,28 +234,15 @@ def run_pipeline(state: Dict[str, Any], progress_callback=None) -> Dict[str, Any
         _write_parsed_instance(state)
         _write_parsed_distance(state)
 
-        # determine python executable (use same interpreter)
-        py = sys.executable or "python"
-        scripts = [
-            BASE_DIR / "sweep_nn.py",
-            BASE_DIR / "acs_solver.py",
-            BASE_DIR / "rvnd.py",
-            BASE_DIR / "final_integration.py",
+        # Run each pipeline step as direct function call (NO subprocess!)
+        pipeline_modules = [
+            "sweep_nn",
+            "acs_solver",
+            "rvnd",
+            "final_integration",
         ]
-        # run each script and stream output via progress_callback if provided
-        for idx, script in enumerate(scripts):
-            proc = subprocess.Popen([py, str(script)], cwd=str(BASE_DIR), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-            if proc.stdout is not None:
-                for line in proc.stdout:
-                    if progress_callback:
-                        try:
-                            progress_callback(line.rstrip())
-                        except Exception:
-                            # ignore callback errors
-                            pass
-            ret = proc.wait()
-            if ret != 0:
-                raise subprocess.CalledProcessError(ret, str(script))
+        for module_name in pipeline_modules:
+            _run_module_main(module_name, progress_callback)
 
         # read final solution
         with FINAL_SOLUTION.open("r", encoding="utf-8") as fh:
@@ -253,16 +270,10 @@ def run_pipeline(state: Dict[str, Any], progress_callback=None) -> Dict[str, Any
             result["rvnd_data"] = {"iteration_logs": []}
 
         return result
-    except subprocess.CalledProcessError as e:
+    except Exception as e:
         # restore backups
         if inst_bak.exists():
-            shutil.move(inst_bak, PARSED_INSTANCE)
+            shutil.move(str(inst_bak), str(PARSED_INSTANCE))
         if dist_bak.exists():
-            shutil.move(dist_bak, PARSED_DISTANCE)
-        raise RuntimeError(f"Pipeline failed: {e}")
-    except Exception:
-        if inst_bak.exists():
-            shutil.move(inst_bak, PARSED_INSTANCE)
-        if dist_bak.exists():
-            shutil.move(dist_bak, PARSED_DISTANCE)
-        raise
+            shutil.move(str(dist_bak), str(PARSED_DISTANCE))
+        raise RuntimeError(f"Pipeline failed: {e}") from e

@@ -5,7 +5,8 @@ from pathlib import Path
 from typing import Dict, Any
 
 # Define paths
-BASE_DIR = Path(__file__).resolve().parent.parent
+from path_helper import PROGRAM_DIR
+BASE_DIR = PROGRAM_DIR
 DATA_DIR = BASE_DIR / "data"
 AUTOSAVE_PATH = DATA_DIR / "autosave.json"
 

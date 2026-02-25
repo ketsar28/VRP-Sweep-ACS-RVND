@@ -2,7 +2,8 @@ import json
 import math
 from pathlib import Path
 
-DATA_DIR = Path(__file__).resolve().parent / "data" / "processed"
+from path_helper import DATA_DIR
+
 INSTANCE_PATH = DATA_DIR / "parsed_instance.json"
 DISTANCE_PATH = DATA_DIR / "parsed_distance.json"
 

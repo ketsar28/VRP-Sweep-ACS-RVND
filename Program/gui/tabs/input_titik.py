@@ -8,7 +8,8 @@ import sys
 from pathlib import Path
 
 # Add gui directory to path to allow importing utils
-_gui_dir = Path(__file__).resolve().parent.parent
+from path_helper import PROGRAM_DIR
+_gui_dir = PROGRAM_DIR / "gui"
 if str(_gui_dir) not in sys.path:
     sys.path.insert(0, str(_gui_dir))
 

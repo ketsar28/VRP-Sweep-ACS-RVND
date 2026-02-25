@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Dict, Any, List
 
 
-DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "processed"
+from path_helper import DATA_DIR
 ACADEMIC_OUTPUT_PATH = DATA_DIR / "academic_replay_results.json"
 
 
@@ -1709,7 +1709,9 @@ def render_academic_replay() -> None:
                 try:
                     import sys
                     import importlib
-                    sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+                    from path_helper import PROGRAM_DIR
+                    if str(PROGRAM_DIR) not in sys.path:
+                        sys.path.insert(0, str(PROGRAM_DIR))
 
                     # Force reload to ensure dynamic updates
                     import academic_replay

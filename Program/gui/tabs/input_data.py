@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import Dict, Any
 
 # Add parent gui directory to path for agents import
-_gui_dir = Path(__file__).resolve().parent.parent
+from path_helper import PROGRAM_DIR
+_gui_dir = PROGRAM_DIR / "gui"
 if str(_gui_dir) not in sys.path:
     sys.path.insert(0, str(_gui_dir))
 

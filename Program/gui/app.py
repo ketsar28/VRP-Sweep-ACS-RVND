@@ -23,21 +23,35 @@ if not hasattr(st, "experimental_data_editor") and hasattr(st, "data_editor"):
     st.experimental_data_editor = st.data_editor
 
 
-def _load_agents_module() -> object:
-    agents_path = Path(__file__).resolve().parent / "agents.py"
-    spec = importlib.util.spec_from_file_location("gui_agents", agents_path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)  # type: ignore
-    return module
+# --- Centralized Path Handling ---
+# Add Program/ to sys.path FIRST so path_helper can be imported everywhere
+if getattr(sys, 'frozen', False):
+    if hasattr(sys, '_MEIPASS'):
+        _program_dir = Path(sys._MEIPASS) / "Program"
+    else:
+        _program_dir = Path(sys.executable).resolve().parent / "Program"
+else:
+    _program_dir = Path(__file__).resolve().parent.parent
 
+if str(_program_dir) not in sys.path:
+    sys.path.insert(0, str(_program_dir))
+
+# Now import from path_helper (which lives in Program/)
+from path_helper import PROGRAM_DIR
+
+_base_gui_dir = PROGRAM_DIR / "gui"
+_project_root = PROGRAM_DIR.parent
 
 # Add tabs folder to path for imports
-_tabs_dir = Path(__file__).resolve().parent / "tabs"
+_tabs_dir = _base_gui_dir / "tabs"
 if str(_tabs_dir) not in sys.path:
     sys.path.insert(0, str(_tabs_dir))
 
-# Add project root to path for absolute imports (e.g. Program.gui.utils)
-_project_root = Path(__file__).resolve().parent.parent.parent
+# Add gui folder to path for agents import
+if str(_base_gui_dir) not in sys.path:
+    sys.path.insert(0, str(_base_gui_dir))
+
+# Add project root to path for absolute imports
 if str(_project_root) not in sys.path:
     sys.path.insert(0, str(_project_root))
 
@@ -118,9 +132,8 @@ def _build_state_from_ui() -> Dict:
     return {"points": pts, "inputData": input_data}
 
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-DATA_DIR = BASE_DIR / "data" / "processed"
-DOCS_DIR = BASE_DIR / "docs"
+# Use centralized path_helper (already imported at top of file)
+from path_helper import DATA_DIR, DOCS_DIR
 
 FINAL_SOLUTION_PATH = DATA_DIR / "final_solution.json"
 FINAL_SUMMARY_PATH = DOCS_DIR / "final_summary.md"
