@@ -429,14 +429,28 @@ def render_input_data() -> None:
     # NEW: Distance Multiplier (Layout yang lebih rapi)
     st.markdown("##### ⚙️ Konfigurasi Jarak")
 
-    dist_multiplier = st.number_input(
-        "Faktor Pengali (Multiplier)",
-        min_value=0.1, max_value=10.0, step=0.1,
-        value=float(st.session_state.get("distance_multiplier", 1.5)),
-        help="Faktor pengali untuk jarak Euclidean. Default 1.0 (murni). Gunakan 1.5 untuk memperhitungkan tortuosity (kelok jalan)."
+    # Tambahkan toggle On/Off untuk Tortuosity
+    use_tortuosity = st.toggle(
+        "Gunakan Tortuosity (Faktor Kelok Jalan)",
+        value=st.session_state.get("use_tortuosity", False),
+        help="Aktifkan jika ingin jarak dikali dengan faktor kelengkungan jalan nyata."
     )
-    st.caption(
-        "ℹ️ **Tips:** Gunakan **1.5** untuk memperhitungkan _tortuosity_ (kelok jalan).")
+    st.session_state["use_tortuosity"] = use_tortuosity
+
+    if use_tortuosity:
+        # Gunakan max() untuk menjaga nilai minimal 1.1 jika sebelumnya tertahan di 1.0
+        val_awal = max(1.1, float(st.session_state.get("distance_multiplier", 1.5)))
+        dist_multiplier = st.number_input(
+            "Nilai Pengali Tortuosity",
+            min_value=1.1, max_value=10.0, step=0.1,
+            value=val_awal,
+            help="Isi > 1.0 (misal 1.5) untuk simulasi kelok jalan dalam kota."
+        )
+        st.caption("ℹ️ **Tips:** Angka **1.5** biasanya pas untuk asumsi rute dalam kota.")
+    else:
+        # Jika toggle mati, paksa multiplier jadi 1.0 (jarak murni)
+        dist_multiplier = 1.0
+        st.info("ℹ️ Tortuosity dimatikan. Menggunakan perhitungan **Jarak Lurus Asli (Multiplier = 1.0)**.")
 
     st.session_state["distance_multiplier"] = dist_multiplier
     # Also save to inputData

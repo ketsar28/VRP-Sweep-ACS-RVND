@@ -45,8 +45,8 @@ def _display_sweep_iterations(logs: List[Dict]) -> None:
     if angle_logs:
         st.markdown("**Langkah 1: Perhitungan Sudut Polar**")
         st.info("Sudut polar saya gunakan untuk menentukan posisi relatif pelanggan terhadap depot.")
-        st.latex(
-            r"\theta = \arctan\left(\frac{y_i - y_{\text{depot}}}{x_i - x_{\text{depot}}}\right) \cdot \frac{180}{\pi}")
+        # st.latex(
+        #     r"\theta = \arctan\left(\frac{y_i - y_{\text{depot}}}{x_i - x_{\text{depot}}}\right) \cdot \frac{180}{\pi}")
 
         df_angles = pd.DataFrame([{
             "Pelanggan": log_entry["customer_id"],
@@ -417,6 +417,38 @@ def _display_acs_summary(result: Dict[str, Any]) -> None:
     m2.metric("Total Waktu (ACS)", f"{summary['total_time']:.0f} menit")
     m3.metric("Total Biaya (ACS)", f"Rp {summary['total_cost']:,.0f}")
 
+    # Ambil rute terbaik ACS dari logs (iteration_summary terakhir per cluster)
+    all_logs = result.get("iteration_logs", [])
+    acs_logs = [log for log in all_logs if log.get("phase") == "ACS" and log.get("step") == "iteration_summary"]
+    
+    if acs_logs:
+        # Get the final iteration summary for each cluster
+        best_acs_routes = {}
+        for log in acs_logs:
+            cid = log.get("cluster_id")
+            # Overwrite with the latest iteration seen for this cluster
+            best_acs_routes[cid] = log
+            
+        if best_acs_routes:
+            st.markdown("---")
+            st.markdown("#### 🐜 Rute Terbaik ACS (Per Cluster)")
+            st.caption("Berikut adalah urutan titik kunjungan terbaik yang ditemukan oleh rombongan semut (sebelum dilanjutkan ke RVND).")
+            
+            table_data = []
+            for cid, log in sorted(best_acs_routes.items()):
+                seq = log.get("best_route", [])
+                seq_str = " → ".join(str(n) for n in seq) if seq else "-"
+                dist = log.get("best_distance", 0.0)
+                
+                table_data.append({
+                    "Cluster": f"Cluster {cid}",
+                    "Urutan Rute": seq_str,
+                    "Jarak": f"{dist:.2f} km"
+                })
+                
+            df_acs = pd.DataFrame(table_data)
+            st.dataframe(df_acs, use_container_width=True, hide_index=True)
+
 
 def _display_rvnd_summary(result: Dict[str, Any]) -> None:
     """Display Final (ACS + RVND) results summary for comparison."""
@@ -439,6 +471,30 @@ def _display_rvnd_summary(result: Dict[str, Any]) -> None:
     m2.metric("Total Waktu Akhir", f"{summary['total_time']:.0f} menit")
     m3.metric("Total Biaya Akhir", f"Rp {summary['total_cost']:,.0f}",
               delta=f"-Rp {save_cost:,.0f}" if save_cost > 100 else None)
+
+    # NEW: Display final best route sequence explicitly
+    final_routes = result.get("routes", [])
+    if final_routes:
+        st.markdown("---")
+        st.markdown("#### 🗺️ Rute Akhir Terbaik (Best Route Sequence)")
+        st.caption("Berikut adalah urutan titik kunjungan terbaik yang dihasilkan dari proses optimasi.")
+        
+        table_data = []
+        for i, r in enumerate(final_routes):
+            seq = r.get("sequence", [])
+            seq_str = " → ".join(str(n) for n in seq) if seq else "-"
+            vehicle = r.get("vehicle_type", f"Rute {i+1}")
+            dist = r.get("total_distance", 0.0)
+            
+            table_data.append({
+                "Armada": vehicle,
+                "Urutan Rute": seq_str,
+                "Jarak": f"{dist:.2f} km",
+                "Muatan (kg)": f"{r.get('total_demand', 0):.0f}"
+            })
+            
+        df_routes = pd.DataFrame(table_data)
+        st.dataframe(df_routes, use_container_width=True, hide_index=True)
 
 def _generate_verification_log(routes_snapshot: List[List[int]], dataset: Dict[str, Any]) -> None:
     """
